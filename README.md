@@ -13,4 +13,4 @@ A (marginally) better on screen keyboard for GNOME 43+
 3. Log out of GNOME and log back in
 4. Click on the keyboard button in the dash bar
 ## Help
-- This project was created in literally two days, so if you find any bugs, please open an issue or submit a pull request. Thanks!
+- This project was created in literally two days, and I have no prior experience with GNOME JS, so if you find any bugs, please open an issue or submit a pull request. Thanks!
