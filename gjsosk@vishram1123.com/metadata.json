@@ -1,0 +1,8 @@
+{
+  "name": "GJS OSK",
+  "description": "A new Onscreen Keyboard built using GNOME JS. Relies on ydotool. For Wayland only",
+  "uuid": "gjsosk@vishram1123.com",
+  "shell-version": [
+    "43"
+  ]
+}
