@@ -18,7 +18,7 @@ A (marginally) better on screen keyboard for GNOME 43+
 4. Click on the keyboard button in the dash bar
 ## Known Problems/Issues (Would appreciate solutions about how to fix):
 - Inabliliy to resize
-- Does not size correctly if screen size changes (i.e. if the screen is rotated)
+- ~~Does not size correctly if screen size changes (i.e. if the screen is rotated)~~ [Fixed here](https://github.com/Vishram1123/gjs-osk/commit/bfe9a201dada51fd793cd994b74f290e0b18651a)
 - Caps lock does not change the case of the letter keys
 - No alternate keyboard layouts (other than en_US)
 ## Help
