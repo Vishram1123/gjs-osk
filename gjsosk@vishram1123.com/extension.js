@@ -1,9 +1,10 @@
-const { GObject, St, Gio, Clutter, Meta, Shell, GLib } = imports.gi;
+const { GObject, St, Gio, Clutter, Meta, Shell, GLib, Gdk } = imports.gi;
 
 const ExtensionUtils = imports.misc.extensionUtils;
 const Me = ExtensionUtils.getCurrentExtension();
 const Main = imports.ui.main;
 const PanelMenu = imports.ui.panelMenu;
+const Lang = imports.lang;
 
 class Extension {
     constructor() {
@@ -76,7 +77,7 @@ let keycodes = {
 		{code: 87, lowerName: "F11", upperName: "F11"},
 		{code: 88, lowerName: "F12", upperName: "F12"},
 		{code: 210, lowerName: "PrtSc", upperName: "PrtSc"},
-		{code: 111, lowerName: "Del", upperName: "Del"}
+		{code: 111, lowerName: "⌦", upperName: "⌦"}
 	],
 	row2: [
 		{code: 41, lowerName: "`", upperName: "~"},
@@ -92,10 +93,10 @@ let keycodes = {
 		{code: 11, lowerName: "0", upperName: ")"},
 		{code: 12, lowerName: "-", upperName: "_"},
 		{code: 13, lowerName: "=", upperName: "+"},
-		{code: 14, lowerName: "Backspace", upperName: "Backspace"}
+		{code: 14, lowerName: "⌫", upperName: "⌫"}
 	],
 	row3: [
-		{code: 15, lowerName: "Tab", upperName: "Tab"},
+		{code: 15, lowerName: "⇥", upperName: "⇥"},
 		{code: 16, lowerName: "q", upperName: "Q"},
 		{code: 17, lowerName: "w", upperName: "W"},
 		{code: 18, lowerName: "e", upperName: "E"},
@@ -111,7 +112,7 @@ let keycodes = {
 		{code: 43, lowerName: "\\", upperName: "|"}
 	],
 	row4: [
-		{code: 58, lowerName: "Caps Lock", upperName: "Caps Lock"},
+		{code: 58, lowerName: "⇪", upperName: "⇪"},
 		{code: 30, lowerName: "a", upperName: "A"},
 		{code: 31, lowerName: "s", upperName: "S"},
 		{code: 32, lowerName: "d", upperName: "D"},
@@ -123,10 +124,10 @@ let keycodes = {
 		{code: 38, lowerName: "l", upperName: "L"},
 		{code: 39, lowerName: ";", upperName: ":"},
 		{code: 40, lowerName: "'", upperName: "\""},
-		{code: 28, lowerName: "Enter", upperName: "Enter"}
+		{code: 28, lowerName: "⏎", upperName: "⏎"}
 	],
 	row5: [
-		{code: 42, lowerName: "Shift", upperName: "Shift"},
+		{code: 42, lowerName: "⇧", upperName: "⇧"},
 		{code: 44, lowerName: "z", upperName: "Z"},
 		{code: 45, lowerName: "x", upperName: "X"},
 		{code: 46, lowerName: "c", upperName: "C"},
@@ -137,15 +138,15 @@ let keycodes = {
 		{code: 51, lowerName: ",", upperName: "<"},
 		{code: 52, lowerName: ".", upperName: ">"},
 		{code: 53, lowerName: "/", upperName: "?"},
-		{code: 54, lowerName: "Shift", upperName: "Shift"}
+		{code: 54, lowerName: "⇧", upperName: "⇧"}
 	],
 	row6: [
-		{code: 29, lowerName: "Ctrl", upperName: "Ctrl"},
+		{code: 29, lowerName: "⌃", upperName: "⌃"},
 		{code: 125, lowerName: "❖", upperName: "❖"},
-		{code: 56, lowerName: "Alt", upperName: "Alt"},
-        {code: 57, lowerName: "Space", upperName: "Space"},
-        {code: 100, lowerName: "Alt", upperName: "Alt"},
-        {code: 97, lowerName: "Ctrl", upperName: "Ctrl"},
+		{code: 56, lowerName: "⌥", upperName: "⌥"},
+        {code: 57, lowerName: "␣", upperName: "␣"},
+        {code: 100, lowerName: "⌥", upperName: "⌥"},
+        {code: 97, lowerName: "⌃", upperName: "⌃"},
         [
             {code: 105, lowerName: "←", upperName: "←"},
             {code: 103, lowerName: "↑", upperName: "↑"},
@@ -160,9 +161,7 @@ class Keyboard extends St.Widget{
         let monitor = Main.layoutManager.primaryMonitor;
         super._init({
             visible: true,
-            reactive: false,
-            x: 0,
-            y: 0
+            reactive: true
         });
         this.contentLayout = new imports.ui.dialog.Dialog(Main.layoutManager.modalDialogGroup, 'db-keyboard-content');
         this.box = new St.BoxLayout({vertical: true});
@@ -172,12 +171,60 @@ class Keyboard extends St.Widget{
         this.mod = [];
         this.modBtns = [];
         this.capsL = false;
-        this.contentLayout.set_style("margin-top: " + monitor.height * 0.6 + "px; margin-left: " + ((monitor.width * .5) - ((this.contentLayout.width * .5)+40)) + "px");
         this.box.add_style_class_name("boxLay");
         this.opened = false;
-        this.state = "closed"
+        this.state = "closed";
+        this.dragging = false;
+        this.delta = [];
+        /*this.contentLayout.connect("button-press-event", (object, event) => {
+			this.dragging = true; 
+			this.delta = [global.get_pointer()[0] - this.contentLayout.translation_x, global.get_pointer()[1] - this.contentLayout.translation_y];
+			this.dragInterval = setInterval(() => this.checkDrag(this.dragging, this.delta), 1);
+			console.log(true);
+		})
+		this.contentLayout.connect("button-release-event", (object, event) => {
+			this.dragging = false; 
+			this.delta = [];
+			clearInterval(this.dragInterval);
+			console.log(false);
+		})*/
+		this.checkMonitor();
+		
     }
+    checkDrag(dragging, delta) {
+			this.last_pts = [this.contentLayout.translation_x, this.contentLayout.translation_y]
+			if (dragging){
+				let [mouse_x, mouse_y] = global.get_pointer();
+				this.contentLayout.set_translation(mouse_x - delta[0], mouse_y - delta[1], 0);
+				this.last_pts = [mouse_x - 15, mouse_y - 15];
+			} else {
+				this.contentLayout.set_translation(this.last_pts[0], this.last_pts[1], 0);
+			}
+	}
+    checkMonitor() {
+		let oldMonitorDimensions = [Main.layoutManager.primaryMonitor.width, Main.layoutManager.primaryMonitor.height];
+		setInterval(() => {
+			if (oldMonitorDimensions[0] != Main.layoutManager.primaryMonitor.width || oldMonitorDimensions[1] != Main.layoutManager.primaryMonitor.height) {
+				this.contentLayout.remove_all_children();
+				this.box = new St.BoxLayout({vertical: true});
+				this.buildUI();
+				this.contentLayout.add_child(this.box);
+				this.close(); 
+				this.mod = [];
+				this.modBtns = [];
+				this.capsL = false;
+				this.box.add_style_class_name("boxLay");
+				this.opened = false;
+				this.state = "closed";
+				this.dragging = false;
+				oldMonitorDimensions = [Main.layoutManager.primaryMonitor.width, Main.layoutManager.primaryMonitor.height];
+			}
+		}, 200);
+	}
     open() {
+		let monitor = Main.layoutManager.primaryMonitor;
+		this.contentLayout.set_translation(0, 0, 0);
+		this.contentLayout.set_translation((monitor.width * .5) - ((this.contentLayout.width * .5)), monitor.height - this.contentLayout.height - 25, 0);
         this.state = "opening"
         this.box.opacity = 0;
         this.contentLayout.show();
@@ -185,31 +232,36 @@ class Keyboard extends St.Widget{
             opacity: 255,
             duration: 100,
             mode: Clutter.AnimationMode.EASE_OUT_QUAD,
-            onComplete: () => {setTimeout(() => {this.state = "opened"}, 500);}
+            onComplete: () => {setTimeout(() => {this.state = "opened"}, 500); this.contentLayout.set_translation((monitor.width * .5) - ((this.contentLayout.width * .5)), monitor.height - this.contentLayout.height - 25, 0);}
         });
         this.opened = true;
     }    
     close() {
+		let monitor = Main.layoutManager.primaryMonitor;
         this.state = "closing"
         this.box.ease({
             opacity: 0,
             duration: 100,
             mode: Clutter.AnimationMode.EASE_OUT_QUAD,
-            onComplete: () => {this.row7.hide();
-        this.contentLayout.translation_x -= this.contentLayout.translation_x;
-        this.contentLayout.translation_y -= this.contentLayout.translation_y;
+            onComplete: () => {
+        this.contentLayout.set_translation(0, 0, 0); this.contentLayout.set_translation((monitor.width * .5) - ((this.contentLayout.width * .5)), monitor.height - this.contentLayout.height - 40, 0);
         this.opened = false;this.contentLayout.hide(); setTimeout(() => {this.state = "closed"}, 500);},
         });
+        this.dragging = false; 
+		this.delta = [];
+		clearInterval(this.dragInterval);
+		console.log(false);
     }
     buildUI(upper){
-        var topRowWidth = 90
+        var topRowWidth = Math.round((Main.layoutManager.primaryMonitor.width * 0.7) / 16);
+        var topRowHeight = Math.round((Main.layoutManager.primaryMonitor.height * 0.037));
         let row1 = new St.BoxLayout({pack_start: true});
         for (var num in keycodes.row1){
             const i = keycodes.row1[num]
             var w = topRowWidth;
             row1.add_child(new St.Button({
                 label: upper ? i.upperName : i.lowerName,
-                height: 40,
+                height: topRowHeight,
                 width: w 
             }));
             var isMod = false;
@@ -242,7 +294,7 @@ class Keyboard extends St.Widget{
             }
             row2.add_child(new St.Button({
                 label: upper ? i.upperName : i.lowerName,
-                height: 60,
+                height: topRowHeight + 20,
                 width: w 
             }));
             var isMod = false;
@@ -275,7 +327,7 @@ class Keyboard extends St.Widget{
             }
             row3.add_child(new St.Button({
                 label: upper ? i.upperName : i.lowerName,
-                height: 60,
+                height: topRowHeight + 20,
                 width: w 
             }));
             var isMod = false;
@@ -306,7 +358,7 @@ class Keyboard extends St.Widget{
             }
             row4.add_child(new St.Button({
                 label: upper ? i.upperName : i.lowerName,
-                height: 60,
+                height: topRowHeight + 20,
                 width: w 
             }));
             var isMod = false;
@@ -340,7 +392,7 @@ class Keyboard extends St.Widget{
             }
             row5.add_child(new St.Button({
                 label: upper ? i.upperName : i.lowerName,
-                height: 60,
+                height: topRowHeight + 20,
                 width: w 
             }));
             var isMod = false;
@@ -359,43 +411,6 @@ class Keyboard extends St.Widget{
             }
         }
         row5.add_style_class_name("keysHolder");
-        this.row7 = new St.BoxLayout({pack_start: true});
-        var moveLeft = new St.Button({
-            label: "←",
-            width: (row1.width / 5),
-            height: 50
-        });
-        moveLeft.connect("clicked", () => {this.contentLayout.translation_x -= 100});
-        this.row7.add_child(moveLeft);
-        var moveUp = new St.Button({
-            label: "↑",
-            width: (row1.width / 5),
-            height: 50
-        });
-        moveUp.connect("clicked", () => {this.contentLayout.translation_y -= 100});
-        this.row7.add_child(moveUp);
-        var moveRight = new St.Button({
-            label: "→",
-            width: (row1.width / 5),
-            height: 50
-        });
-        moveRight.connect("clicked", () => {this.contentLayout.translation_x += 100});
-        this.row7.add_child(moveRight);
-        var moveDown = new St.Button({
-            label: "↓",
-            width: (row1.width / 5),
-            height: 50
-        });
-        moveDown.connect("clicked", () => {this.contentLayout.translation_y += 100});
-        this.row7.add_child(moveDown);
-        var close = new St.Button({
-            label: "🗙",
-            width: (row1.width / 5),
-            height: 50
-        });
-        close.connect("clicked", () => this.close());
-        this.row7.add_child(close);
-        this.row7.add_style_class_name("keysHolder");
         let row6 = new St.BoxLayout({pack_start: true});
         for (var num in keycodes.row6){
             const i = keycodes.row6[num]
@@ -404,7 +419,7 @@ class Keyboard extends St.Widget{
                 w = ((row1.width - ((keycodes.row6.length + 1) * ((topRowWidth) + 5))));
                 row6.add_child(new St.Button({
                     label: upper ? i.upperName : i.lowerName,
-                    height: 60,
+                    height: topRowHeight + 20,
                     width: w 
                 }));
                 var isMod = false;
@@ -443,28 +458,28 @@ class Keyboard extends St.Widget{
                 });
                 gbox.add_child(btn4);
                 var btn5 = new St.Button({
-                    label: "⛭",    
+                    label: "🗙",    
                 });
                 gbox.add_child(btn5);
                 btn1.connect("clicked", () => this.decideMod((keycodes.row6[keycodes.row6.length - 1])[0]))
                 btn2.connect("clicked", () => this.decideMod((keycodes.row6[keycodes.row6.length - 1])[1]))
                 btn3.connect("clicked", () => this.decideMod((keycodes.row6[keycodes.row6.length - 1])[2]))
                 btn4.connect("clicked", () => this.decideMod((keycodes.row6[keycodes.row6.length - 1])[3]))
-                btn5.connect("clicked", () => {if (this.row7.is_visible()){this.row7.hide()} else {this.row7.show()}})
+                btn5.connect("clicked", () => {this.close();});
                 btn1.char = (keycodes.row6[keycodes.row6.length - 1])[0]
                 btn2.char = (keycodes.row6[keycodes.row6.length - 1])[1]
                 btn3.char = (keycodes.row6[keycodes.row6.length - 1])[2]
                 btn4.char = (keycodes.row6[keycodes.row6.length - 1])[3]
-                btn1.width =  (((topRowWidth) + 5)*(2/3)) - 4 ;
-                btn1.height = 60;
-                btn2.width = (((topRowWidth) + 5)*(2/3)) - 4 ;
-                btn3.width = (((topRowWidth) + 5)*(2/3)) - 4 ;
-                btn4.width = (((topRowWidth) + 5)*(2/3)) - 4 ;
-                btn4.height = 60;
-                btn2.height = 30;
-                btn3.height = 30;
+                btn1.width =  Math.round((((topRowWidth) + 5)) * (2/3)) - 4 ;
+                btn1.height = topRowHeight + 20;
+                btn2.width = Math.round((((topRowWidth) + 5)) * (2/3)) - 4 ;
+                btn3.width = Math.round((((topRowWidth) + 5)) * (2/3))- 4 ;
+                btn4.width = Math.round((((topRowWidth) + 5)) * (2/3)) - 4 ;
+                btn4.height = topRowHeight + 20;
+                btn2.height = (topRowHeight + 20)/2;
+                btn3.height = (topRowHeight + 20)/2;
                 btn5.width = (((topRowWidth) + 5) - 4) ;
-                btn5.height = 60;
+                btn5.height = topRowHeight + 20;
                 btn1.add_style_class_name('dr-b');
                 btn2.add_style_class_name('dr-b');
                 btn3.add_style_class_name('dr-b');
@@ -477,7 +492,7 @@ class Keyboard extends St.Widget{
                 w = (topRowWidth) + 5;
                 row6.add_child(new St.Button({
                     label: upper ? i.upperName : i.lowerName,
-                    height: 60,
+                    height: topRowHeight + 20,
                     width: w 
                 }));
                 
@@ -506,8 +521,6 @@ class Keyboard extends St.Widget{
         this.box.add_child(row4);
         this.box.add_child(row5);
         this.box.add_child(row6);
-        this.box.add_child(this.row7);
-        this.row7.hide();
         var containers_ = this.box.get_children();
         var elems_ = []
         containers_.forEach(items => {
@@ -590,5 +603,4 @@ function init() {
     
     return new Extension();
 }
-
 
