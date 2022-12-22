@@ -174,33 +174,10 @@ class Keyboard extends St.Widget{
         this.box.add_style_class_name("boxLay");
         this.opened = false;
         this.state = "closed";
-        this.dragging = false;
         this.delta = [];
-        /*this.contentLayout.connect("button-press-event", (object, event) => {
-			this.dragging = true; 
-			this.delta = [global.get_pointer()[0] - this.contentLayout.translation_x, global.get_pointer()[1] - this.contentLayout.translation_y];
-			this.dragInterval = setInterval(() => this.checkDrag(this.dragging, this.delta), 1);
-			console.log(true);
-		})
-		this.contentLayout.connect("button-release-event", (object, event) => {
-			this.dragging = false; 
-			this.delta = [];
-			clearInterval(this.dragInterval);
-			console.log(false);
-		})*/
 		this.checkMonitor();
 		
     }
-    checkDrag(dragging, delta) {
-			this.last_pts = [this.contentLayout.translation_x, this.contentLayout.translation_y]
-			if (dragging){
-				let [mouse_x, mouse_y] = global.get_pointer();
-				this.contentLayout.set_translation(mouse_x - delta[0], mouse_y - delta[1], 0);
-				this.last_pts = [mouse_x - 15, mouse_y - 15];
-			} else {
-				this.contentLayout.set_translation(this.last_pts[0], this.last_pts[1], 0);
-			}
-	}
     checkMonitor() {
 		let oldMonitorDimensions = [Main.layoutManager.primaryMonitor.width, Main.layoutManager.primaryMonitor.height];
 		setInterval(() => {
@@ -245,12 +222,8 @@ class Keyboard extends St.Widget{
             mode: Clutter.AnimationMode.EASE_OUT_QUAD,
             onComplete: () => {
         this.contentLayout.set_translation(0, 0, 0); this.contentLayout.set_translation((monitor.width * .5) - ((this.contentLayout.width * .5)), monitor.height - this.contentLayout.height - 40, 0);
-        this.opened = false;this.contentLayout.hide(); setTimeout(() => {this.state = "closed"}, 500);},
+        this.opened = false;this.contentLayout.hide(); this.row7.hide();setTimeout(() => {this.state = "closed"}, 500);},
         });
-        this.dragging = false; 
-		this.delta = [];
-		clearInterval(this.dragInterval);
-		console.log(false);
     }
     buildUI(upper){
         var topRowWidth = Math.round((Main.layoutManager.primaryMonitor.width * 0.7) / 16);
@@ -411,6 +384,43 @@ class Keyboard extends St.Widget{
             }
         }
         row5.add_style_class_name("keysHolder");
+        this.row7 = new St.BoxLayout({pack_start: true});
+        var moveLeft = new St.Button({
+            label: "←",
+            width: (row1.width / 5),
+            height: topRowHeight + 10
+        });
+        moveLeft.connect("clicked", () => {if (this.contentLayout.translation_x - 100 >= 0) {this.contentLayout.translation_x -= 100} else {this.contentLayout.translation_x = 0;}});
+        this.row7.add_child(moveLeft);
+        var moveUp = new St.Button({
+            label: "↑",
+            width: (row1.width / 5),
+            height: topRowHeight + 10
+        });
+        moveUp.connect("clicked", () => {if (this.contentLayout.translation_y - 100 >= 0) {this.contentLayout.translation_y -= 100} else {this.contentLayout.translation_y = 0;}});
+        this.row7.add_child(moveUp);
+        var moveRight = new St.Button({
+            label: "→",
+            width: (row1.width / 5),
+            height: topRowHeight + 10
+        });
+        moveRight.connect("clicked", () => {if (this.contentLayout.translation_x + 100 <= Main.layoutManager.primaryMonitor.width - this.contentLayout.width) {this.contentLayout.translation_x += 100} else {this.contentLayout.translation_x = Main.layoutManager.primaryMonitor.width - this.contentLayout.width;}});
+        this.row7.add_child(moveRight);
+        var moveDown = new St.Button({
+            label: "↓",
+            width: (row1.width / 5),
+            height: topRowHeight + 10
+        });
+        moveDown.connect("clicked", () => {if (this.contentLayout.translation_y + 100 <= Main.layoutManager.primaryMonitor.height - this.contentLayout.height) {this.contentLayout.translation_y += 100} else {this.contentLayout.translation_y = Main.layoutManager.primaryMonitor.height - this.contentLayout.height;}});
+        this.row7.add_child(moveDown);
+        var close = new St.Button({
+            label: "🗙",
+            width: (row1.width / 5),
+            height: topRowHeight + 10
+        });
+        close.connect("clicked", () => this.close());
+        this.row7.add_child(close);
+        this.row7.add_style_class_name("keysHolder");
         let row6 = new St.BoxLayout({pack_start: true});
         for (var num in keycodes.row6){
             const i = keycodes.row6[num]
@@ -458,14 +468,14 @@ class Keyboard extends St.Widget{
                 });
                 gbox.add_child(btn4);
                 var btn5 = new St.Button({
-                    label: "🗙",    
+                    label: "⛭",    
                 });
                 gbox.add_child(btn5);
                 btn1.connect("clicked", () => this.decideMod((keycodes.row6[keycodes.row6.length - 1])[0]))
                 btn2.connect("clicked", () => this.decideMod((keycodes.row6[keycodes.row6.length - 1])[1]))
                 btn3.connect("clicked", () => this.decideMod((keycodes.row6[keycodes.row6.length - 1])[2]))
                 btn4.connect("clicked", () => this.decideMod((keycodes.row6[keycodes.row6.length - 1])[3]))
-                btn5.connect("clicked", () => {this.close();});
+                btn5.connect("clicked", () => {if (this.row7.is_visible()){this.row7.hide(); this.contentLayout.translation_y += topRowHeight + 10} else {this.row7.show(); this.contentLayout.translation_y -= topRowHeight + 10}})
                 btn1.char = (keycodes.row6[keycodes.row6.length - 1])[0]
                 btn2.char = (keycodes.row6[keycodes.row6.length - 1])[1]
                 btn3.char = (keycodes.row6[keycodes.row6.length - 1])[2]
@@ -521,6 +531,8 @@ class Keyboard extends St.Widget{
         this.box.add_child(row4);
         this.box.add_child(row5);
         this.box.add_child(row6);
+        this.box.add_child(this.row7);
+        this.row7.hide();
         var containers_ = this.box.get_children();
         var elems_ = []
         containers_.forEach(items => {
