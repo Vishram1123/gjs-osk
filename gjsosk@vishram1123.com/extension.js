@@ -155,18 +155,18 @@ let keycodes = {
         ]
 	]
 }
-const Keyboard = GObject.registerClass(
-class Keyboard extends St.Widget{
+const Keyboard = GObject.registerClass({Signals: {
+        'drag-begin': {},
+        'drag-end': {},
+    },
+},
+class Keyboard extends imports.ui.dialog.Dialog{
      _init(){
         let monitor = Main.layoutManager.primaryMonitor;
-        super._init({
-            visible: true,
-            reactive: true
-        });
-        this.contentLayout = new imports.ui.dialog.Dialog(Main.layoutManager.modalDialogGroup, 'db-keyboard-content');
+        super._init(Main.layoutManager.modalDialogGroup, 'db-keyboard-content');
         this.box = new St.BoxLayout({vertical: true});
         this.buildUI();
-        this.contentLayout.add_child(this.box);
+        this.add_child(this.box);
         this.close(); 
         this.mod = [];
         this.modBtns = [];
@@ -176,16 +176,104 @@ class Keyboard extends St.Widget{
         this.state = "closed";
         this.delta = [];
 		this.checkMonitor();
-		
+		this._dragging = false;
     }
+    vfunc_button_press_event() {
+		this.delta = [global.get_pointer()[0] - this.translation_x, global.get_pointer()[1] - this.translation_y];
+		console.log("dragging");
+		return this.startDragging(Clutter.get_current_event(), this.delta)
+	}
+	startDragging(event, delta) {
+		if (this._dragging)
+            return Clutter.EVENT_PROPAGATE;
+        this._dragging = true;
+        let device = event.get_device();
+        let sequence = event.get_event_sequence();
+        this._grab = global.stage.grab(this);
+        this._grabbedDevice = device;
+        this._grabbedSequence = sequence;
+		this.emit('drag-begin');
+		let [absX, absY] = event.get_coords();
+		this.snapMovement(absX - delta[0], absY - delta[1]);
+		return Clutter.EVENT_STOP;
+    }
+	vfunc_button_release_event() {
+		if (this._dragging && !this._grabbedSequence) {
+            return this.endDragging();
+		}
+        return Clutter.EVENT_PROPAGATE;
+	}
+	endDragging() {
+        if (this._dragging) {
+            if (this._releaseId) {
+                this.disconnect(this._releaseId);
+                this._releaseId = 0;
+            }
+            if (this._grab) {
+                this._grab.dismiss();
+                this._grab = null;
+            }
+            this._grabbedSequence = null;
+            this._grabbedDevice = null;
+            this._dragging = false;
+            this.delta = [];
+            this.emit('drag-end');
+            this._dragging = false;
+        }
+        return Clutter.EVENT_STOP;
+    }
+    vfunc_motion_event() {
+		let event = Clutter.get_current_event();
+		if (this._dragging && !this._grabbedSequence) {
+			this.motionEvent(event);
+		}
+        return Clutter.EVENT_PROPAGATE;
+	}
+	motionEvent(event) {
+		let [absX, absY] = event.get_coords();
+		this.snapMovement(absX - this.delta[0], absY - this.delta[1]);
+		return Clutter.EVENT_STOP
+	}
+    vfunc_touch_event() {
+        let event = Clutter.get_current_event();
+        let sequence = event.get_event_sequence();
+
+        if (!this._dragging && event.type() == Clutter.EventType.TOUCH_BEGIN) {
+            this.delta = [event.get_coords()[0] - this.translation_x, event.get_coords()[1] - this.translation_y];
+            this.startDragging(event);
+            console.log("started")
+            return Clutter.EVENT_STOP;
+        } else if (this._grabbedSequence && sequence.get_slot() === this._grabbedSequence.get_slot()) {
+            if (event.type() == Clutter.EventType.TOUCH_UPDATE) {
+				console.log("moving")
+                return this.motionEvent(event);
+			}
+            else if (event.type() == Clutter.EventType.TOUCH_END) {
+				console.log("ending") 
+                return this.endDragging();
+			}
+        }
+
+        return Clutter.EVENT_PROPAGATE;
+    }
+    snapMovement(xPos, yPos) {
+		let monitor = Main.layoutManager.primaryMonitor
+		if (Math.abs(xPos - ((monitor.width * .5) - ((this.width * .5)))) <= 50) {
+			xPos = ((monitor.width * .5) - ((this.width * .5)));
+		}
+		if (Math.abs(yPos - (monitor.height - this.height - 40)) <= 50) {
+			yPos = (monitor.height - this.height - 40);
+		}
+		this.set_translation(xPos, yPos, 0);
+	}
     checkMonitor() {
 		let oldMonitorDimensions = [Main.layoutManager.primaryMonitor.width, Main.layoutManager.primaryMonitor.height];
 		setInterval(() => {
 			if (oldMonitorDimensions[0] != Main.layoutManager.primaryMonitor.width || oldMonitorDimensions[1] != Main.layoutManager.primaryMonitor.height) {
-				this.contentLayout.remove_all_children();
+				this.remove_all_children();
 				this.box = new St.BoxLayout({vertical: true});
 				this.buildUI();
-				this.contentLayout.add_child(this.box);
+				this.add_child(this.box);
 				this.close(); 
 				this.mod = [];
 				this.modBtns = [];
@@ -200,16 +288,16 @@ class Keyboard extends St.Widget{
 	}
     open() {
 		let monitor = Main.layoutManager.primaryMonitor;
-		this.contentLayout.set_translation(0, 0, 0);
-		this.contentLayout.set_translation((monitor.width * .5) - ((this.contentLayout.width * .5)), monitor.height - this.contentLayout.height - 25, 0);
+		this.set_translation(0, 0, 0);
+		this.set_translation((monitor.width * .5) - ((this.width * .5)), monitor.height - this.height - 25, 0);
         this.state = "opening"
         this.box.opacity = 0;
-        this.contentLayout.show();
+        this.show();
         this.box.ease({
             opacity: 255,
             duration: 100,
             mode: Clutter.AnimationMode.EASE_OUT_QUAD,
-            onComplete: () => {setTimeout(() => {this.state = "opened"}, 500); this.contentLayout.set_translation((monitor.width * .5) - ((this.contentLayout.width * .5)), monitor.height - this.contentLayout.height - 25, 0);}
+            onComplete: () => {setTimeout(() => {this.state = "opened"}, 500); this.set_translation((monitor.width * .5) - ((this.width * .5)), monitor.height - this.height - 25, 0);}
         });
         this.opened = true;
     }    
@@ -221,13 +309,14 @@ class Keyboard extends St.Widget{
             duration: 100,
             mode: Clutter.AnimationMode.EASE_OUT_QUAD,
             onComplete: () => {
-        this.contentLayout.set_translation(0, 0, 0); this.contentLayout.set_translation((monitor.width * .5) - ((this.contentLayout.width * .5)), monitor.height - this.contentLayout.height - 40, 0);
-        this.opened = false;this.contentLayout.hide(); this.row7.hide();setTimeout(() => {this.state = "closed"}, 500);},
+        this.set_translation(0, 0, 0); this.set_translation((monitor.width * .5) - ((this.width * .5)), monitor.height - this.height - 40, 0);
+        this.opened = false;this.hide(); setTimeout(() => {this.state = "closed"}, 500);},
         });
     }
     buildUI(upper){
-        var topRowWidth = Math.round((Main.layoutManager.primaryMonitor.width * 0.7) / 16);
-        var topRowHeight = Math.round((Main.layoutManager.primaryMonitor.height * 0.037));
+		let monitor = Main.layoutManager.primaryMonitor
+        var topRowWidth = Math.round((monitor.width * 0.7) / 16);
+        var topRowHeight = Math.round((monitor.height * 0.037));
         let row1 = new St.BoxLayout({pack_start: true});
         for (var num in keycodes.row1){
             const i = keycodes.row1[num]
@@ -384,43 +473,6 @@ class Keyboard extends St.Widget{
             }
         }
         row5.add_style_class_name("keysHolder");
-        this.row7 = new St.BoxLayout({pack_start: true});
-        var moveLeft = new St.Button({
-            label: "←",
-            width: (row1.width / 5),
-            height: topRowHeight + 10
-        });
-        moveLeft.connect("clicked", () => {if (this.contentLayout.translation_x - 100 >= 0) {this.contentLayout.translation_x -= 100} else {this.contentLayout.translation_x = 0;}});
-        this.row7.add_child(moveLeft);
-        var moveUp = new St.Button({
-            label: "↑",
-            width: (row1.width / 5),
-            height: topRowHeight + 10
-        });
-        moveUp.connect("clicked", () => {if (this.contentLayout.translation_y - 100 >= 0) {this.contentLayout.translation_y -= 100} else {this.contentLayout.translation_y = 0;}});
-        this.row7.add_child(moveUp);
-        var moveRight = new St.Button({
-            label: "→",
-            width: (row1.width / 5),
-            height: topRowHeight + 10
-        });
-        moveRight.connect("clicked", () => {if (this.contentLayout.translation_x + 100 <= Main.layoutManager.primaryMonitor.width - this.contentLayout.width) {this.contentLayout.translation_x += 100} else {this.contentLayout.translation_x = Main.layoutManager.primaryMonitor.width - this.contentLayout.width;}});
-        this.row7.add_child(moveRight);
-        var moveDown = new St.Button({
-            label: "↓",
-            width: (row1.width / 5),
-            height: topRowHeight + 10
-        });
-        moveDown.connect("clicked", () => {if (this.contentLayout.translation_y + 100 <= Main.layoutManager.primaryMonitor.height - this.contentLayout.height) {this.contentLayout.translation_y += 100} else {this.contentLayout.translation_y = Main.layoutManager.primaryMonitor.height - this.contentLayout.height;}});
-        this.row7.add_child(moveDown);
-        var close = new St.Button({
-            label: "🗙",
-            width: (row1.width / 5),
-            height: topRowHeight + 10
-        });
-        close.connect("clicked", () => this.close());
-        this.row7.add_child(close);
-        this.row7.add_style_class_name("keysHolder");
         let row6 = new St.BoxLayout({pack_start: true});
         for (var num in keycodes.row6){
             const i = keycodes.row6[num]
@@ -468,14 +520,14 @@ class Keyboard extends St.Widget{
                 });
                 gbox.add_child(btn4);
                 var btn5 = new St.Button({
-                    label: "⛭",    
+                    label: "🗙",    
                 });
                 gbox.add_child(btn5);
                 btn1.connect("clicked", () => this.decideMod((keycodes.row6[keycodes.row6.length - 1])[0]))
                 btn2.connect("clicked", () => this.decideMod((keycodes.row6[keycodes.row6.length - 1])[1]))
                 btn3.connect("clicked", () => this.decideMod((keycodes.row6[keycodes.row6.length - 1])[2]))
                 btn4.connect("clicked", () => this.decideMod((keycodes.row6[keycodes.row6.length - 1])[3]))
-                btn5.connect("clicked", () => {if (this.row7.is_visible()){this.row7.hide(); this.contentLayout.translation_y += topRowHeight + 10} else {this.row7.show(); this.contentLayout.translation_y -= topRowHeight + 10}})
+                btn5.connect("clicked", () => this.close());
                 btn1.char = (keycodes.row6[keycodes.row6.length - 1])[0]
                 btn2.char = (keycodes.row6[keycodes.row6.length - 1])[1]
                 btn3.char = (keycodes.row6[keycodes.row6.length - 1])[2]
@@ -531,8 +583,6 @@ class Keyboard extends St.Widget{
         this.box.add_child(row4);
         this.box.add_child(row5);
         this.box.add_child(row6);
-        this.box.add_child(this.row7);
-        this.row7.hide();
         var containers_ = this.box.get_children();
         var elems_ = []
         containers_.forEach(items => {
