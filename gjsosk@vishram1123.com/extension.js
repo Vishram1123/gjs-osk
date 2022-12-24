@@ -260,9 +260,17 @@ class Keyboard extends imports.ui.dialog.Dialog{
 		let monitor = Main.layoutManager.primaryMonitor
 		if (Math.abs(xPos - ((monitor.width * .5) - ((this.width * .5)))) <= 50) {
 			xPos = ((monitor.width * .5) - ((this.width * .5)));
+		} else if (Math.abs(xPos - 40) <= 50) {
+			xPos = 40;
+		} else if (Math.abs(xPos - (monitor.width - this.width - 40)) <= 50) {
+			xPos = monitor.width - this.width - 40
 		}
 		if (Math.abs(yPos - (monitor.height - this.height - 40)) <= 50) {
-			yPos = (monitor.height - this.height - 40);
+			yPos = monitor.height - this.height - 40;
+		} else if (Math.abs(yPos - 40) <= 50) {
+			yPos = 40;
+		} else if (Math.abs(yPos - ((monitor.height * .5) - (this.height * .5))) <= 50) {
+			yPos = (monitor.height * .5) - (this.height * .5);
 		}
 		this.set_translation(xPos, yPos, 0);
 	}
@@ -313,7 +321,7 @@ class Keyboard extends imports.ui.dialog.Dialog{
         this.opened = false;this.hide(); setTimeout(() => {this.state = "closed"}, 500);},
         });
     }
-    buildUI(upper){
+    buildUI(){
 		let monitor = Main.layoutManager.primaryMonitor
         var topRowWidth = Math.round((monitor.width * 0.7) / 16);
         var topRowHeight = Math.round((monitor.height * 0.037));
@@ -322,7 +330,7 @@ class Keyboard extends imports.ui.dialog.Dialog{
             const i = keycodes.row1[num]
             var w = topRowWidth;
             row1.add_child(new St.Button({
-                label: upper ? i.upperName : i.lowerName,
+                label: i.lowerName,
                 height: topRowHeight,
                 width: w 
             }));
@@ -355,7 +363,7 @@ class Keyboard extends imports.ui.dialog.Dialog{
                 w = (topRowWidth) + 5;
             }
             row2.add_child(new St.Button({
-                label: upper ? i.upperName : i.lowerName,
+                label: i.lowerName,
                 height: topRowHeight + 20,
                 width: w 
             }));
@@ -388,7 +396,7 @@ class Keyboard extends imports.ui.dialog.Dialog{
                 w = (topRowWidth) + 5;
             }
             row3.add_child(new St.Button({
-                label: upper ? i.upperName : i.lowerName,
+                label: i.lowerName,
                 height: topRowHeight + 20,
                 width: w 
             }));
@@ -419,7 +427,7 @@ class Keyboard extends imports.ui.dialog.Dialog{
                 w = (topRowWidth) + 5;
             }
             row4.add_child(new St.Button({
-                label: upper ? i.upperName : i.lowerName,
+                label: i.lowerName,
                 height: topRowHeight + 20,
                 width: w 
             }));
@@ -453,7 +461,7 @@ class Keyboard extends imports.ui.dialog.Dialog{
                 w = (topRowWidth) + 5;
             }
             row5.add_child(new St.Button({
-                label: upper ? i.upperName : i.lowerName,
+                label: i.lowerName,
                 height: topRowHeight + 20,
                 width: w 
             }));
@@ -480,7 +488,7 @@ class Keyboard extends imports.ui.dialog.Dialog{
             if (num == 3){
                 w = ((row1.width - ((keycodes.row6.length + 1) * ((topRowWidth) + 5))));
                 row6.add_child(new St.Button({
-                    label: upper ? i.upperName : i.lowerName,
+                    label: i.lowerName,
                     height: topRowHeight + 20,
                     width: w 
                 }));
@@ -553,7 +561,7 @@ class Keyboard extends imports.ui.dialog.Dialog{
             else {
                 w = (topRowWidth) + 5;
                 row6.add_child(new St.Button({
-                    label: upper ? i.upperName : i.lowerName,
+                    label: i.lowerName,
                     height: topRowHeight + 20,
                     width: w 
                 }));
