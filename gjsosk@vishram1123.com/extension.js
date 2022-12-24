@@ -441,7 +441,7 @@ class Keyboard extends imports.ui.dialog.Dialog{
             row4.get_children()[num].char = i;
             if (num == 0){
                 const capsLock = row4.get_children()[num];
-                row4.get_children()[num].connect("clicked", () => {this.decideMod(i); if (!this.capsL) {capsLock.add_style_class_name('selected'); this.capsL = true;} else {capsLock.remove_style_class_name('selected'); this.capsL = false;}})
+                row4.get_children()[num].connect("clicked", () => {this.decideMod(i); this.setCapsLock(); if (!this.capsL) {capsLock.add_style_class_name('selected'); this.capsL = true;} else {capsLock.remove_style_class_name('selected'); this.capsL = false;}})
             } else if (!isMod) {
                 row4.get_children()[num].connect("clicked", () => this.decideMod(i))
             } else {
@@ -627,7 +627,7 @@ class Keyboard extends imports.ui.dialog.Dialog{
                         if (i.code == 42 || i.code == 54){
                             for (var elem of elems){
                                 if (elem.char != undefined) {
-                                    elem.label = elem.char.lowerName;
+                                    elem.label = (elem.label == elem.char.upperName) ? elem.char.lowerName : elem.char.upperName;
                                 }
                             }
                         }
@@ -642,7 +642,7 @@ class Keyboard extends imports.ui.dialog.Dialog{
                 if (i.code == 42 || i.code == 54){
                     for (var elem of elems){
                         if (elem.char != undefined) {
-                            elem.label = elem.char.upperName;
+                            elem.label = (elem.label == elem.char.upperName) ? elem.char.lowerName : elem.char.upperName;
                         }
                     }
                 }
@@ -652,14 +652,14 @@ class Keyboard extends imports.ui.dialog.Dialog{
                 return;
             }
         }
-        if (this.mod.length != 0) {
+        if (this.mod.length != 0 && i.code != 58) {
             this.spawnCommandLine("ydotool key " + this.mod.join(":1 ") + ":1 " + i.code + ":1 " + i.code + ":0 " + this.mod.join(":0 ") + ":0 ");
             for (var bt of this.modBtns){
                 bt.remove_style_class_name("selected");
             }
             for (var elem of elems){
                 if (elem.char != undefined) {
-                    elem.label = elem.char.lowerName;
+                    elem.label = (elem.label == elem.char.upperName) ? elem.char.lowerName : elem.char.upperName;
                 }
             }
             this.mod = [];
@@ -667,10 +667,24 @@ class Keyboard extends imports.ui.dialog.Dialog{
             this.spawnCommandLine("ydotool key " + i.code + ":1 " + i.code + ":0");
         }
     }
+    setCapsLock() {
+		var containers = this.box.get_children();
+        var elems = []
+        containers.forEach(items => {
+            items.get_children().forEach(btn => {
+                elems.push(btn);
+            })
+        })
+        for (var elem of elems) {
+			var code = elem.char != undefined ? elem.char.code : 0;
+			if ((code >= 16 && code <= 25) || (code >= 30 && code <= 38) || (code >= 44 && code <= 50)){
+				elem.label = (elem.label == elem.char.upperName) ? elem.char.lowerName : elem.char.upperName;
+			}
+		}
+	}
 });
 function init() {
     log(`initializing ${Me.metadata.name}`);
     
     return new Extension();
 }
-
