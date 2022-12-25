@@ -7,7 +7,7 @@ A (marginally) better on screen keyboard for GNOME 43+
 ## Requirements
 - GNOME 43 or above
 - [ydotool](https://github.com/ReimuNotMoe/ydotool) for sending keystrokes
-- Wayland (X11 not tested)
+- ~~Wayland (X11 not tested)~~ X11 supported
 - [Block Caribou 36](https://extensions.gnome.org/extension/3222/block-caribou-36/) for blocking default GNOME OSK
 ## Demo (sped up by 1.5x)
 ![](https://github.com/Vishram1123/gjs-osk/blob/main/demo.gif?raw=true)
