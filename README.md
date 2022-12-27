@@ -22,4 +22,4 @@ A (marginally) better on screen keyboard for GNOME 43+
 - ~~Caps lock does not change the case of the letter keys~~ [Fixed here](https://github.com/Vishram1123/gjs-osk/commit/9f425279c603d2206596e580424b12a6e212c179)
 - ~~No alternate keyboard layouts (other than en_US)~~ Turn on "Compose Key" in settings, and use Right Alt to be able to type special characters [(key combinations here)](https://en.wikipedia.org/wiki/Compose_key#Common_compose_combinations)
 ## Help
-- This project was created in literally two days, and I have no prior experience with GNOME JS, so if you find any bugs, please open an issue or submit a pull request. Thanks!
+- If you find any bugs, or if you have any suggestions, please open an issue or submit a pull request. Thanks!
