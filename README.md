@@ -9,8 +9,8 @@ A (marginally) better on screen keyboard for GNOME 43+
 - [ydotool](https://github.com/ReimuNotMoe/ydotool) for sending keystrokes
 - ~~Wayland (X11 not tested)~~ X11 supported
 - [Block Caribou 36](https://extensions.gnome.org/extension/3222/block-caribou-36/) for blocking default GNOME OSK
-## Demo (sped up by 1.5x)
-![](https://github.com/Vishram1123/gjs-osk/blob/main/demo.gif?raw=true)
+## Demo
+[GJS OSK DEMO.webm](https://user-images.githubusercontent.com/64966832/209698441-2921b10d-a59c-44e1-a0fd-0bec10275506.webm)
 ## Install
 1. Clone this repo (or download as zip)
 2. Copy `gjsosk@vishram1123.com/` to `~/.local/share/gnome-shell/extensions/`
