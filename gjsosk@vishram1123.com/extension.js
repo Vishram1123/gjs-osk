@@ -658,7 +658,7 @@ class Keyboard extends imports.ui.dialog.Dialog{
                 bt.remove_style_class_name("selected");
             }
             for (var elem of elems){
-                if (elem.char != undefined) {
+                if (elem.char != undefined && (this.mod.includes(42) || this.mod.includes(54))) {
                     elem.label = (elem.label == elem.char.upperName) ? elem.char.lowerName : elem.char.upperName;
                 }
             }
