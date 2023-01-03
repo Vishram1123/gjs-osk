@@ -1,26 +1,29 @@
-.keysHolder > *:hover{
-  background-color: rgba(255,255,255,0.2);
+.regular:hover {
+  background-color: rgba(255, 255, 255,0.2);
+  color: white;
+}
+.inverted:hover {
+  background-color: rgba(0, 0, 0, 0.2);
+  color: black;
+}
+.regular {
+  background-color: rgba(255, 255, 255,0.05);
+  color: white;
+}
+.inverted {
+  background-color: rgba(0, 0, 0,0.05);
+  color: black;
 }
 .keysHolder > * {
-  background-color: rgba(255,255,255,0.05);
   border: 0;
-  border-radius: 5px;
   background-clip: padding-box;
-  margin: 2px;
   box-sizing: border-box;
-  font-size: 15px;
-}
-.dr-b:hover{
-  background-color: rgba(255,255,255,0.2);
 }
 .dr-b {
-  background-color: rgba(255,255,255,0.05);
   border: 0;
-  border-radius: 5px;
   background-clip: padding-box;
-  margin: 2px;
+  margin: inherit;
   box-sizing: border-box;
-  font-size: 15px;
 }
 .keyActionBtns{
   background-color: rgba(255,255,255,0.00);
@@ -30,18 +33,20 @@
   margin: 0px !important;
   box-sizing: border-box;
 }
-.selected{
+.selected.regular {
  background-color: rgba(255,255,255,0.7);
  color: black;
+}
+.selected.inverted {
+ background-color: rgba(0, 0, 0, 0.7);
+ color: white;
 }
 .db-keyboard-content{
   background-color: rgba(0,0,0,0);
   border: 0;
 }
 .boxLay{
-  background-color: rgb(50,50,50);
   padding: 20px;
   border-radius: 10px;
-  box-sizing: border-box;
 }
 

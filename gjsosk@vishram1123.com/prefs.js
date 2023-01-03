@@ -1,0 +1,211 @@
+'use strict';
+
+const { Adw, Gio, Gtk, Gdk } = imports.gi;
+
+const ExtensionUtils = imports.misc.extensionUtils;
+const Me = ExtensionUtils.getCurrentExtension();
+const UIFolderPath = Me.dir.get_child('ui').get_path();
+
+
+function init() {
+    let iconTheme = Gtk.IconTheme.get_for_display(Gdk.Display.get_default());
+  	iconTheme.add_search_path(UIFolderPath + `/icons`);
+}
+
+function fillPreferencesWindow(window) {
+    const settings = ExtensionUtils.getSettings('org.gnome.shell.extensions.gjsosk');
+    
+    const page1 = new Adw.PreferencesPage({
+		title: "General", 
+		icon_name: "general-symbolic"
+	});
+    const group1 = new Adw.PreferencesGroup({ title: "Behavior" });
+    page1.add(group1);
+
+    const row1 = new Adw.ActionRow({ title: 'Enable Dragging' });
+    group1.add(row1);
+
+    const dragToggle = new Gtk.Switch({
+        active: settings.get_boolean('enable-drag'),
+        valign: Gtk.Align.CENTER,
+    });
+
+    row1.add_suffix(dragToggle);
+    row1.activatable_widget = dragToggle;
+    
+	const row2 = new Adw.ExpanderRow({ title: 'Portrait Sizing' });
+    group1.add(row2);
+    
+    let pW = new Adw.ActionRow({ title: 'Width (%)' })
+    let pH = new Adw.ActionRow({ title: 'Height (%)' })
+	
+	let numChanger_pW = Gtk.SpinButton.new_with_range(0, 100, 5);
+	numChanger_pW.value = settings.get_int('portrait-width-percent');
+	numChanger_pW.valign = Gtk.Align.CENTER;
+    pW.add_suffix(numChanger_pW);
+	pW.activatable_widget = numChanger_pW;
+	
+	let numChanger_pH = Gtk.SpinButton.new_with_range(0, 100, 5);
+	numChanger_pH.value = settings.get_int('portrait-height-percent');
+	numChanger_pH.valign = Gtk.Align.CENTER;
+    pH.add_suffix(numChanger_pH);
+	pH.activatable_widget = numChanger_pH;
+    
+    row2.add_row(pW);
+    row2.add_row(pH);
+
+    const row3 = new Adw.ExpanderRow({ title: 'Landscape Sizing' });
+    group1.add(row3);
+    
+    let lW = new Adw.ActionRow({ title: 'Width (%)' });
+    let lH = new Adw.ActionRow({ title: 'Height (%)' });
+	
+	let numChanger_lW = Gtk.SpinButton.new_with_range(0, 100, 5);
+	numChanger_lW.value = settings.get_int('landscape-width-percent');
+	numChanger_lW.valign = Gtk.Align.CENTER;
+    lW.add_suffix(numChanger_lW);
+	lW.activatable_widget = numChanger_lW;
+	
+	let numChanger_lH = Gtk.SpinButton.new_with_range(0, 100, 5);
+	numChanger_lH.value = settings.get_int('landscape-height-percent');
+	numChanger_lH.valign = Gtk.Align.CENTER;
+    lH.add_suffix(numChanger_lH);
+	lH.activatable_widget = numChanger_lH;
+    
+    row3.add_row(lW);
+    row3.add_row(lH);
+    
+    const row4 = new Adw.ActionRow({ title: 'Default Position' });
+    group1.add(row4);
+    
+    let posList = ["Top Left", "Top Center", "Top Right", "Center Left", "Center", "Center Right", "Bottom Left", "Bottom Center", "Bottom Right"];
+    let dropDown = Gtk.DropDown.new_from_strings(posList);
+	dropDown.valign = Gtk.Align.CENTER;
+	dropDown.selected = settings.get_int("default-snap");
+	
+	row4.add_suffix(dropDown);
+	row4.activatable_widget = dropDown;
+    
+    const group2 = new Adw.PreferencesGroup({ title: "Appearance" });
+    page1.add(group2);
+    
+    const row5 = new Adw.ActionRow({ title: 'Color' });
+    group2.add(row5);
+    
+    let rgba = new Gdk.RGBA();
+	rgba.parse("rgba(" + settings.get_double("background-r") + ", " + settings.get_double("background-g") + ", " + settings.get_double("background-b") + ", 1)");
+	let colorButton = new Gtk.ColorButton({
+		rgba,
+		use_alpha: false,
+		valign: Gtk.Align.CENTER
+	});
+	row5.add_suffix(colorButton);
+	row5.activatable_widget = colorButton;
+	
+	let row6 = new Adw.ActionRow({ title: 'Font Size (px)' });
+	group2.add(row6);
+
+	let numChanger_font= Gtk.SpinButton.new_with_range(0, 100, 1);
+	numChanger_font.value = settings.get_int('font-size-px');
+	numChanger_font.valign = Gtk.Align.CENTER;
+    row6.add_suffix(numChanger_font);
+	row6.activatable_widget = numChanger_font;
+	
+	let row7 = new Adw.ActionRow({ title: 'Border Spacing (px)' });
+	group2.add(row7);
+
+	let numChanger_bord = Gtk.SpinButton.new_with_range(0, 10, 1);
+	numChanger_bord.value = settings.get_int('border-spacing-px');
+	numChanger_bord.valign = Gtk.Align.CENTER;
+    row7.add_suffix(numChanger_bord);
+	row7.activatable_widget = numChanger_bord;
+	
+	const row8 = new Adw.ActionRow({ title: 'Round Corners' });
+    group2.add(row8);
+
+    const dragToggle2 = new Gtk.Switch({
+        active: settings.get_boolean('round-key-corners'),
+        valign: Gtk.Align.CENTER,
+    });
+
+    row8.add_suffix(dragToggle2);
+    row8.activatable_widget = dragToggle2;
+    
+    window.connect("close-request", () => {
+		settings.set_boolean("enable-drag", dragToggle.active);
+		settings.set_int("portrait-width-percent", numChanger_pW.value);
+		settings.set_int("portrait-height-percent", numChanger_pH.value);
+		settings.set_int("landscape-width-percent", numChanger_lW.value);
+		settings.set_int("landscape-height-percent", numChanger_lH.value);
+		let [r, g, b] = colorButton.get_rgba().to_string().replace("rgb(", "").replace(")","").split(",")
+		settings.set_double("background-r", r);
+		settings.set_double("background-g", g);
+		settings.set_double("background-b", b);
+		settings.set_int("font-size-px", numChanger_font.value);
+		settings.set_int("border-spacing-px", numChanger_bord.value);
+		settings.set_boolean("round-key-corners", dragToggle2.active); 
+		settings.set_int("default-snap", dropDown.selected);
+	});
+	
+	window.add(page1);
+	
+	let page2 = new Adw.PreferencesPage({
+		title: "About",
+		icon_name: 'info-symbolic',
+	});
+
+	let contribute_icon_pref_group = new Adw.PreferencesGroup();
+	let icon_box = new Gtk.Box({
+		orientation: Gtk.Orientation.VERTICAL,
+		margin_top: 24,
+		margin_bottom: 24,
+		spacing: 18,
+	});
+
+	let icon_image = new Gtk.Image({
+		icon_name: "input-keyboard-symbolic",
+		pixel_size: 128,
+	});
+
+	let label_box = new Gtk.Box({
+		orientation: Gtk.Orientation.VERTICAL,
+		spacing: 6,
+	});
+
+	let label = new Gtk.Label({
+		label: "GJS OSK",
+		wrap: true,
+	});
+	let context = label.get_style_context();
+	context.add_class("title-1");
+	
+	let another_label = new Gtk.Label({
+		label: "Version " + Me.metadata.version
+	});
+
+	let links_pref_group = new Adw.PreferencesGroup();
+	let code_row = new Adw.ActionRow({
+		icon_name: "code-symbolic",
+		title: "More Information, submit feedback, and get help"
+	});
+	let github_link = new Gtk.LinkButton({
+		label: "Github",
+		uri: "https://github.com/Vishram1123/gjs-osk",
+	});
+	
+
+	code_row.add_suffix(github_link);
+	code_row.set_activatable_widget(github_link);
+	links_pref_group.add(code_row);
+
+	label_box.append(label);
+	label_box.append(another_label);
+	icon_box.append(icon_image);
+	icon_box.append(label_box);
+	contribute_icon_pref_group.add(icon_box);
+
+	page2.add(contribute_icon_pref_group);
+	page2.add(links_pref_group);
+	
+	window.add(page2);
+}

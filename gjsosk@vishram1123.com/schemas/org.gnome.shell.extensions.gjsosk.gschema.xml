@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schemalist>
+  <schema id="org.gnome.shell.extensions.gjsosk" path="/org/gnome/shell/extensions/gjsosk/">
+    <key name="portrait-width-percent" type="i">
+      <default>100</default>
+    </key>
+    <key name="portrait-height-percent" type="i">
+      <default>20</default>
+    </key>
+    <key name="landscape-width-percent" type="i">
+      <default>70</default>
+    </key>
+    <key name="landscape-height-percent" type="i">
+      <default>30</default>
+    </key>
+    <key name="enable-drag" type="b">
+      <default>true</default>
+    </key>
+    <key name="background-r" type="d">
+      <default>50</default>
+    </key>
+    <key name="background-g" type="d">
+      <default>50</default>
+    </key>
+    <key name="background-b" type="d">
+      <default>50</default>
+    </key>
+    <key name="font-size-px" type="i">
+      <default>14</default>
+    </key>
+    <key name="border-spacing-px" type="i">
+      <default>2</default>
+    </key>
+    <key name="round-key-corners" type="b">
+      <default>false</default>
+    </key>
+    <key name="default-snap" type="i">
+      <default>7</default>
+    </key>
+  </schema>
+</schemalist>
