@@ -10,7 +10,9 @@ A (marginally) better on screen keyboard for GNOME 43+
 - ~~Wayland (X11 not tested)~~ X11 supported
 - [Block Caribou 36](https://extensions.gnome.org/extension/3222/block-caribou-36/) for blocking default GNOME OSK
 ## Demo
-[GJS OSK DEMO.webm](https://user-images.githubusercontent.com/64966832/209698441-2921b10d-a59c-44e1-a0fd-0bec10275506.webm)
+[Keyboard Demo.webm](https://user-images.githubusercontent.com/64966832/210458851-1b91adba-f6e4-4d40-b0d5-dba2c46cc354.webm)
+[Settings Demo.webm](https://user-images.githubusercontent.com/64966832/210458854-eb458311-3d3f-4edb-93df-f5b8334d4cbc.webm)
+
 ## Install
 1. Clone this repo (or download as zip)
 2. Copy `gjsosk@vishram1123.com/` to `~/.local/share/gnome-shell/extensions/`
