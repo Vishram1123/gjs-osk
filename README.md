@@ -20,6 +20,7 @@ A (marginally) better on screen keyboard for GNOME 43+
 - To drag the keyboard around, drag the outer edge of the keyboard around the screen, and then let go.
   - The keyboard will snap to the corners, edges, and center of the screen.
 - To change properties about the keyboard, open up the "Extensions" application, and click on "Settings" under this extension to get a list of changeable properties
+  - Close the settings dialog to save any modified settings
 - To type special characters, open GNOME settings, and turn on "Compose Key" under the Keyboard submenu. Choose a modifier (preferably right alt), and use the [key combinations listed here](https://en.wikipedia.org/wiki/Compose_key#Common_compose_combinations) to type special characters
 ## Known Problems/Issues (Would appreciate solutions about how to fix):
 - ~~Inabliliy to resize~~ Won't fix - dragging window around to different areas of screen should help, though additional size options will be added to upcoming settings view
