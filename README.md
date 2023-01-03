@@ -1,4 +1,4 @@
-# gjs-osk
+# GJS OSK
 A (marginally) better on screen keyboard for GNOME 43+
 ## Advantages over the default OSK:
 -	Function, modifier, tab, and arrow key support
