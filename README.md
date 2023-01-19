@@ -6,7 +6,7 @@ A (marginally) better on screen keyboard for GNOME 43+
 -	More compact layout
 ## Requirements
 - GNOME 43 or above
-- [ydotool](https://github.com/ReimuNotMoe/ydotool) for sending keystrokes
+- ~~[ydotool](https://github.com/ReimuNotMoe/ydotool) for sending keystrokes~~ No longer needed as of [this commit](https://github.com/Vishram1123/gjs-osk/commit/70cee7cf966539e5514b946b5cf2ac747befeb75), as ydotool has been replaced with GNOME's native Clutter.VirtualInputDevice
 - ~~Wayland (X11 not tested)~~ X11 supported
 - [Block Caribou 36](https://extensions.gnome.org/extension/3222/block-caribou-36/) for blocking default GNOME OSK
 ## Demo
