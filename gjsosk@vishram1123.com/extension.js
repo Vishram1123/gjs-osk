@@ -5,6 +5,8 @@ const Me = ExtensionUtils.getCurrentExtension();
 const Main = imports.ui.main;
 const PanelMenu = imports.ui.panelMenu;
 const Lang = imports.lang;
+const ByteArray = imports.byteArray;
+const Signals = imports.misc.signals;
 
 class Extension {
 	constructor() {
@@ -178,10 +180,10 @@ class Keyboard extends imports.ui.dialog.Dialog{
 		this.delta = [];
 		this.checkMonitor();
 		this._dragging = false;
+		this.inputDevice = Clutter.get_default_backend().get_default_seat().create_virtual_device(Clutter.InputDeviceType.KEYBOARD_DEVICE);
 	}
 	vfunc_button_press_event() {
 		this.delta = [global.get_pointer()[0] - this.translation_x, global.get_pointer()[1] - this.translation_y];
-		console.log("dragging");
 		return this.startDragging(Clutter.get_current_event(), this.delta)
 	}
 	startDragging(event, delta) {
@@ -254,15 +256,12 @@ class Keyboard extends imports.ui.dialog.Dialog{
 		if (!this._dragging && event.type() == Clutter.EventType.TOUCH_BEGIN) {
 			this.delta = [event.get_coords()[0] - this.translation_x, event.get_coords()[1] - this.translation_y];
 			this.startDragging(event);
-			console.log("started")
 			return Clutter.EVENT_STOP;
 		} else if (this._grabbedSequence && sequence.get_slot() === this._grabbedSequence.get_slot()) {
 			if (event.type() == Clutter.EventType.TOUCH_UPDATE) {
-				console.log("moving")
 				return this.motionEvent(event);
 			}
 			else if (event.type() == Clutter.EventType.TOUCH_END) {
-				console.log("ending") 
 				return this.endDragging();
 			}
 		}
@@ -653,20 +652,27 @@ class Keyboard extends imports.ui.dialog.Dialog{
 			return false;
 		}
 	}
-	spawnCommandLine(command_line) {
+	spawnCommandLine(keys) {
 		try {
-			GLib.spawn_command_line_async(command_line);
+			for (var i = 0; i < keys.length; i++) {
+				this.inputDevice.notify_key(Clutter.get_current_event_time(), keys[i], Clutter.KeyState.PRESSED);
+			}
+			for (var j = keys.length - 1; j >= 0 ; j--) {
+				this.inputDevice.notify_key(Clutter.get_current_event_time() + 1, keys[j], Clutter.KeyState.RELEASED);
+			}
 		} catch (err) {
 			let source = new imports.ui.messageTray.SystemNotificationSource();
 			source.connect('destroy', () => {
 				source = null;
 			})
 			Main.messageTray.add(source);
-			let notification = new imports.ui.messageTray.Notification(source, "GJS-OSK: Missing ydotool", "Please install ydotool to use GJS OSK. Click to get instructions on how to do so.")
+			let notification = new imports.ui.messageTray.Notification(source, "GJS-OSK: An unknown error occured", "Please report this bug to the Issues page:\n\n" + err + "\n\nKeys Pressed: " + keys)
 			notification.setTransient(false);
             notification.setResident(false);
 			source.showNotification(notification);
-			notification.connect("activated", () => Gtk.show_uri(null, "https://github.com/ReimuNotMoe/ydotool", Gtk.get_current_event_time()));
+			notification.connect("activated", () => {
+				Gtk.show_uri(null, "https://github.com/vishram1123/gjs-osk/issues/new", Gtk.get_current_event_time());
+			});
 		}
 	}
 	decideMod(i,mBtn){
@@ -690,7 +696,7 @@ class Keyboard extends imports.ui.dialog.Dialog{
 								}
 							}
 						}
-						this.spawnCommandLine("ydotool key " + this.mod.join(":1 ") + ":1 " + this.mod.join(":0 ") + ":0 ");
+						this.spawnCommandLine(this.mod);
 						for (var bt of this.modBtns){
 							bt.remove_style_class_name("selected");
 						}
@@ -712,7 +718,8 @@ class Keyboard extends imports.ui.dialog.Dialog{
 			}
 		}
 		if (this.mod.length != 0 && i.code != 58) {
-			this.spawnCommandLine("ydotool key " + this.mod.join(":1 ") + ":1 " + i.code + ":1 " + i.code + ":0 " + this.mod.join(":0 ") + ":0 ");
+			this.mod.push(i.code);
+			this.spawnCommandLine(this.mod);
 			for (var bt of this.modBtns){
 				bt.remove_style_class_name("selected");
 			}
@@ -723,7 +730,7 @@ class Keyboard extends imports.ui.dialog.Dialog{
 			}
 			this.mod = [];
 		} else {
-			this.spawnCommandLine("ydotool key " + i.code + ":1 " + i.code + ":0");
+			this.spawnCommandLine([i.code]);
 		}
 	}
 	setCapsLock() {
@@ -747,4 +754,3 @@ function init() {
 	
 	return new Extension();
 }
-
