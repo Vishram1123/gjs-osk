@@ -21,10 +21,22 @@ function fillPreferencesWindow(window) {
 	});
     const group1 = new Adw.PreferencesGroup({ title: "Behavior" });
     page1.add(group1);
-
+	
+	 const row0 = new Adw.ActionRow({ title: 'Language' });
+    group1.add(row0);
+    
+    let langList = ["QUERTY", "AZERTY", "Dvorak"];
+    let langDrop = Gtk.DropDown.new_from_strings(langList);
+	langDrop.valign = Gtk.Align.CENTER;
+	langDrop.selected = settings.get_int("lang");
+	
+	row0.add_suffix(langDrop);
+	row0.activatable_widget = langDrop;
+	
     const row1 = new Adw.ActionRow({ title: 'Enable Dragging' });
     group1.add(row1);
-
+    
+	
     const dragToggle = new Gtk.Switch({
         active: settings.get_boolean('enable-drag'),
         valign: Gtk.Align.CENTER,
@@ -132,6 +144,7 @@ function fillPreferencesWindow(window) {
     row8.activatable_widget = dragToggle2;
     
     window.connect("close-request", () => {
+		settings.set_int("lang", langDrop.selected);
 		settings.set_boolean("enable-drag", dragToggle.active);
 		settings.set_int("portrait-width-percent", numChanger_pW.value);
 		settings.set_int("portrait-height-percent", numChanger_pH.value);

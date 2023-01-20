@@ -1,8 +1,8 @@
-.regular:hover {
+.regular:active {
   background-color: rgba(255, 255, 255,0.2);
   color: white;
 }
-.inverted:hover {
+.inverted:active {
   background-color: rgba(0, 0, 0, 0.2);
   color: black;
 }

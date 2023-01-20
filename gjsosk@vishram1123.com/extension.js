@@ -8,6 +8,8 @@ const Lang = imports.lang;
 const ByteArray = imports.byteArray;
 const Signals = imports.misc.signals;
 
+let keycodes;
+
 class Extension {
 	constructor() {
 	}
@@ -32,7 +34,12 @@ class Extension {
 	}
 	enable() {
 		this.settings = ExtensionUtils.getSettings("org.gnome.shell.extensions.gjsosk");
-
+		
+		let [ok, contents] = GLib.file_get_contents(Me.path + '/keycodes.json');
+		if(ok) {
+			keycodes = JSON.parse(contents)[['qwerty', 'azerty', 'dvorak'][this.settings.get_int("lang")]];
+		}
+		
 		let indicatorName = `${Me.metadata.name} Indicator`;
 		this.Keyboard = new Keyboard(this.settings);
 		this._indicator = new PanelMenu.Button(0.0, indicatorName, false);
@@ -47,6 +54,10 @@ class Extension {
 		
 		Main.panel.addToStatusArea(indicatorName, this._indicator);
 		this.settings.connect("changed", key => {
+			let [ok, contents] = GLib.file_get_contents(Me.path + '/keycodes.json');
+			if(ok) {
+				keycodes = JSON.parse(contents)[["qwerty", "azerty", "dvorak"][this.settings.get_int("lang")]];
+			}
 			this.Keyboard.refresh();
 		});
 	}
@@ -59,100 +70,7 @@ class Extension {
 		this.Keyboard.destroy();
 	}
 }
-let keycodes = {
-	row1: [
-		{code: 1, lowerName: "esc", upperName: "esc"},
-		{code: 59, lowerName: "F1", upperName: "F1"},
-		{code: 60, lowerName: "F2", upperName: "F2"},
-		{code: 61, lowerName: "F3", upperName: "F3"},
-		{code: 62, lowerName: "F4", upperName: "F4"},
-		{code: 63, lowerName: "F5", upperName: "F5"},
-		{code: 64, lowerName: "F6", upperName: "F6"},
-		{code: 65, lowerName: "F7", upperName: "F7"},
-		{code: 66, lowerName: "F8", upperName: "F8"},
-		{code: 67, lowerName: "F9", upperName: "F9"},
-		{code: 68, lowerName: "F10", upperName: "F10"},
-		{code: 87, lowerName: "F11", upperName: "F11"},
-		{code: 88, lowerName: "F12", upperName: "F12"},
-		{code: 210, lowerName: "PrtSc", upperName: "PrtSc"},
-		{code: 111, lowerName: "⌦", upperName: "⌦"}
-	],
-	row2: [
-		{code: 41, lowerName: "`", upperName: "~"},
-		{code: 2, lowerName: "1", upperName: "!"},
-		{code: 3, lowerName: "2", upperName: "@"},
-		{code: 4, lowerName: "3", upperName: "#"},
-		{code: 5, lowerName: "4", upperName: "$"},
-		{code: 6, lowerName: "5", upperName: "%"},
-		{code: 7, lowerName: "6", upperName: "^"},
-		{code: 8, lowerName: "7", upperName: "&"},
-		{code: 9, lowerName: "8", upperName: "*"},
-		{code: 10, lowerName: "9", upperName: "("},
-		{code: 11, lowerName: "0", upperName: ")"},
-		{code: 12, lowerName: "-", upperName: "_"},
-		{code: 13, lowerName: "=", upperName: "+"},
-		{code: 14, lowerName: "⌫", upperName: "⌫"}
-	],
-	row3: [
-		{code: 15, lowerName: "⇥", upperName: "⇥"},
-		{code: 16, lowerName: "q", upperName: "Q"},
-		{code: 17, lowerName: "w", upperName: "W"},
-		{code: 18, lowerName: "e", upperName: "E"},
-		{code: 19, lowerName: "r", upperName: "R"},
-		{code: 20, lowerName: "t", upperName: "T"},
-		{code: 21, lowerName: "y", upperName: "Y"},
-		{code: 22, lowerName: "u", upperName: "U"},
-		{code: 23, lowerName: "i", upperName: "I"},
-		{code: 24, lowerName: "o", upperName: "O"},
-		{code: 25, lowerName: "p", upperName: "P"},
-		{code: 26, lowerName: "[", upperName: "{"},
-		{code: 27, lowerName: "]", upperName: "}"},
-		{code: 43, lowerName: "\\", upperName: "|"}
-	],
-	row4: [
-		{code: 58, lowerName: "⇪", upperName: "⇪"},
-		{code: 30, lowerName: "a", upperName: "A"},
-		{code: 31, lowerName: "s", upperName: "S"},
-		{code: 32, lowerName: "d", upperName: "D"},
-		{code: 33, lowerName: "f", upperName: "F"},
-		{code: 34, lowerName: "g", upperName: "G"},
-		{code: 35, lowerName: "h", upperName: "H"},
-		{code: 36, lowerName: "j", upperName: "J"},
-		{code: 37, lowerName: "k", upperName: "K"},
-		{code: 38, lowerName: "l", upperName: "L"},
-		{code: 39, lowerName: ";", upperName: ":"},
-		{code: 40, lowerName: "'", upperName: "\""},
-		{code: 28, lowerName: "⏎", upperName: "⏎"}
-	],
-	row5: [
-		{code: 42, lowerName: "⇧", upperName: "⇧"},
-		{code: 44, lowerName: "z", upperName: "Z"},
-		{code: 45, lowerName: "x", upperName: "X"},
-		{code: 46, lowerName: "c", upperName: "C"},
-		{code: 47, lowerName: "v", upperName: "V"},
-		{code: 48, lowerName: "b", upperName: "B"},
-		{code: 49, lowerName: "n", upperName: "N"},
-		{code: 50, lowerName: "m", upperName: "M"},
-		{code: 51, lowerName: ",", upperName: "<"},
-		{code: 52, lowerName: ".", upperName: ">"},
-		{code: 53, lowerName: "/", upperName: "?"},
-		{code: 54, lowerName: "⇧", upperName: "⇧"}
-	],
-	row6: [
-		{code: 29, lowerName: "⌃", upperName: "⌃"},
-		{code: 125, lowerName: "❖", upperName: "❖"},
-		{code: 56, lowerName: "⌥", upperName: "⌥"},
-		{code: 57, lowerName: "␣", upperName: "␣"},
-		{code: 100, lowerName: "⌥", upperName: "⌥"},
-		{code: 97, lowerName: "⌃", upperName: "⌃"},
-		[
-			{code: 105, lowerName: "←", upperName: "←"},
-			{code: 103, lowerName: "↑", upperName: "↑"},
-			{code: 108, lowerName: "↓", upperName: "↓"},
-			{code: 106, lowerName: "→", upperName: "→"}
-		]
-	]
-}
+
 const Keyboard = GObject.registerClass({Signals: {
 		'drag-begin': {},
 		'drag-end': {},
@@ -173,6 +91,8 @@ class Keyboard extends imports.ui.dialog.Dialog{
 		this.mod = [];
 		this.modBtns = [];
 		this.capsL = false;
+		this.shift = false;
+		this.alt = false;
 		this.box.add_style_class_name("boxLay");
 		this.box.set_style("background-color: rgb(" + settings.get_double("background-r") + "," + settings.get_double("background-g") + "," + settings.get_double("background-b") + ");")
 		this.opened = false;
@@ -191,6 +111,24 @@ class Keyboard extends imports.ui.dialog.Dialog{
 			if (this._dragging)
 				return Clutter.EVENT_PROPAGATE;
 			this._dragging = true;
+			this.box.get_children().forEach(keyholder => {
+				keyholder.set_opacity(255);
+				keyholder.ease({
+					opacity: 0,
+					duration: 100,
+					mode: Clutter.AnimationMode.EASE_OUT_QUAD,
+					onComplete: () => { keyholder.set_z_position(-10000000000000000000000000000); 
+						this.box.add_style_pseudo_class("dragging");
+					}
+				});
+				this.box.set_opacity(255);
+				this.box.ease({
+					opacity: 200,
+					duration: 100,
+					mode: Clutter.AnimationMode.EASE_OUT_QUAD,
+					onComplete: () => { }
+				});
+			});
 			let device = event.get_device();
 			let sequence = event.get_event_sequence();
 			this._grab = global.stage.grab(this);
@@ -221,6 +159,23 @@ class Keyboard extends imports.ui.dialog.Dialog{
 					this._grab.dismiss();
 					this._grab = null;
 				}
+				this.box.get_children().forEach(keyholder => {
+					keyholder.set_opacity(0);
+					keyholder.set_z_position(0);
+					keyholder.ease({
+						opacity: 255,
+						duration: 100,
+						mode: Clutter.AnimationMode.EASE_OUT_QUAD,
+						onComplete: () => { }
+					});
+				    this.box.set_opacity(200);
+					this.box.ease({
+						opacity: 255,
+						duration: 100,
+						mode: Clutter.AnimationMode.EASE_OUT_QUAD,
+						onComplete: () => { }
+					});
+				});
 				this._grabbedSequence = null;
 				this._grabbedDevice = null;
 				this._dragging = false;
@@ -308,6 +263,8 @@ class Keyboard extends imports.ui.dialog.Dialog{
 		this.mod = [];
 		this.modBtns = [];
 		this.capsL = false;
+		this.shift = false;
+		this.alt = false;
 		this.box.set_style("background-color: rgb(" + this.settings.get_double("background-r") + "," + this.settings.get_double("background-g") + "," + this.settings.get_double("background-b") + ");")
 		this.opened = false;
 		this.state = "closed";
@@ -362,7 +319,7 @@ class Keyboard extends imports.ui.dialog.Dialog{
 				width: w 
 			}));
 			var isMod = false;
-			for (var j of [42, 54, 29, 125, 56, 100, 97]){
+			for (var j of [42, 54, 29, 125, 56, 100, 97, 58]){
 				if (i.code == j){
 					isMod = true;
 					break;
@@ -396,7 +353,7 @@ class Keyboard extends imports.ui.dialog.Dialog{
 				width: w 
 			}));
 			var isMod = false;
-			for (var j of [42, 54, 29, 125, 56, 100, 97]){
+			for (var j of [42, 54, 29, 125, 56, 100, 97, 58]){
 				if (i.code == j){
 					isMod = true;
 					break;
@@ -430,7 +387,7 @@ class Keyboard extends imports.ui.dialog.Dialog{
 				width: w 
 			}));
 			var isMod = false;
-			for (var j of [42, 54, 29, 125, 56, 100, 97]){
+			for (var j of [42, 54, 29, 125, 56, 100, 97, 58]){
 				if (i.code == j){
 					isMod = true;
 					break;
@@ -462,17 +419,14 @@ class Keyboard extends imports.ui.dialog.Dialog{
 				width: w 
 			}));
 			var isMod = false;
-			for (var j of [42, 54, 29, 125, 56, 100, 97]){
+			for (var j of [42, 54, 29, 125, 56, 100, 97, 58]){
 				if (i.code == j){
 					isMod = true;
 					break;
 				}
 			}
 			row4.get_children()[num].char = i;
-			if (num == 0){
-				const capsLock = row4.get_children()[num];
-				row4.get_children()[num].connect("clicked", () => {this.decideMod(i); this.setCapsLock(); if (!this.capsL) {capsLock.add_style_class_name('selected'); this.capsL = true;} else {capsLock.remove_style_class_name('selected'); this.capsL = false;}})
-			} else if (!isMod) {
+			if (!isMod) {
 				row4.get_children()[num].connect("clicked", () => this.decideMod(i))
 			} else {
 				const modButton = row4.get_children()[num];
@@ -497,7 +451,7 @@ class Keyboard extends imports.ui.dialog.Dialog{
 				width: w 
 			}));
 			var isMod = false;
-			for (var j of [42, 54, 29, 125, 56, 100, 97]){
+			for (var j of [42, 54, 29, 125, 56, 100, 97, 58]){
 				if (i.code == j){
 					isMod = true;
 					break;
@@ -525,7 +479,7 @@ class Keyboard extends imports.ui.dialog.Dialog{
 					width: w 
 				}));
 				var isMod = false;
-				for (var j of [42, 54, 29, 125, 56, 100, 97]){
+				for (var j of [42, 54, 29, 125, 56, 100, 97, 58]){
 					if (i.code == j){
 						isMod = true;
 						break;
@@ -601,7 +555,7 @@ class Keyboard extends imports.ui.dialog.Dialog{
 				}));
 				
 				var isMod = false;
-				for (var j of [42, 54, 29, 125, 56, 100, 97]){
+				for (var j of [42, 54, 29, 125, 56, 100, 97, 58]){
 					if (i.code == j){
 						isMod = true;
 						break;
@@ -676,76 +630,175 @@ class Keyboard extends imports.ui.dialog.Dialog{
 		}
 	}
 	decideMod(i,mBtn){
-	let monitor = Main.layoutManager.primaryMonitor;
-		var modKeys = [42, 54, 29, 125, 56, 100, 97];
-		var containers = this.box.get_children();
-		var elems = []
-		containers.forEach(items => {
-			items.get_children().forEach(btn => {
-				elems.push(btn);
-			})
-		})
-		for (var j of modKeys){
-			if (i.code == j){
-				for (var k of this.mod){
-					if (k == i.code){
-						if (i.code == 42 || i.code == 54){
-							for (var elem of elems){
-								if (elem.char != undefined) {
-									elem.label = (elem.label == elem.char.upperName) ? elem.char.lowerName : elem.char.upperName;
-								}
-							}
-						}
-						this.spawnCommandLine(this.mod);
-						for (var bt of this.modBtns){
-							bt.remove_style_class_name("selected");
-						}
-						this.mod = [];
-						return;
-					}
-				}
-				if (i.code == 42 || i.code == 54){
-					for (var elem of elems){
-						if (elem.char != undefined) {
-							elem.label = (elem.label == elem.char.upperName) ? elem.char.lowerName : elem.char.upperName;
-						}
-					}
-				}
-				this.mod.push(i.code)
-				this.modBtns.push(mBtn)
-				mBtn.add_style_class_name("selected");
-				return;
-			}
-		}
-		if (this.mod.length != 0 && i.code != 58) {
+		if (i.code == 29 || i.code == 97 || i.code == 125) {
+			this.setNormMod(mBtn);
+		} else if (i.code == 56 || i.code == 100) {
+			this.setAlt(mBtn);
+		} else if (i.code == 42 || i.code == 54) {
+			this.setShift(mBtn);
+		} else if (i.code == 58) {
+			this.setCapsLock(mBtn);
+		} else {
 			this.mod.push(i.code);
 			this.spawnCommandLine(this.mod);
-			for (var bt of this.modBtns){
-				bt.remove_style_class_name("selected");
-			}
-			for (var elem of elems){
-				if (elem.char != undefined && (this.mod.includes(42) || this.mod.includes(54))) {
-					elem.label = (elem.label == elem.char.upperName) ? elem.char.lowerName : elem.char.upperName;
-				}
-			}
 			this.mod = [];
-		} else {
-			this.spawnCommandLine([i.code]);
+			this.modBtns.forEach(button => {
+				button.remove_style_class_name("selected");
+			});
+			this.resetAllMod();
+			this.modBtns = [];
 		}
 	}
-	setCapsLock() {
-		var containers = this.box.get_children();
-		var elems = []
-		containers.forEach(items => {
-			items.get_children().forEach(btn => {
-				elems.push(btn);
-			})
-		})
-		for (var elem of elems) {
-			var code = elem.char != undefined ? elem.char.code : 0;
-			if ((code >= 16 && code <= 25) || (code >= 30 && code <= 38) || (code >= 44 && code <= 50)){
-				elem.label = (elem.label == elem.char.upperName) ? elem.char.lowerName : elem.char.upperName;
-			}
+	setCapsLock(button) {
+		if (!this.capsL) { 
+			button.add_style_class_name("selected");
+			this.capsL = true;
+			this.keys.forEach(key => {
+				if (this.shift && key.char != undefined) {
+					if (key.char.letter == "primary") {
+						key.label = key.label.toLowerCase();
+					} else if (key.char.letter == "pseudo") {
+						key.label = key.char.upperName;
+					} else if (key.char.letter == undefined) {
+						key.label = key.char.upperName;
+					}
+				} else if (key.char != undefined && key.char.letter != undefined) {
+					key.label = key.label.toUpperCase();
+				}
+			});
+		} else {
+			button.remove_style_class_name("selected");
+			this.capsL = false;
+			this.keys.forEach(key => {
+				if (this.shift && key.char != undefined) {
+					if (key.char.letter == "primary") {
+						key.label = key.label.toUpperCase();
+					} else if (key.char.letter == "pseudo") {
+						key.label = key.char.upperName;
+					} else if (key.char.letter == undefined) {
+						key.label = key.char.upperName;
+					}
+				} else if (key.char != undefined && key.char.letter != undefined) {
+					key.label = key.label.toLowerCase();
+				}
+			});
+		}
+		this.spawnCommandLine([button.char.code]);
+	}
+	setAlt(button) {
+		if (!this.alt) { 
+			this.alt = true;
+			this.keys.forEach(key => {
+				if (!this.shift && key.char != undefined) {
+					if (key.char.altName != "") {
+						key.label = key.char.altName;
+					}
+				}
+			});
+		} else {
+			this.alt = false;
+			this.keys.forEach(key => {
+				if (!this.shift && key.char != undefined) {
+					if (key.char.altName != "" && this.capsL && (key.char.letter == "primary" || key.char.letter == "pseudo")) {
+						key.label = key.char.lowerName.toUpperCase();
+					}
+					else if (key.char.altName != "" && this.capsL) {
+						key.label = key.char.lowerName;
+					}
+					else if (key.char.altName != "" && !this.capsL) {
+						key.label = key.char.lowerName;
+					}
+				}
+			});
+			this.spawnCommandLine([button.char.code]);
+		}
+		this.setNormMod(button);
+	}
+	setShift(button) {
+		if (!this.shift) { 
+			this.shift = true;
+			this.keys.forEach(key => {
+				if (this.capsL && key.char != undefined) {
+					if (key.char.letter == "primary") {
+						key.label = key.char.lowerName.toLowerCase();
+					} else if (key.char.letter == "pseudo" || key.char.letter == undefined) {
+						key.label = key.char.upperName;
+					} 
+				} else if (key.char != undefined) {
+					key.label = key.char.upperName;
+				}
+			});
+		} else {
+			this.shift = false;
+			this.keys.forEach(key => {
+				if (this.capsL && key.char != undefined) {
+					if (this.alt && key.char.altName != "") {
+						key.label = key.char.altName;
+					} else if (key.char.letter != undefined) {
+						key.label = key.char.lowerName.toUpperCase();
+					} else if (key.char.letter == undefined) {
+						key.label = key.char.lowerName;
+					} 
+				} else if (key.char != undefined) {
+					if (this.alt && key.char.altName != "") {
+						key.label = key.char.altName;
+					} else {
+						key.label = key.char.lowerName;
+					}
+				}
+			});
+			this.spawnCommandLine([button.char.code]);
+		}
+		this.setNormMod(button);
+	}
+	setNormMod(button) {
+		if (this.mod.includes(button.char.code)) {
+			this.mod.splice(this.mod.indexOf(button.char.code), this.mod.indexOf(button.char.code) + 1);
+			button.remove_style_class_name("selected");
+			this.modBtns.splice(this.modBtns.indexOf(button), this.modBtns.indexOf(button) + 1);
+			this.spawnCommandLine([button.char.code]);
+		} else {
+			button.add_style_class_name("selected");
+			this.mod.push(button.char.code);
+			this.modBtns.push(button);
+		}
+	}
+	resetAllMod() {
+		if (this.shift) {
+			this.shift = false;
+			this.keys.forEach(key => {
+				if (this.capsL && key.char != undefined) {
+					if (this.alt && key.char.altName != "") {
+						key.label = key.char.altName;
+					} else if (key.char.letter != undefined) {
+						key.label = key.char.lowerName.toUpperCase();
+					} else if (key.char.letter == undefined) {
+						key.label = key.char.lowerName;
+					} 
+				} else if (key.char != undefined) {
+					if (this.alt && key.char.altName != "") {
+						key.label = key.char.altName;
+					} else {
+						key.label = key.char.lowerName;
+					}
+				}
+			});
+		} 
+		if (this.alt) {
+			this.alt = false;
+			this.keys.forEach(key => {
+				if (!this.shift && key.char != undefined) {
+					if (key.char.altName != "" && this.capsL && (key.char.letter == "primary" || key.char.letter == "pseudo")) {
+						key.label = key.char.lowerName.toUpperCase();
+					}
+					else if (key.char.altName != "" && this.capsL) {
+						key.label = key.char.lowerName;
+					}
+					else if (key.char.altName != "" && !this.capsL) {
+						key.label = key.char.lowerName;
+					}
+				}
+			});
 		}
 	}
 });
