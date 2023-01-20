@@ -27,7 +27,7 @@ A (marginally) better on screen keyboard for GNOME 43+
 - To type special characters, open GNOME settings, and turn on "Compose Key" under the Keyboard submenu. Choose a modifier (preferably right alt), and use the [key combinations listed here](https://en.wikipedia.org/wiki/Compose_key#Common_compose_combinations) to type special characters
 - To change the keyboard layout, add an input source in GNOME Settings (currently only QWERTY, AZERTY, and Dvorak layouts supported), and change the layout in GJS OSK's settings
 ## Known Problems/Issues (Would appreciate solutions about how to fix):
-- ~~Inabliliy to resize~~ Won't fix - dragging window around to different areas of screen should help, though additional size options will be added to upcoming settings view
+- ~~Inabliliy to resize~~ Won't fix - dragging window around to different areas of screen should help, though additional size options ~~will be~~ have been added to the ~~upcoming~~ settings view
 - ~~Does not size correctly if screen size changes (i.e. if the screen is rotated)~~ [Fixed here](https://github.com/Vishram1123/gjs-osk/commit/bfe9a201dada51fd793cd994b74f290e0b18651a)
 - ~~Caps lock does not change the case of the letter keys~~ [Fixed here](https://github.com/Vishram1123/gjs-osk/commit/9f425279c603d2206596e580424b12a6e212c179)
 - ~~No alternate keyboard layouts (other than en_US) Turn on "Compose Key" in settings, and use Right Alt to be able to type special characters [(key combinations here)](https://en.wikipedia.org/wiki/Compose_key#Common_compose_combinations)~~ Added [here](https://github.com/Vishram1123/gjs-osk/commit/98adbd069726f45a495713227deaeba83158064a)
