@@ -42,4 +42,5 @@ A (marginally) better on screen keyboard for GNOME 43+
   - If a letter changes to another on alt, change `"altName": ""` such that its value represents the output of the character if it is pressed along with alt
   - Keys have to follow a general QWERTY shape (though more or less keys can be on a single line), as this is how the keyboard is coded
 - Once "keycodes.json" is modified, add the layout name to the array `langList` in prefs.js, and on the arrays in line 40 and 59 in extension.js
+
 **Help in this area is greatly appreciated!**
