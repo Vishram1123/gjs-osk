@@ -25,7 +25,7 @@ function fillPreferencesWindow(window) {
 	 const row0 = new Adw.ActionRow({ title: 'Language' });
     group1.add(row0);
     
-    let langList = ["QUERTY", "AZERTY", "Dvorak"];
+    let langList = ["QWERTY", "AZERTY", "Dvorak", "QWERTZ"];
     let langDrop = Gtk.DropDown.new_from_strings(langList);
 	langDrop.valign = Gtk.Align.CENTER;
 	langDrop.selected = settings.get_int("lang");

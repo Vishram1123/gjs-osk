@@ -1539,5 +1539,524 @@
 				}
 			]
 		]
+	},
+	"qwertz": {
+		"row1": [
+			{
+				"code": 1,
+				"lowerName": "esc",
+				"upperName": "esc",
+				"altName": ""
+			},
+			{
+				"code": 59,
+				"lowerName": "F1",
+				"upperName": "F1",
+				"altName": ""
+			},
+			{
+				"code": 60,
+				"lowerName": "F2",
+				"upperName": "F2",
+				"altName": ""
+			},
+			{
+				"code": 61,
+				"lowerName": "F3",
+				"upperName": "F3",
+				"altName": ""
+			},
+			{
+				"code": 62,
+				"lowerName": "F4",
+				"upperName": "F4",
+				"altName": ""
+			},
+			{
+				"code": 63,
+				"lowerName": "F5",
+				"upperName": "F5",
+				"altName": ""
+			},
+			{
+				"code": 64,
+				"lowerName": "F6",
+				"upperName": "F6",
+				"altName": ""
+			},
+			{
+				"code": 65,
+				"lowerName": "F7",
+				"upperName": "F7",
+				"altName": ""
+			},
+			{
+				"code": 66,
+				"lowerName": "F8",
+				"upperName": "F8",
+				"altName": ""
+			},
+			{
+				"code": 67,
+				"lowerName": "F9",
+				"upperName": "F9",
+				"altName": ""
+			},
+			{
+				"code": 68,
+				"lowerName": "F10",
+				"upperName": "F10",
+				"altName": ""
+			},
+			{
+				"code": 87,
+				"lowerName": "F11",
+				"upperName": "F11",
+				"altName": ""
+			},
+			{
+				"code": 88,
+				"lowerName": "F12",
+				"upperName": "F12",
+				"altName": ""
+			},
+			{
+				"code": 210,
+				"lowerName": "PrtSc",
+				"upperName": "PrtSc",
+				"altName": ""
+			},
+			{
+				"code": 111,
+				"lowerName": "⌦",
+				"upperName": "⌦",
+				"altName": ""
+			}
+		],
+		"row2": [
+			{
+				"code": 41,
+				"lowerName": "^",
+				"upperName": "°",
+				"altName": "′"
+			},
+			{
+				"code": 2,
+				"lowerName": "1",
+				"upperName": "!",
+				"altName": "¹"
+			},
+			{
+				"code": 3,
+				"lowerName": "2",
+				"upperName": "\"",
+				"altName": "²"
+			},
+			{
+				"code": 4,
+				"lowerName": "3",
+				"upperName": "§",
+				"altName": "³"
+			},
+			{
+				"code": 5,
+				"lowerName": "4",
+				"upperName": "$",
+				"altName": "¼"
+			},
+			{
+				"code": 6,
+				"lowerName": "5",
+				"upperName": "%",
+				"altName": "½"
+			},
+			{
+				"code": 7,
+				"lowerName": "6",
+				"upperName": "&",
+				"altName": "¬"
+			},
+			{
+				"code": 8,
+				"lowerName": "7",
+				"upperName": "/",
+				"altName": "{"
+			},
+			{
+				"code": 9,
+				"lowerName": "8",
+				"upperName": "(",
+				"altName": "["
+			},
+			{
+				"code": 10,
+				"lowerName": "9",
+				"upperName": ")",
+				"altName": "]"
+			},
+			{
+				"code": 11,
+				"lowerName": "0",
+				"upperName": "=",
+				"altName": "}"
+			},
+			{
+				"code": 12,
+				"lowerName": "ß",
+				"upperName": "?",
+				"altName": "\\"
+			},
+			{
+				"code": 13,
+				"lowerName": "´",
+				"upperName": "`",
+				"altName": "¸"
+			},
+			{
+				"code": 14,
+				"lowerName": "⌫",
+				"upperName": "⌫",
+				"altName": ""
+			}
+		],
+		"row3": [
+			{
+				"code": 15,
+				"lowerName": "⇥",
+				"upperName": "⇥",
+				"altName": ""
+			},
+			{
+				"code": 16,
+				"lowerName": "q",
+				"letter": "primary",
+				"upperName": "Q",
+				"altName": "@"
+			},
+			{
+				"code": 17,
+				"lowerName": "w",
+				"letter": "primary",
+				"upperName": "W",
+				"altName": "ſ"
+			},
+			{
+				"code": 18,
+				"lowerName": "e",
+				"letter": "primary",
+				"upperName": "E",
+				"altName": "ě"
+			},
+			{
+				"code": 19,
+				"lowerName": "r",
+				"letter": "primary",
+				"upperName": "R",
+				"altName": "ŕ"
+			},
+			{
+				"code": 20,
+				"lowerName": "t",
+				"letter": "primary",
+				"upperName": "T",
+				"altName": "₵"
+			},
+			{
+				"code": 21,
+				"lowerName": "z",
+				"letter": "primary",
+				"upperName": "Y",
+				"altName": "ž"
+			},
+			{
+				"code": 22,
+				"lowerName": "u",
+				"letter": "primary",
+				"upperName": "U",
+				"altName": "ź"
+			},
+			{
+				"code": 23,
+				"lowerName": "i",
+				"letter": "primary",
+				"upperName": "I",
+				"altName": "→"
+			},
+			{
+				"code": 24,
+				"lowerName": "o",
+				"letter": "primary",
+				"upperName": "O",
+				"altName": "ó"
+			},
+			{
+				"code": 25,
+				"lowerName": "p",
+				"letter": "primary",
+				"upperName": "P",
+				"altName": "þ"
+			},
+			{
+				"code": 26,
+				"lowerName": "ü",
+				"letter": "primary",
+				"upperName": "Ü",
+				"altName": "¨"
+			},
+			{
+				"code": 27,
+				"lowerName": "+",
+				"upperName": "*",
+				"altName": "~"
+			},
+			{
+				"code": 43,
+				"lowerName": "#",
+				"upperName": "'",
+				"altName": "’"
+			}
+		],
+		"row4": [
+			{
+				"code": 58,
+				"lowerName": "⇪",
+				"upperName": "⇪",
+				"altName": ""
+			},
+			{
+				"code": 30,
+				"lowerName": "a",
+				"letter": "primary",
+				"upperName": "A",
+				"altName": "æ"
+			},
+			{
+				"code": 31,
+				"lowerName": "s",
+				"letter": "primary",
+				"upperName": "S",
+				"altName": "ś"
+			},
+			{
+				"code": 32,
+				"lowerName": "d",
+				"letter": "primary",
+				"upperName": "D",
+				"altName": "š"
+			},
+			{
+				"code": 33,
+				"lowerName": "f",
+				"letter": "primary",
+				"upperName": "F",
+				"altName": "đ"
+			},
+			{
+				"code": 34,
+				"lowerName": "g",
+				"letter": "primary",
+				"upperName": "G",
+				"altName": "ŋ"
+			},
+			{
+				"code": 35,
+				"lowerName": "h",
+				"letter": "primary",
+				"upperName": "H",
+				"altName": "ħ"
+			},
+			{
+				"code": 36,
+				"lowerName": "j",
+				"letter": "primary",
+				"upperName": "J",
+				"altName": "."
+			},
+			{
+				"code": 37,
+				"lowerName": "k",
+				"letter": "primary",
+				"upperName": "K",
+				"altName": "ĸ"
+			},
+			{
+				"code": 38,
+				"lowerName": "l",
+				"letter": "primary",
+				"upperName": "L",
+				"altName": "ł"
+			},
+			{
+				"code": 39,
+				"lowerName": "ö",
+				"letter": "primary",
+				"upperName": "Ö",
+				"altName": "˝"
+			},
+			{
+				"code": 40,
+				"lowerName": "ä",
+				"letter": "primary",
+				"upperName": "Ä",
+				"altName": "^"
+			},
+			{
+				"code": 28,
+				"lowerName": "⏎",
+				"upperName": "⏎",
+				"altName": ""
+			}
+		],
+		"row5": [
+			{
+				"code": 42,
+				"lowerName": "⇧",
+				"upperName": "⇧",
+				"altName": ""
+			},
+			{
+				"code": 86,
+				"lowerName": "<",
+				"upperName": ">",
+				"altName": ""
+			},
+			{
+				"code": 44,
+				"lowerName": "y",
+				"letter": "primary",
+				"upperName": "Y",
+				"altName": "»"
+			},
+			{
+				"code": 45,
+				"lowerName": "x",
+				"letter": "primary",
+				"upperName": "X",
+				"altName": "«"
+			},
+			{
+				"code": 46,
+				"lowerName": "c",
+				"letter": "primary",
+				"upperName": "C",
+				"altName": "ć"
+			},
+			{
+				"code": 47,
+				"lowerName": "v",
+				"letter": "primary",
+				"upperName": "V",
+				"altName": "č"
+			},
+			{
+				"code": 48,
+				"lowerName": "b",
+				"letter": "primary",
+				"upperName": "B",
+				"altName": "“"
+			},
+			{
+				"code": 49,
+				"lowerName": "n",
+				"letter": "primary",
+				"upperName": "N",
+				"altName": "ń"
+			},
+			{
+				"code": 50,
+				"lowerName": "m",
+				"letter": "primary",
+				"upperName": "M",
+				"altName": "µ"
+			},
+			{
+				"code": 51,
+				"lowerName": ",",
+				"upperName": ";",
+				"altName": "·"
+			},
+			{
+				"code": 52,
+				"lowerName": ".",
+				"upperName": ":",
+				"altName": "…"
+			},
+			{
+				"code": 53,
+				"lowerName": "-",
+				"upperName": "_",
+				"altName": "–"
+			},
+			{
+				"code": 54,
+				"lowerName": "⇧",
+				"upperName": "⇧",
+				"altName": ""
+			}
+		],
+		"row6": [
+			{
+				"code": 29,
+				"lowerName": "⌃",
+				"upperName": "⌃",
+				"altName": ""
+			},
+			{
+				"code": 125,
+				"lowerName": "❖",
+				"upperName": "❖",
+				"altName": ""
+			},
+			{
+				"code": 56,
+				"lowerName": "⌥",
+				"upperName": "⌥",
+				"altName": ""
+			},
+			{
+				"code": 57,
+				"lowerName": "␣",
+				"upperName": "␣",
+				"altName": ""
+			},
+			{
+				"code": 100,
+				"lowerName": "⌥",
+				"upperName": "⌥",
+				"altName": ""
+			},
+			{
+				"code": 97,
+				"lowerName": "⌃",
+				"upperName": "⌃",
+				"altName": ""
+			},
+			[
+				{
+					"code": 105,
+					"lowerName": "←",
+					"upperName": "←",
+					"altName": ""
+				},
+				{
+					"code": 103,
+					"lowerName": "↑",
+					"upperName": "↑",
+					"altName": ""
+				},
+				{
+					"code": 108,
+					"lowerName": "↓",
+					"upperName": "↓",
+					"altName": ""
+				},
+				{
+					"code": 106,
+					"lowerName": "→",
+					"upperName": "→",
+					"altName": ""
+				}
+			]
+		]
 	}
 }

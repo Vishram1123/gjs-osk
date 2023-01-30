@@ -7,6 +7,7 @@ const PanelMenu = imports.ui.panelMenu;
 const Lang = imports.lang;
 const ByteArray = imports.byteArray;
 const Signals = imports.misc.signals;
+const KeyboardManager = imports.misc.keyboardManager;
 
 let keycodes;
 
@@ -37,7 +38,7 @@ class Extension {
 		
 		let [ok, contents] = GLib.file_get_contents(Me.path + '/keycodes.json');
 		if(ok) {
-			keycodes = JSON.parse(contents)[['qwerty', 'azerty', 'dvorak'][this.settings.get_int("lang")]];
+			keycodes = JSON.parse(contents)[['qwerty', 'azerty', 'dvorak', "qwertz"][this.settings.get_int("lang")]];
 		}
 		
 		let indicatorName = `${Me.metadata.name} Indicator`;
@@ -56,7 +57,7 @@ class Extension {
 		this.settings.connect("changed", key => {
 			let [ok, contents] = GLib.file_get_contents(Me.path + '/keycodes.json');
 			if(ok) {
-				keycodes = JSON.parse(contents)[["qwerty", "azerty", "dvorak"][this.settings.get_int("lang")]];
+				keycodes = JSON.parse(contents)[["qwerty", "azerty", "dvorak", "qwertz"][this.settings.get_int("lang")]];
 			}
 			this.Keyboard.refresh();
 		});
@@ -87,6 +88,8 @@ class Keyboard extends imports.ui.dialog.Dialog{
 		this.buildUI();
 		this.draggable = settings.get_boolean("enable-drag");
 		this.add_child(this.box);
+		this.init = KeyboardManager.getKeyboardManager()._current.id;
+		this.initLay = Object.keys(KeyboardManager.getKeyboardManager()._layoutInfos);
 		this.close(); 
 		this.mod = [];
 		this.modBtns = [];
@@ -259,6 +262,8 @@ class Keyboard extends imports.ui.dialog.Dialog{
 		this.heightPercent = (monitor.width > monitor.height) ? this.settings.get_int("landscape-height-percent")/100 : this.settings.get_int("portrait-height-percent")/100;
 		this.buildUI();
 		this.draggable = this.settings.get_boolean("enable-drag");
+		this.init = KeyboardManager.getKeyboardManager()._current.id;
+		this.initLay = Object.keys(KeyboardManager.getKeyboardManager()._layoutInfos);
 		this.close(); 
 		this.mod = [];
 		this.modBtns = [];
@@ -272,6 +277,18 @@ class Keyboard extends imports.ui.dialog.Dialog{
 		this.dragging = false;
 	}
 	open() {
+		this.inputDevice = Clutter.get_default_backend().get_default_seat().create_virtual_device(Clutter.InputDeviceType.KEYBOARD_DEVICE);
+		this.init = KeyboardManager.getKeyboardManager()._current.id;
+		this.initLay = Object.keys(KeyboardManager.getKeyboardManager()._layoutInfos);
+		let newLay = this.initLay;
+		console.log(newLay);
+		if (!newLay.includes(["us", "fr+azerty", "us+dvorak", "de+dsb_qwertz"][this.settings.get_int("lang")])) {
+			newLay.push(["us", "fr+azerty", "us+dvorak", "de+dsb_qwertz"][this.settings.get_int("lang")]);
+			KeyboardManager.getKeyboardManager().setUserLayouts(newLay);
+		}
+		KeyboardManager.getKeyboardManager().apply(["us", "fr+azerty", "us+dvorak", "de+dsb_qwertz"][this.settings.get_int("lang")]);
+		KeyboardManager.getKeyboardManager().reapply();
+		console.log(KeyboardManager.getKeyboardManager()._current.id);
 		this.state = "opening"
 		this.box.opacity = 0;
 		this.show();
@@ -290,6 +307,9 @@ class Keyboard extends imports.ui.dialog.Dialog{
 		this.opened = true;
 	}	
 	close() {
+		console.log(this.initLay);
+		KeyboardManager.getKeyboardManager().setUserLayouts(this.initLay);
+		KeyboardManager.getKeyboardManager().apply(this.init);
 		let monitor = Main.layoutManager.primaryMonitor;
 		let posX = [25, ((monitor.width * .5) - ((this.width * .5))),  monitor.width - this.width - 25][(this.settings.get_int("default-snap") % 3)];
 		let posY = [25, ((monitor.height * .5) - ((this.height * .5))),  monitor.height - this.height - 25][Math.floor((this.settings.get_int("default-snap") / 3))];
@@ -640,6 +660,7 @@ class Keyboard extends imports.ui.dialog.Dialog{
 			this.setCapsLock(mBtn);
 		} else {
 			this.mod.push(i.code);
+			console.log(this.mod);
 			this.spawnCommandLine(this.mod);
 			this.mod = [];
 			this.modBtns.forEach(button => {

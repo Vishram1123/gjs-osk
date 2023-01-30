@@ -1,11 +1,11 @@
 {
   "name": "GJS OSK",
-  "description": "A new Onscreen Keyboard built using GNOME JS. Relies on ydotool.",
+  "description": "A new Onscreen Keyboard built using GNOME JS",
   "uuid": "gjsosk@vishram1123.com",
   "shell-version": [
     "43"
   ],
   "url": "https://github.com/Vishram1123/gjs-osk",
-  "version": 1.1,
+  "version": 1.2,
   "settings-schema": "org.gnome.shell.extensions.gjsosk"
 }
