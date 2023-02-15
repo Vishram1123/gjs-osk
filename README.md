@@ -26,6 +26,8 @@ A (marginally) better on screen keyboard for GNOME 43+
   - Close the settings dialog to save any modified settings
 - To type special characters, open GNOME settings, and turn on "Compose Key" under the Keyboard submenu. Choose a modifier (preferably right alt), and use the [key combinations listed here](https://en.wikipedia.org/wiki/Compose_key#Common_compose_combinations) to type special characters
 - To change the keyboard layout, ~~add an input source in GNOME Settings (currently only QWERTY, AZERTY, and Dvorak layouts supported), and~~ change the layout in GJS OSK's settings (method changed as of [this commit](https://github.com/Vishram1123/gjs-osk/commit/6c0058f25713fc02a55b1381660ba7c5ac52b6b7))
+- To add typing prediction, add "Typing Booster" as an input source (in GNOME's settings), and keep it chosen as the primary input source [(extended guide here)](https://mike-fabian.github.io/ibus-typing-booster/docs/user/).
+  - Note that this will cause predictive text to be present even without the OSK open, and the input language for Typing Booster's predictions will have to be set in Typing Booster's settings 
 ## Known Problems/Issues (Would appreciate solutions about how to fix):
 - ~~Inabliliy to resize~~ Won't fix - dragging window around to different areas of screen should help, though additional size options ~~will be~~ have been added to the ~~upcoming~~ settings view
 - ~~Does not size correctly if screen size changes (i.e. if the screen is rotated)~~ [Fixed here](https://github.com/Vishram1123/gjs-osk/commit/bfe9a201dada51fd793cd994b74f290e0b18651a)
