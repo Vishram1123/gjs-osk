@@ -1,5 +1,7 @@
 # GJS OSK
 A (marginally) better on screen keyboard for GNOME 43+
+# Update
+Sorry, I haven't been able to make progress on the keyboard - I have been busy with school work and life. I will get back to this as soon as possible.
 ## Advantages over the default OSK:
 -	Function, modifier, tab, and arrow key support
 -	Ability to move around the screen
