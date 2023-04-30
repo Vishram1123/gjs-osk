@@ -8,6 +8,7 @@ const Lang = imports.lang;
 const ByteArray = imports.byteArray;
 const Signals = imports.misc.signals;
 const KeyboardManager = imports.misc.keyboardManager;
+const Atspi = imports.gi.Atspi;
 
 let keycodes;
 
@@ -54,7 +55,7 @@ class Extension {
 		this._indicator.connect("touch-event", () => this._toggleKeyboard());
 		
 		Main.panel.addToStatusArea(indicatorName, this._indicator);
-		this.settings.connect("changed", key => {
+		this.settingsHandler = this.settings.connect("changed", key => {
 			let [ok, contents] = GLib.file_get_contents(Me.path + '/keycodes.json');
 			if(ok) {
 				keycodes = JSON.parse(contents)[["qwerty", "azerty", "dvorak", "qwertz"][this.settings.get_int("lang")]];
@@ -69,6 +70,7 @@ class Extension {
 		this._indicator.destroy();
 		this._indicator = null;
 		this.Keyboard.destroy();
+		this.settings.disconnect(this.settingsHandler);
 	}
 }
 
@@ -86,7 +88,7 @@ class Keyboard extends imports.ui.dialog.Dialog{
 		this.widthPercent = (monitor.width > monitor.height) ? settings.get_int("landscape-width-percent")/100 : settings.get_int("portrait-width-percent")/100;
 		this.heightPercent = (monitor.width > monitor.height) ? settings.get_int("landscape-height-percent")/100 : settings.get_int("portrait-height-percent")/100;
 		this.buildUI();
-		this.draggable = settings.get_boolean("enable-drag");
+		this.draggable = false;
 		this.add_child(this.box);
 		this.init = KeyboardManager.getKeyboardManager()._current.id;
 		this.initLay = Object.keys(KeyboardManager.getKeyboardManager()._layoutInfos);
@@ -105,6 +107,11 @@ class Keyboard extends imports.ui.dialog.Dialog{
 		this._dragging = false;
 		this.inputDevice = Clutter.get_default_backend().get_default_seat().create_virtual_device(Clutter.InputDeviceType.KEYBOARD_DEVICE);
 	}
+	destroy() {
+		clearInterval(this.monitorChecker);
+		super.destroy();
+		
+	}
 	vfunc_button_press_event() {
 		this.delta = [global.get_pointer()[0] - this.translation_x, global.get_pointer()[1] - this.translation_y];
 		return this.startDragging(Clutter.get_current_event(), this.delta)
@@ -114,23 +121,12 @@ class Keyboard extends imports.ui.dialog.Dialog{
 			if (this._dragging)
 				return Clutter.EVENT_PROPAGATE;
 			this._dragging = true;
-			this.box.get_children().forEach(keyholder => {
-				keyholder.set_opacity(255);
-				keyholder.ease({
-					opacity: 0,
-					duration: 100,
-					mode: Clutter.AnimationMode.EASE_OUT_QUAD,
-					onComplete: () => { keyholder.set_z_position(-10000000000000000000000000000); 
-						this.box.add_style_pseudo_class("dragging");
-					}
-				});
-				this.box.set_opacity(255);
-				this.box.ease({
-					opacity: 200,
-					duration: 100,
-					mode: Clutter.AnimationMode.EASE_OUT_QUAD,
-					onComplete: () => { }
-				});
+			this.box.set_opacity(255);
+			this.box.ease({
+				opacity: 200,
+				duration: 100,
+				mode: Clutter.AnimationMode.EASE_OUT_QUAD,
+				onComplete: () => { }
 			});
 			let device = event.get_device();
 			let sequence = event.get_event_sequence();
@@ -162,15 +158,7 @@ class Keyboard extends imports.ui.dialog.Dialog{
 					this._grab.dismiss();
 					this._grab = null;
 				}
-				this.box.get_children().forEach(keyholder => {
-					keyholder.set_opacity(0);
-					keyholder.set_z_position(0);
-					keyholder.ease({
-						opacity: 255,
-						duration: 100,
-						mode: Clutter.AnimationMode.EASE_OUT_QUAD,
-						onComplete: () => { }
-					});
+				
 				    this.box.set_opacity(200);
 					this.box.ease({
 						opacity: 255,
@@ -178,7 +166,6 @@ class Keyboard extends imports.ui.dialog.Dialog{
 						mode: Clutter.AnimationMode.EASE_OUT_QUAD,
 						onComplete: () => { }
 					});
-				});
 				this._grabbedSequence = null;
 				this._grabbedDevice = null;
 				this._dragging = false;
@@ -247,7 +234,7 @@ class Keyboard extends imports.ui.dialog.Dialog{
 	checkMonitor() {
 		let monitor = Main.layoutManager.primaryMonitor;
 		let oldMonitorDimensions = [monitor.width, monitor.height];
-		setInterval(() => {
+		this.monitorChecker = setInterval(() => {
 			monitor = Main.layoutManager.primaryMonitor;
 			if (oldMonitorDimensions[0] != monitor.width || oldMonitorDimensions[1] != monitor.height) {
 				this.refresh()
@@ -261,7 +248,7 @@ class Keyboard extends imports.ui.dialog.Dialog{
 		this.widthPercent = (monitor.width > monitor.height) ? this.settings.get_int("landscape-width-percent")/100 : this.settings.get_int("portrait-width-percent")/100;
 		this.heightPercent = (monitor.width > monitor.height) ? this.settings.get_int("landscape-height-percent")/100 : this.settings.get_int("portrait-height-percent")/100;
 		this.buildUI();
-		this.draggable = this.settings.get_boolean("enable-drag");
+		this.draggable = false;
 		this.init = KeyboardManager.getKeyboardManager()._current.id;
 		this.initLay = Object.keys(KeyboardManager.getKeyboardManager()._layoutInfos);
 		this.close(); 
@@ -281,14 +268,12 @@ class Keyboard extends imports.ui.dialog.Dialog{
 		this.init = KeyboardManager.getKeyboardManager()._current.id;
 		this.initLay = Object.keys(KeyboardManager.getKeyboardManager()._layoutInfos);
 		let newLay = this.initLay;
-		console.log(newLay);
 		if (!newLay.includes(["us", "fr+azerty", "us+dvorak", "de+dsb_qwertz"][this.settings.get_int("lang")])) {
 			newLay.push(["us", "fr+azerty", "us+dvorak", "de+dsb_qwertz"][this.settings.get_int("lang")]);
 			KeyboardManager.getKeyboardManager().setUserLayouts(newLay);
 		}
 		KeyboardManager.getKeyboardManager().apply(["us", "fr+azerty", "us+dvorak", "de+dsb_qwertz"][this.settings.get_int("lang")]);
 		KeyboardManager.getKeyboardManager().reapply();
-		console.log(KeyboardManager.getKeyboardManager()._current.id);
 		this.state = "opening"
 		this.box.opacity = 0;
 		this.show();
@@ -307,7 +292,6 @@ class Keyboard extends imports.ui.dialog.Dialog{
 		this.opened = true;
 	}	
 	close() {
-		console.log(this.initLay);
 		KeyboardManager.getKeyboardManager().setUserLayouts(this.initLay);
 		KeyboardManager.getKeyboardManager().apply(this.init);
 		let monitor = Main.layoutManager.primaryMonitor;
@@ -535,14 +519,54 @@ class Keyboard extends imports.ui.dialog.Dialog{
 				});
 				gbox.add_child(btn4);
 				var btn5 = new St.Button({
+					label: "🕂",	
+				});
+				var btn6 = new St.Button({
 					label: "🗙",	
 				});
-				gbox.add_child(btn5);
+				if (this.settings.get_boolean("enable-drag")) {
+					gbox.add_child(btn5);
+				}
+				gbox.add_child(btn6);
 				btn1.connect("clicked", () => this.decideMod((keycodes.row6[keycodes.row6.length - 1])[0]))
 				btn2.connect("clicked", () => this.decideMod((keycodes.row6[keycodes.row6.length - 1])[1]))
 				btn3.connect("clicked", () => this.decideMod((keycodes.row6[keycodes.row6.length - 1])[2]))
 				btn4.connect("clicked", () => this.decideMod((keycodes.row6[keycodes.row6.length - 1])[3]))
-				btn5.connect("clicked", () => this.close());
+				btn5.connect("clicked", () => {
+					if (this.settings.get_boolean("enable-drag")) {
+						this.draggable = !this.draggable;
+						this.keys.forEach(keyholder => {
+							if (keyholder.label != "🕂") {
+								keyholder.set_opacity(this.draggable ? 255 : 0);
+								keyholder.ease({
+									opacity: this.draggable ? 0 : 255,
+									duration: 100,
+									mode: Clutter.AnimationMode.EASE_OUT_QUAD,
+									onComplete: () => { keyholder.set_z_position(this.draggable ? -10000000000000000000000000000 : 0); 
+										if (this.draggable) {
+											this.box.add_style_pseudo_class("dragging");
+										} else {
+											this.box.remove_style_pseudo_class("dragging");
+										}
+									}
+								});
+							}
+						});
+						btn5.ease({
+							width: btn5.width * (this.draggable ? 2 : 0.5),
+							duration: 100,
+							mode: Clutter.AnimationMode.EASE_OUT_QUAD,
+							onComplete: () => {}
+						})
+						btn6.ease({
+							width: this.draggable ? 0 : btn5.width / 2,
+							duration: 100,
+							mode: Clutter.AnimationMode.EASE_OUT_QUAD,
+							onComplete: () => {}
+						})
+					}
+				})
+				btn6.connect("clicked", () => this.close());
 				btn1.char = (keycodes.row6[keycodes.row6.length - 1])[0]
 				btn2.char = (keycodes.row6[keycodes.row6.length - 1])[1]
 				btn3.char = (keycodes.row6[keycodes.row6.length - 1])[2]
@@ -555,14 +579,17 @@ class Keyboard extends imports.ui.dialog.Dialog{
 				btn4.height = topRowHeight + 20;
 				btn2.height = (topRowHeight + 20)/2;
 				btn3.height = (topRowHeight + 20)/2;
-				btn5.width = Math.round((topRowWidth) + 4);
+				btn5.width = Math.round((topRowWidth / 2) + 2);
+				btn6.width = this.settings.get_boolean("enable-drag") ? Math.round((topRowWidth / 2) + 2) : Math.round((topRowWidth) + 4);
 				btn5.height = topRowHeight + 20;
+				btn6.height = topRowHeight + 20;
 				btn1.add_style_class_name('dr-b');
 				btn2.add_style_class_name('dr-b');
 				btn3.add_style_class_name('dr-b');
 				btn4.add_style_class_name('dr-b');
 				btn5.add_style_class_name('dr-b');
-				this.keys.push.apply(this.keys, [btn1, btn2, btn3, btn4, btn5]);
+				btn6.add_style_class_name('dr-b');
+				this.keys.push.apply(this.keys, [btn1, btn2, btn3, btn4, btn5, btn6]);
 				gbox.add_style_class_name('keyActionBtns');
 				row6.add_child(gbox);
 			}
@@ -592,7 +619,6 @@ class Keyboard extends imports.ui.dialog.Dialog{
 			}
 		}
 		row6.add_style_class_name("keysHolder");
-		
 		
 		this.box.add_child(row1);
 		this.box.add_child(row2);
@@ -631,9 +657,11 @@ class Keyboard extends imports.ui.dialog.Dialog{
 			for (var i = 0; i < keys.length; i++) {
 				this.inputDevice.notify_key(Clutter.get_current_event_time(), keys[i], Clutter.KeyState.PRESSED);
 			}
-			for (var j = keys.length - 1; j >= 0 ; j--) {
-				this.inputDevice.notify_key(Clutter.get_current_event_time() + 1, keys[j], Clutter.KeyState.RELEASED);
-			}
+			setTimeout(() => {
+				for (var j = keys.length - 1; j >= 0 ; j--) {
+					this.inputDevice.notify_key(Clutter.get_current_event_time(), keys[j], Clutter.KeyState.RELEASED);
+				}
+			}, 100);
 		} catch (err) {
 			let source = new imports.ui.messageTray.SystemNotificationSource();
 			source.connect('destroy', () => {
@@ -660,7 +688,6 @@ class Keyboard extends imports.ui.dialog.Dialog{
 			this.setCapsLock(mBtn);
 		} else {
 			this.mod.push(i.code);
-			console.log(this.mod);
 			this.spawnCommandLine(this.mod);
 			this.mod = [];
 			this.modBtns.forEach(button => {

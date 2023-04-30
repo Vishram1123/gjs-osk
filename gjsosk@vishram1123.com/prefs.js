@@ -13,16 +13,40 @@ function init() {
 }
 
 function fillPreferencesWindow(window) {
+	
     const settings = ExtensionUtils.getSettings('org.gnome.shell.extensions.gjsosk');
     
     const page1 = new Adw.PreferencesPage({
 		title: "General", 
 		icon_name: "general-symbolic"
 	});
-    const group1 = new Adw.PreferencesGroup({ title: "Behavior" });
+    
+    const group0 = new Adw.PreferencesGroup();
+    page1.add(group0)
+	
+	const apply = Gtk.Button.new_with_label("Apply Changes");
+	apply.connect("clicked", () => {
+		settings.set_int("lang", langDrop.selected);
+		settings.set_boolean("enable-drag", dragToggle.active);
+		settings.set_int("portrait-width-percent", numChanger_pW.value);
+		settings.set_int("portrait-height-percent", numChanger_pH.value);
+		settings.set_int("landscape-width-percent", numChanger_lW.value);
+		settings.set_int("landscape-height-percent", numChanger_lH.value);
+		let [r, g, b] = colorButton.get_rgba().to_string().replace("rgb(", "").replace(")","").split(",")
+		settings.set_double("background-r", r);
+		settings.set_double("background-g", g);
+		settings.set_double("background-b", b);
+		settings.set_int("font-size-px", numChanger_font.value);
+		settings.set_int("border-spacing-px", numChanger_bord.value);
+		settings.set_boolean("round-key-corners", dragToggle2.active); 
+		settings.set_int("default-snap", dropDown.selected);
+	});
+	group0.add(apply)
+	
+	const group1 = new Adw.PreferencesGroup({ title: "Behavior" });
     page1.add(group1);
 	
-	 const row0 = new Adw.ActionRow({ title: 'Language' });
+	const row0 = new Adw.ActionRow({ title: 'Language' });
     group1.add(row0);
     
     let langList = ["QWERTY", "AZERTY", "Dvorak", "QWERTZ"];
@@ -143,23 +167,6 @@ function fillPreferencesWindow(window) {
     row8.add_suffix(dragToggle2);
     row8.activatable_widget = dragToggle2;
     
-    window.connect("close-request", () => {
-		settings.set_int("lang", langDrop.selected);
-		settings.set_boolean("enable-drag", dragToggle.active);
-		settings.set_int("portrait-width-percent", numChanger_pW.value);
-		settings.set_int("portrait-height-percent", numChanger_pH.value);
-		settings.set_int("landscape-width-percent", numChanger_lW.value);
-		settings.set_int("landscape-height-percent", numChanger_lH.value);
-		let [r, g, b] = colorButton.get_rgba().to_string().replace("rgb(", "").replace(")","").split(",")
-		settings.set_double("background-r", r);
-		settings.set_double("background-g", g);
-		settings.set_double("background-b", b);
-		settings.set_int("font-size-px", numChanger_font.value);
-		settings.set_int("border-spacing-px", numChanger_bord.value);
-		settings.set_boolean("round-key-corners", dragToggle2.active); 
-		settings.set_int("default-snap", dropDown.selected);
-	});
-	
 	window.add(page1);
 	
 	let page2 = new Adw.PreferencesPage({
@@ -221,4 +228,20 @@ function fillPreferencesWindow(window) {
 	page2.add(links_pref_group);
 	
 	window.add(page2);
+	window.connect("close-request", () => {
+		settings.set_int("lang", langDrop.selected);
+		settings.set_boolean("enable-drag", dragToggle.active);
+		settings.set_int("portrait-width-percent", numChanger_pW.value);
+		settings.set_int("portrait-height-percent", numChanger_pH.value);
+		settings.set_int("landscape-width-percent", numChanger_lW.value);
+		settings.set_int("landscape-height-percent", numChanger_lH.value);
+		let [r, g, b] = colorButton.get_rgba().to_string().replace("rgb(", "").replace(")","").split(",")
+		settings.set_double("background-r", r);
+		settings.set_double("background-g", g);
+		settings.set_double("background-b", b);
+		settings.set_int("font-size-px", numChanger_font.value);
+		settings.set_int("border-spacing-px", numChanger_bord.value);
+		settings.set_boolean("round-key-corners", dragToggle2.active); 
+		settings.set_int("default-snap", dropDown.selected);
+	});
 }

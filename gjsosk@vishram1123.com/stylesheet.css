@@ -25,6 +25,10 @@
   margin: inherit;
   box-sizing: border-box;
 }
+.boxLay:dragging {
+  background-image: url(ui/icons/hicolor/scalable/actions/move.svg);
+  background-size: 100px;
+}
 .keyActionBtns{
   background-color: rgba(255,255,255,0.00);
   border: 0;
