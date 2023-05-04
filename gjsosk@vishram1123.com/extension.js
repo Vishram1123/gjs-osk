@@ -3,22 +3,17 @@ const {
 	St,
 	Gio,
 	Clutter,
-	Meta,
 	Shell,
-	GLib,
-	Gdk,
-	Gtk
+	GLib
 } = imports.gi;
 
 const ExtensionUtils = imports.misc.extensionUtils;
 const Me = ExtensionUtils.getCurrentExtension();
 const Main = imports.ui.main;
 const PanelMenu = imports.ui.panelMenu;
-const Lang = imports.lang;
 const ByteArray = imports.byteArray;
 const Signals = imports.misc.signals;
 const KeyboardManager = imports.misc.keyboardManager;
-const Atspi = imports.gi.Atspi;
 
 let keycodes;
 
@@ -76,12 +71,11 @@ class Extension {
 	}
 
 	disable() {
-		log(`disabling ${Me.metadata.name}`);
-
 		this._indicator.destroy();
 		this._indicator = null;
 		this.Keyboard.destroy();
 		this.settings.disconnect(this.settingsHandler);
+		this.settings = null;
 	}
 }
 
@@ -123,6 +117,11 @@ const Keyboard = GObject.registerClass({
 		}
 		destroy() {
 			clearInterval(this.monitorChecker);
+			this.monitorChecker = null;
+			clearTimeout(this.stateTimeout);
+			this.stateTimeout = null;
+			clearTimeout(this.keyTimeout);
+			this.keyTimeout = null
 			super.destroy();
 
 		}
@@ -262,6 +261,20 @@ const Keyboard = GObject.registerClass({
 			this.heightPercent = (monitor.width > monitor.height) ? this.settings.get_int("landscape-height-percent") / 100 : this.settings.get_int("portrait-height-percent") / 100;
 			this.buildUI();
 			this.draggable = false;
+			this.keys.forEach(keyholder => {
+				if (keyholder.label != "🕂") {
+					keyholder.set_opacity(0);
+					keyholder.ease({
+						opacity: 255,
+						duration: 100,
+						mode: Clutter.AnimationMode.EASE_OUT_QUAD,
+						onComplete: () => {
+							keyholder.set_z_position(0);
+							this.box.remove_style_pseudo_class("dragging");
+						}
+					});
+				}
+			});
 			this.init = KeyboardManager.getKeyboardManager()._current.id;
 			this.initLay = Object.keys(KeyboardManager.getKeyboardManager()._layoutInfos);
 			this.close();
@@ -295,7 +308,7 @@ const Keyboard = GObject.registerClass({
 				duration: 100,
 				mode: Clutter.AnimationMode.EASE_OUT_QUAD,
 				onComplete: () => {
-					setTimeout(() => {
+					this.stateTimeout = setTimeout(() => {
 						this.state = "opened"
 					}, 500);
 					let monitor = Main.layoutManager.primaryMonitor;
@@ -322,7 +335,7 @@ const Keyboard = GObject.registerClass({
 					this.set_translation(posX, posY, 0);
 					this.opened = false;
 					this.hide();
-					setTimeout(() => {
+					this.stateTimeout = setTimeout(() => {
 						this.state = "closed"
 					}, 500);
 				},
@@ -683,12 +696,12 @@ const Keyboard = GObject.registerClass({
 				return false;
 			}
 		}
-		spawnCommandLine(keys) {
+		sendKey(keys) {
 			try {
 				for (var i = 0; i < keys.length; i++) {
 					this.inputDevice.notify_key(Clutter.get_current_event_time(), keys[i], Clutter.KeyState.PRESSED);
 				}
-				setTimeout(() => {
+				this.keyTimeout = setTimeout(() => {
 					for (var j = keys.length - 1; j >= 0; j--) {
 						this.inputDevice.notify_key(Clutter.get_current_event_time(), keys[j], Clutter.KeyState.RELEASED);
 					}
@@ -704,8 +717,24 @@ const Keyboard = GObject.registerClass({
 				notification.setResident(false);
 				source.showNotification(notification);
 				notification.connect("activated", () => {
-					Gtk.show_uri(null, "https://github.com/vishram1123/gjs-osk/issues/new", Gtk.get_current_event_time());
+					sendCommand("xdg-open https://github.com/Vishram1123/gjs-osk/issues");
 				});
+			}
+		}
+		sendCommand(command_line) {
+			try {
+				let [success, argv] = GLib.shell_parse_argv(command_line);
+				trySpawn(argv);
+			} catch (err) {
+				let source = new imports.ui.messageTray.SystemNotificationSource();
+				source.connect('destroy', () => {
+					source = null;
+				})
+				Main.messageTray.add(source);
+				let notification = new imports.ui.messageTray.Notification(source, "GJS-OSK: An unknown error occured", "Please report this bug to the Issues page:\n\n" + err)
+				notification.setTransient(false);
+				notification.setResident(false);
+				source.showNotification(notification);
 			}
 		}
 		decideMod(i, mBtn) {
@@ -719,7 +748,7 @@ const Keyboard = GObject.registerClass({
 				this.setCapsLock(mBtn);
 			} else {
 				this.mod.push(i.code);
-				this.spawnCommandLine(this.mod);
+				this.sendKey(this.mod);
 				this.mod = [];
 				this.modBtns.forEach(button => {
 					button.remove_style_class_name("selected");
@@ -762,7 +791,7 @@ const Keyboard = GObject.registerClass({
 					}
 				});
 			}
-			this.spawnCommandLine([button.char.code]);
+			this.sendKey([button.char.code]);
 		}
 		setAlt(button) {
 			if (!this.alt) {
@@ -787,7 +816,7 @@ const Keyboard = GObject.registerClass({
 						}
 					}
 				});
-				this.spawnCommandLine([button.char.code]);
+				this.sendKey([button.char.code]);
 			}
 			this.setNormMod(button);
 		}
@@ -824,7 +853,7 @@ const Keyboard = GObject.registerClass({
 						}
 					}
 				});
-				this.spawnCommandLine([button.char.code]);
+				this.sendKey([button.char.code]);
 			}
 			this.setNormMod(button);
 		}
@@ -833,7 +862,7 @@ const Keyboard = GObject.registerClass({
 				this.mod.splice(this.mod.indexOf(button.char.code), this.mod.indexOf(button.char.code) + 1);
 				button.remove_style_class_name("selected");
 				this.modBtns.splice(this.modBtns.indexOf(button), this.modBtns.indexOf(button) + 1);
-				this.spawnCommandLine([button.char.code]);
+				this.sendKey([button.char.code]);
 			} else {
 				button.add_style_class_name("selected");
 				this.mod.push(button.char.code);
@@ -879,7 +908,5 @@ const Keyboard = GObject.registerClass({
 	});
 
 function init() {
-	log(`initializing ${Me.metadata.name}`);
-
 	return new Extension();
 }

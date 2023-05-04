@@ -12,12 +12,12 @@ const Me = ExtensionUtils.getCurrentExtension();
 const UIFolderPath = Me.dir.get_child('ui').get_path();
 
 function init() {
-	let iconTheme = Gtk.IconTheme.get_for_display(Gdk.Display.get_default());
-	iconTheme.add_search_path(UIFolderPath + `/icons`);
+
 }
 
 function fillPreferencesWindow(window) {
-
+	let iconTheme = Gtk.IconTheme.get_for_display(Gdk.Display.get_default());
+	iconTheme.add_search_path(UIFolderPath + `/icons`);
 	const settings = ExtensionUtils.getSettings('org.gnome.shell.extensions.gjsosk');
 
 	const page1 = new Adw.PreferencesPage({
