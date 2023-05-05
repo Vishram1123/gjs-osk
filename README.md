@@ -1,4 +1,4 @@
-# GJS OSK
+# [GJS OSK](https://extensions.gnome.org/extension/5949/gjs-osk/)
 A (marginally) better on screen keyboard for GNOME 43+
 # Update
 Sorry, I haven't been able to make progress on the keyboard - I have been busy with school work and life. I will get back to this as soon as possible.
