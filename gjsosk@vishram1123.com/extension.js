@@ -308,6 +308,8 @@ const Keyboard = GObject.registerClass({
 				duration: 100,
 				mode: Clutter.AnimationMode.EASE_OUT_QUAD,
 				onComplete: () => {
+					clearTimeout(this.stateTimeout);
+					this.stateTimeout = null;
 					this.stateTimeout = setTimeout(() => {
 						this.state = "opened"
 					}, 500);
@@ -335,6 +337,8 @@ const Keyboard = GObject.registerClass({
 					this.set_translation(posX, posY, 0);
 					this.opened = false;
 					this.hide();
+					clearTimeout(this.stateTimeout);
+					this.stateTimeout = null;
 					this.stateTimeout = setTimeout(() => {
 						this.state = "closed"
 					}, 500);
@@ -701,6 +705,8 @@ const Keyboard = GObject.registerClass({
 				for (var i = 0; i < keys.length; i++) {
 					this.inputDevice.notify_key(Clutter.get_current_event_time(), keys[i], Clutter.KeyState.PRESSED);
 				}
+				clearTimeout(this.keysTimeout);
+				this.keysTimeout = null;
 				this.keyTimeout = setTimeout(() => {
 					for (var j = keys.length - 1; j >= 0; j--) {
 						this.inputDevice.notify_key(Clutter.get_current_event_time(), keys[j], Clutter.KeyState.RELEASED);
