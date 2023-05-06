@@ -22,7 +22,7 @@ Sorry, I haven't been able to make progress on the keyboard - I have been busy w
 3. Log out of GNOME and log back in
 4. Click on the keyboard button in the dash bar
 ## Usage
-- To drag the keyboard around, drag the outer edge of the keyboard around the screen, and then let go.
+- To drag the keyboard around, click on the move icon in the bottom right, then drag the keyboard around the screen. To get the full keyboard back, press the move icon again.
   - The keyboard will snap to the corners, edges, and center of the screen.
 - To change properties about the keyboard, open up the "Extensions" application, and click on "Settings" under this extension to get a list of changeable properties
   - Close the settings dialog to save any modified settings
