@@ -17,6 +17,10 @@ Sorry, I haven't been able to make progress on the keyboard - I have been busy w
 [Settings Demo.webm](https://user-images.githubusercontent.com/64966832/210458854-eb458311-3d3f-4edb-93df-f5b8334d4cbc.webm)
 
 ## Install
+1. Visit [https://extensions.gnome.org/extension/5949/gjs-osk/](https://extensions.gnome.org/extension/5949/gjs-osk/)
+2. Confirming that you have Chrome GNOME shell installed on your computer and your browser's GNOME Shell Integration plugin
+3. Click Install, and accept the prompt
+## Install from Source
 1. Clone this repo (or download as zip)
 2. Copy `gjsosk@vishram1123.com/` to `~/.local/share/gnome-shell/extensions/`
 3. Log out of GNOME and log back in
