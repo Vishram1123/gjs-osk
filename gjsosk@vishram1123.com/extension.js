@@ -98,8 +98,10 @@ const Keyboard = GObject.registerClass({
 			this.buildUI();
 			this.draggable = false;
 			this.add_child(this.box);
-			this.init = KeyboardManager.getKeyboardManager()._current.id;
-			this.initLay = Object.keys(KeyboardManager.getKeyboardManager()._layoutInfos);
+			this.startupTimeout = setTimeout(() => {
+				this.init = KeyboardManager.getKeyboardManager()._current.id;
+				this.initLay = Object.keys(KeyboardManager.getKeyboardManager()._layoutInfos);
+			}, 200); 
 			this.close();
 			this.mod = [];
 			this.modBtns = [];
@@ -116,12 +118,22 @@ const Keyboard = GObject.registerClass({
 			this.inputDevice = Clutter.get_default_backend().get_default_seat().create_virtual_device(Clutter.InputDeviceType.KEYBOARD_DEVICE);
 		}
 		destroy() {
-			clearInterval(this.monitorChecker);
-			this.monitorChecker = null;
-			clearTimeout(this.stateTimeout);
-			this.stateTimeout = null;
-			clearTimeout(this.keyTimeout);
-			this.keyTimeout = null
+			if (this.startupTimeout !== null && this.startupTimeout <= 4294967295) {
+				clearInterval(this.startupTimeout);
+				this.startupTimeout = null;
+			}
+			if (this.monitorChecker !== null && this.monitorChecker <= 4294967295) {
+				clearInterval(this.monitorChecker);
+				this.monitorChecker = null;
+			}
+			if (this.stateTimeout !== null && this.stateTimeout <= 4294967295) {
+				clearTimeout(this.stateTimeout);
+				this.stateTimeout = null;
+			}
+			if (this.keyTimeout !== null && this.keyTimeout <= 4294967295) {
+				clearTimeout(this.keyTimeout);
+				this.keyTimeout = null;
+			}
 			super.destroy();
 
 		}
@@ -275,8 +287,14 @@ const Keyboard = GObject.registerClass({
 					});
 				}
 			});
-			this.init = KeyboardManager.getKeyboardManager()._current.id;
-			this.initLay = Object.keys(KeyboardManager.getKeyboardManager()._layoutInfos);
+			if (this.startupTimeout !== null && this.startupTimeout <= 4294967295) {
+				clearInterval(this.startupTimeout);
+				this.startupTimeout = null;
+			}
+			this.startupTimeout = setTimeout(() => {
+				this.init = KeyboardManager.getKeyboardManager()._current.id;
+				this.initLay = Object.keys(KeyboardManager.getKeyboardManager()._layoutInfos);
+			}, 200); 
 			this.close();
 			this.mod = [];
 			this.modBtns = [];
@@ -291,8 +309,14 @@ const Keyboard = GObject.registerClass({
 		}
 		open() {
 			this.inputDevice = Clutter.get_default_backend().get_default_seat().create_virtual_device(Clutter.InputDeviceType.KEYBOARD_DEVICE);
-			this.init = KeyboardManager.getKeyboardManager()._current.id;
-			this.initLay = Object.keys(KeyboardManager.getKeyboardManager()._layoutInfos);
+			if (this.startupTimeout !== null && this.startupTimeout <= 4294967295) {
+				clearInterval(this.startupTimeout);
+				this.startupTimeout = null;
+			}
+			this.startupTimeout = setTimeout(() => {
+				this.init = KeyboardManager.getKeyboardManager()._current.id;
+				this.initLay = Object.keys(KeyboardManager.getKeyboardManager()._layoutInfos);
+			}, 200); 
 			let newLay = this.initLay;
 			if (!newLay.includes(["us", "fr+azerty", "us+dvorak", "de+dsb_qwertz"][this.settings.get_int("lang")])) {
 				newLay.push(["us", "fr+azerty", "us+dvorak", "de+dsb_qwertz"][this.settings.get_int("lang")]);
@@ -308,8 +332,10 @@ const Keyboard = GObject.registerClass({
 				duration: 100,
 				mode: Clutter.AnimationMode.EASE_OUT_QUAD,
 				onComplete: () => {
-					clearTimeout(this.stateTimeout);
-					this.stateTimeout = null;
+					if (this.stateTimeout !== null && this.stateTimeout <= 4294967295) {
+						clearTimeout(this.stateTimeout);
+						this.stateTimeout = null;
+					}
 					this.stateTimeout = setTimeout(() => {
 						this.state = "opened"
 					}, 500);
@@ -322,8 +348,10 @@ const Keyboard = GObject.registerClass({
 			this.opened = true;
 		}
 		close() {
-			KeyboardManager.getKeyboardManager().setUserLayouts(this.initLay);
-			KeyboardManager.getKeyboardManager().apply(this.init);
+			if (this.initLay !== undefined && this.init !== undefined) {
+				KeyboardManager.getKeyboardManager().setUserLayouts(this.initLay);
+				KeyboardManager.getKeyboardManager().apply(this.init);
+			}
 			let monitor = Main.layoutManager.primaryMonitor;
 			let posX = [25, ((monitor.width * .5) - ((this.width * .5))), monitor.width - this.width - 25][(this.settings.get_int("default-snap") % 3)];
 			let posY = [25, ((monitor.height * .5) - ((this.height * .5))), monitor.height - this.height - 25][Math.floor((this.settings.get_int("default-snap") / 3))];
@@ -337,8 +365,10 @@ const Keyboard = GObject.registerClass({
 					this.set_translation(posX, posY, 0);
 					this.opened = false;
 					this.hide();
-					clearTimeout(this.stateTimeout);
-					this.stateTimeout = null;
+					if (this.stateTimeout !== null && this.stateTimeout <= 4294967295) {
+						clearTimeout(this.stateTimeout);
+						this.stateTimeout = null;
+					}
 					this.stateTimeout = setTimeout(() => {
 						this.state = "closed"
 					}, 500);
@@ -705,8 +735,10 @@ const Keyboard = GObject.registerClass({
 				for (var i = 0; i < keys.length; i++) {
 					this.inputDevice.notify_key(Clutter.get_current_event_time(), keys[i], Clutter.KeyState.PRESSED);
 				}
-				clearTimeout(this.keysTimeout);
-				this.keysTimeout = null;
+				if (this.keyTimeout !== null && this.keyTimeout <= 4294967295) {
+				    clearTimeout(this.keyTimeout);
+				    this.keyTimeout = null;
+			    }
 				this.keyTimeout = setTimeout(() => {
 					for (var j = keys.length - 1; j >= 0; j--) {
 						this.inputDevice.notify_key(Clutter.get_current_event_time(), keys[j], Clutter.KeyState.RELEASED);
