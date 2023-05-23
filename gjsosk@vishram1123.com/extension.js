@@ -104,7 +104,7 @@ const Keyboard = GObject.registerClass({
 				this.initLay = Object.keys(KeyboardManager.getKeyboardManager()._layoutInfos);
 				this.close();
 			}, 200); 
-			this.set_name("osk-gjs")
+			this.box.set_name("osk-gjs")
 			this.mod = [];
 			this.modBtns = [];
 			this.capsL = false;
@@ -275,20 +275,13 @@ const Keyboard = GObject.registerClass({
 		}
 		checkTextbox() {
 			/*console.log("textbox");
-			function onChanged(event) {
-				let focusedActor = event.source;
-				if (focusedActor.get_role_name() == "text") {
-					this.open();
-				} else if (focusedActor.get_name() != "osk-gjs") {
-					this.close();
-				}
-			}
-
-			Atspi.init();
-			let atspiListener = Atspi.EventListener.new(onChanged);
-			atspiListener.register("object:state-changed:focused");
-			Atspi.event_main();*/
+			setInterval(() => {
+				let focus = global.stage.get_key_focus();
+				console.log(focus instanceof Clutter.Text);
+				
+			}, 200);*/
 		}
+		
 		refresh() {
 			let monitor = Main.layoutManager.primaryMonitor;
 			this.box.remove_all_children();
@@ -317,6 +310,10 @@ const Keyboard = GObject.registerClass({
 			this.startupTimeout = setTimeout(() => {
 				this.init = KeyboardManager.getKeyboardManager()._current.id;
 				this.initLay = Object.keys(KeyboardManager.getKeyboardManager()._layoutInfos);
+				if (this.initLay == undefined || this.init == undefined) { 
+					this.refresh();
+					return;
+				}
 				this.close();
 			}, 200); 
 			this.mod = [];
@@ -339,6 +336,10 @@ const Keyboard = GObject.registerClass({
 			this.startupTimeout = setTimeout(() => {
 				this.init = KeyboardManager.getKeyboardManager()._current.id;
 				this.initLay = Object.keys(KeyboardManager.getKeyboardManager()._layoutInfos);
+				if (this.initLay == undefined || this.init == undefined) { 
+					this.open();
+					return;
+				}
 				let newLay = this.initLay;
 				if (!newLay.includes(["us", "fr+azerty", "us+dvorak", "de+dsb_qwertz"][this.settings.get_int("lang")])) {
 					newLay.push(["us", "fr+azerty", "us+dvorak", "de+dsb_qwertz"][this.settings.get_int("lang")]);
