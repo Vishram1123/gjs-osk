@@ -88,37 +88,41 @@ const Keyboard = GObject.registerClass({
 	},
 	class Keyboard extends imports.ui.dialog.Dialog {
 		_init(settings) {
-			this.settings = settings;
-			let monitor = Main.layoutManager.primaryMonitor;
-			super._init(Main.layoutManager.modalDialogGroup, 'db-keyboard-content');
-			this.box = new St.BoxLayout({
-				vertical: true
-			});
-			this.widthPercent = (monitor.width > monitor.height) ? settings.get_int("landscape-width-percent") / 100 : settings.get_int("portrait-width-percent") / 100;
-			this.heightPercent = (monitor.width > monitor.height) ? settings.get_int("landscape-height-percent") / 100 : settings.get_int("portrait-height-percent") / 100;
-			this.buildUI();
-			this.draggable = false;
-			this.add_child(this.box);
-			this.startupTimeout = setTimeout(() => {
+			this.startupInterval = setInterval(() => {
 				this.init = KeyboardManager.getKeyboardManager()._current.id;
 				this.initLay = Object.keys(KeyboardManager.getKeyboardManager()._layoutInfos);
+				if (this.initLay == undefined || this.init == undefined) { 
+					return;
+				}
+				this.settings = settings;
+				let monitor = Main.layoutManager.primaryMonitor;
+				super._init(Main.layoutManager.modalDialogGroup, 'db-keyboard-content');
+				this.box = new St.BoxLayout({
+					vertical: true
+				});
+				this.widthPercent = (monitor.width > monitor.height) ? settings.get_int("landscape-width-percent") / 100 : settings.get_int("portrait-width-percent") / 100;
+				this.heightPercent = (monitor.width > monitor.height) ? settings.get_int("landscape-height-percent") / 100 : settings.get_int("portrait-height-percent") / 100;
+				this.buildUI();
+				this.draggable = false;
+				this.add_child(this.box);
 				this.close();
+				this.box.set_name("osk-gjs")
+				this.mod = [];
+				this.modBtns = [];
+				this.capsL = false;
+				this.shift = false;
+				this.alt = false;
+				this.box.add_style_class_name("boxLay");
+				this.box.set_style("background-color: rgb(" + settings.get_double("background-r") + "," + settings.get_double("background-g") + "," + settings.get_double("background-b") + ");")
+				this.opened = false;
+				this.state = "closed";
+				this.delta = [];
+				this.checkMonitor();
+				this.checkTextbox();
+				this._dragging = false;
+				this.inputDevice = Clutter.get_default_backend().get_default_seat().create_virtual_device(Clutter.InputDeviceType.KEYBOARD_DEVICE);
+				clearInterval(this.startupInterval);
 			}, 200); 
-			this.box.set_name("osk-gjs")
-			this.mod = [];
-			this.modBtns = [];
-			this.capsL = false;
-			this.shift = false;
-			this.alt = false;
-			this.box.add_style_class_name("boxLay");
-			this.box.set_style("background-color: rgb(" + settings.get_double("background-r") + "," + settings.get_double("background-g") + "," + settings.get_double("background-b") + ");")
-			this.opened = false;
-			this.state = "closed";
-			this.delta = [];
-			this.checkMonitor();
-			this.checkTextbox();
-			this._dragging = false;
-			this.inputDevice = Clutter.get_default_backend().get_default_seat().create_virtual_device(Clutter.InputDeviceType.KEYBOARD_DEVICE);
 		}
 		destroy() {
 			if (this.startupTimeout !== null && this.startupTimeout <= 4294967295) {
@@ -275,11 +279,10 @@ const Keyboard = GObject.registerClass({
 		}
 		checkTextbox() {
 			/*console.log("textbox");
-			setInterval(() => {
-				let focus = global.stage.get_key_focus();
+			this._focusNotifyId = global.stage.connect('notify::key-focus', () => {
+				let focus = global.stage.key_focus;
 				console.log(focus instanceof Clutter.Text);
-				
-			}, 200);*/
+			});*/
 		}
 		
 		refresh() {
