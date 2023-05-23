@@ -4,7 +4,8 @@ const {
 	Gio,
 	Clutter,
 	Shell,
-	GLib
+	GLib,
+	Atspi
 } = imports.gi;
 
 const ExtensionUtils = imports.misc.extensionUtils;
@@ -101,8 +102,9 @@ const Keyboard = GObject.registerClass({
 			this.startupTimeout = setTimeout(() => {
 				this.init = KeyboardManager.getKeyboardManager()._current.id;
 				this.initLay = Object.keys(KeyboardManager.getKeyboardManager()._layoutInfos);
+				this.close();
 			}, 200); 
-			this.close();
+			this.set_name("osk-gjs")
 			this.mod = [];
 			this.modBtns = [];
 			this.capsL = false;
@@ -114,6 +116,7 @@ const Keyboard = GObject.registerClass({
 			this.state = "closed";
 			this.delta = [];
 			this.checkMonitor();
+			this.checkTextbox();
 			this._dragging = false;
 			this.inputDevice = Clutter.get_default_backend().get_default_seat().create_virtual_device(Clutter.InputDeviceType.KEYBOARD_DEVICE);
 		}
@@ -125,6 +128,10 @@ const Keyboard = GObject.registerClass({
 			if (this.monitorChecker !== null && this.monitorChecker <= 4294967295) {
 				clearInterval(this.monitorChecker);
 				this.monitorChecker = null;
+			}
+			if (this.textboxChecker !== null && this.textboxChecker <= 4294967295) {
+				clearInterval(this.textboxChecker);
+				this.textboxChecker = null;
 			}
 			if (this.stateTimeout !== null && this.stateTimeout <= 4294967295) {
 				clearTimeout(this.stateTimeout);
@@ -266,6 +273,22 @@ const Keyboard = GObject.registerClass({
 				}
 			}, 200);
 		}
+		checkTextbox() {
+			/*console.log("textbox");
+			function onChanged(event) {
+				let focusedActor = event.source;
+				if (focusedActor.get_role_name() == "text") {
+					this.open();
+				} else if (focusedActor.get_name() != "osk-gjs") {
+					this.close();
+				}
+			}
+
+			Atspi.init();
+			let atspiListener = Atspi.EventListener.new(onChanged);
+			atspiListener.register("object:state-changed:focused");
+			Atspi.event_main();*/
+		}
 		refresh() {
 			let monitor = Main.layoutManager.primaryMonitor;
 			this.box.remove_all_children();
@@ -294,8 +317,8 @@ const Keyboard = GObject.registerClass({
 			this.startupTimeout = setTimeout(() => {
 				this.init = KeyboardManager.getKeyboardManager()._current.id;
 				this.initLay = Object.keys(KeyboardManager.getKeyboardManager()._layoutInfos);
+				this.close();
 			}, 200); 
-			this.close();
 			this.mod = [];
 			this.modBtns = [];
 			this.capsL = false;
@@ -316,36 +339,36 @@ const Keyboard = GObject.registerClass({
 			this.startupTimeout = setTimeout(() => {
 				this.init = KeyboardManager.getKeyboardManager()._current.id;
 				this.initLay = Object.keys(KeyboardManager.getKeyboardManager()._layoutInfos);
-			}, 200); 
-			let newLay = this.initLay;
-			if (!newLay.includes(["us", "fr+azerty", "us+dvorak", "de+dsb_qwertz"][this.settings.get_int("lang")])) {
-				newLay.push(["us", "fr+azerty", "us+dvorak", "de+dsb_qwertz"][this.settings.get_int("lang")]);
-				KeyboardManager.getKeyboardManager().setUserLayouts(newLay);
-			}
-			KeyboardManager.getKeyboardManager().apply(["us", "fr+azerty", "us+dvorak", "de+dsb_qwertz"][this.settings.get_int("lang")]);
-			KeyboardManager.getKeyboardManager().reapply();
-			this.state = "opening"
-			this.box.opacity = 0;
-			this.show();
-			this.box.ease({
-				opacity: 255,
-				duration: 100,
-				mode: Clutter.AnimationMode.EASE_OUT_QUAD,
-				onComplete: () => {
-					if (this.stateTimeout !== null && this.stateTimeout <= 4294967295) {
-						clearTimeout(this.stateTimeout);
-						this.stateTimeout = null;
-					}
-					this.stateTimeout = setTimeout(() => {
-						this.state = "opened"
-					}, 500);
-					let monitor = Main.layoutManager.primaryMonitor;
-					let posX = [25, ((monitor.width * .5) - ((this.width * .5))), monitor.width - this.width - 25][(this.settings.get_int("default-snap") % 3)];
-					let posY = [25, ((monitor.height * .5) - ((this.height * .5))), monitor.height - this.height - 25][Math.floor((this.settings.get_int("default-snap") / 3))];
-					this.set_translation(posX, posY, 0);
+				let newLay = this.initLay;
+				if (!newLay.includes(["us", "fr+azerty", "us+dvorak", "de+dsb_qwertz"][this.settings.get_int("lang")])) {
+					newLay.push(["us", "fr+azerty", "us+dvorak", "de+dsb_qwertz"][this.settings.get_int("lang")]);
+					KeyboardManager.getKeyboardManager().setUserLayouts(newLay);
 				}
-			});
-			this.opened = true;
+				KeyboardManager.getKeyboardManager().apply(["us", "fr+azerty", "us+dvorak", "de+dsb_qwertz"][this.settings.get_int("lang")]);
+				KeyboardManager.getKeyboardManager().reapply();
+				this.state = "opening"
+				this.box.opacity = 0;
+				this.show();
+				this.box.ease({
+					opacity: 255,
+					duration: 100,
+					mode: Clutter.AnimationMode.EASE_OUT_QUAD,
+					onComplete: () => {
+						if (this.stateTimeout !== null && this.stateTimeout <= 4294967295) {
+							clearTimeout(this.stateTimeout);
+							this.stateTimeout = null;
+						}
+						this.stateTimeout = setTimeout(() => {
+							this.state = "opened"
+						}, 500);
+						let monitor = Main.layoutManager.primaryMonitor;
+						let posX = [25, ((monitor.width * .5) - ((this.width * .5))), monitor.width - this.width - 25][(this.settings.get_int("default-snap") % 3)];
+						let posY = [25, ((monitor.height * .5) - ((this.height * .5))), monitor.height - this.height - 25][Math.floor((this.settings.get_int("default-snap") / 3))];
+						this.set_translation(posX, posY, 0);
+					}
+				});
+				this.opened = true;
+			}, 200); 
 		}
 		close() {
 			if (this.initLay !== undefined && this.init !== undefined) {
