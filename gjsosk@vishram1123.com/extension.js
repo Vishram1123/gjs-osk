@@ -4,8 +4,7 @@ const {
 	Gio,
 	Clutter,
 	Shell,
-	GLib,
-	Atspi
+	GLib
 } = imports.gi;
 
 const ExtensionUtils = imports.misc.extensionUtils;
@@ -60,6 +59,13 @@ class Extension {
 
 		this._indicator.connect("button-press-event", () => this._toggleKeyboard());
 		this._indicator.connect("touch-event", () => this._toggleKeyboard());
+		this.tapGesture = new Clutter.TapAction();
+		this.tapGesture.set_n_touch_points(3);
+		this.tapGesture.connect("tap", () => {
+			console.log(this.tapGesture.get_n_current_points());
+			this._toggleKeyboard();
+		});
+		global.stage.add_action(this.tapGesture)
 
 		Main.panel.addToStatusArea(indicatorName, this._indicator);
 		this.settingsHandler = this.settings.connect("changed", key => {
@@ -77,6 +83,7 @@ class Extension {
 		this.Keyboard.destroy();
 		this.settings.disconnect(this.settingsHandler);
 		this.settings = null;
+		global.stage.remove_action(this.tapGesture)
 	}
 }
 
@@ -278,11 +285,7 @@ const Keyboard = GObject.registerClass({
 			}, 200);
 		}
 		checkTextbox() {
-			/*console.log("textbox");
-			this._focusNotifyId = global.stage.connect('notify::key-focus', () => {
-				let focus = global.stage.key_focus;
-				console.log(focus instanceof Clutter.Text);
-			});*/
+			//working on it
 		}
 		
 		refresh() {
