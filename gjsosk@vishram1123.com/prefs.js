@@ -32,6 +32,7 @@ function fillPreferencesWindow(window) {
 	apply.connect("clicked", () => {
 		settings.set_int("lang", langDrop.selected);
 		settings.set_boolean("enable-drag", dragToggle.active);
+		settings.set_boolean("enable-tap-gesture", dragTogglet.active);
 		settings.set_int("portrait-width-percent", numChanger_pW.value);
 		settings.set_int("portrait-height-percent", numChanger_pH.value);
 		settings.set_int("landscape-width-percent", numChanger_lW.value);
@@ -77,6 +78,19 @@ function fillPreferencesWindow(window) {
 
 	row1.add_suffix(dragToggle);
 	row1.activatable_widget = dragToggle;
+	
+	const row1t5 = new Adw.ActionRow({
+		title: 'Enable four-finger tap gesture'
+	});
+	group1.add(row1t5);
+
+	const dragTogglet = new Gtk.Switch({
+		active: settings.get_boolean('enable-tap-gesture'),
+		valign: Gtk.Align.CENTER,
+	});
+
+	row1t5.add_suffix(dragTogglet);
+	row1t5.activatable_widget = dragTogglet;
 
 	const row2 = new Adw.ExpanderRow({
 		title: 'Portrait Sizing'
@@ -263,6 +277,7 @@ function fillPreferencesWindow(window) {
 	window.connect("close-request", () => {
 		settings.set_int("lang", langDrop.selected);
 		settings.set_boolean("enable-drag", dragToggle.active);
+		settings.set_boolean("enable-tap-gesture", dragTogglet.active);
 		settings.set_int("portrait-width-percent", numChanger_pW.value);
 		settings.set_int("portrait-height-percent", numChanger_pH.value);
 		settings.set_int("landscape-width-percent", numChanger_lW.value);
