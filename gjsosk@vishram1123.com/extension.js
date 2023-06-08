@@ -5,7 +5,7 @@ const {
 	Clutter,
 	Shell,
 	GLib,
-	Meta
+	Atk
 } = imports.gi;
 
 const ExtensionUtils = imports.misc.extensionUtils;
@@ -35,8 +35,12 @@ class Extension {
 	_toggleKeyboard() {
 		if (!this.Keyboard.opened) {
 			this._openKeyboard();
+			this.Keyboard.openedFromButton = true;
+			this.Keyboard.closedFromButton = false
 		} else {
 			this._closeKeyboard();
+			this.Keyboard.openedFromButton = false;
+			this.Keyboard.closedFromButton = true;
 		}
 	}
 	enable() {
@@ -59,52 +63,68 @@ class Extension {
 		this._indicator.add_child(icon);
 
 		this._indicator.connect("button-press-event", () => this._toggleKeyboard());
-		this._indicator.connect("touch-event", () => this._toggleKeyboard());
+		this._indicator.connect("touch-event", (_actor, event) => {
+			if (event.type() == 11) this._toggleKeyboard()
+		});
+		
 		
 		if (this.settings.get_boolean("enable-tap-gesture")) {
-			this.tapGesture = new Clutter.TapAction();
-			this.tapGesture.set_n_touch_points(3);
-			this.tapGesture.connect("tap", () => {
-				console.log(this.tapGesture.get_n_current_points());
-				this._toggleKeyboard();
-			});
-			global.stage.add_action(this.tapGesture)
+			this.open_interval();
 		}
 
 		Main.panel.addToStatusArea(indicatorName, this._indicator);
 		this.settingsHandler = this.settings.connect("changed", key => {
+			this.Keyboard.openedFromButton = false;
 			let [ok, contents] = GLib.file_get_contents(Me.path + '/keycodes.json');
 			if (ok) {
 				keycodes = JSON.parse(contents)[["qwerty", "azerty", "dvorak", "qwertz"][this.settings.get_int("lang")]];
 			}
 			this.Keyboard.refresh();
 			if (this.settings.get_boolean("enable-tap-gesture")) {
-				this.tapGesture = new Clutter.TapAction();
-				this.tapGesture.set_n_touch_points(3);
-				this.tapGesture.connect("tap", () => {
-					console.log(this.tapGesture.get_n_current_points());
-					this._toggleKeyboard();
-				});
-				global.stage.add_action(this.tapGesture)
-			} else {
-				if (this.tapGesture) {
-					global.stage.remove_action(this.tapGesture)
+				if (this.openInterval !== null) {
+					clearInterval(this.openInterval);
+					this.openInterval = null;
 				}
-				this.tapGesture = null
+				this.open_interval();
+			} else {
+				if (this.openInterval !== null) {
+					clearInterval(this.openInterval);
+					this.openInterval = null;
+				}
 			}
 		});
 	}
-
+	open_interval() {
+		this.openInterval = setInterval(() => {
+			this.Keyboard.get_parent().set_child_at_index(this.Keyboard, this.Keyboard.get_parent().get_n_children() - 1);
+			this.Keyboard.set_child_at_index(this.Keyboard.box, this.Keyboard.get_n_children() - 1);
+			if (!this.Keyboard.openedFromButton && this.lastInputMethodTouch) {	
+				if (Main.inputMethod.currentFocus != null && Main.inputMethod.currentFocus.is_focused() && !this.Keyboard.closedFromButton) {
+					this._openKeyboard();
+				} else if (!this.Keyboard.closedFromButton) {
+					this._closeKeyboard();
+					this.Keyboard.closedFromButton = false
+				} else if (Main.inputMethod.currentFocus == null) {
+					this.Keyboard.closedFromButton = false
+				}
+			}
+		}, 300);
+		global.stage.connect("event", (_actor, event) => {
+			if (event.type() !== 4 && event.type() !== 5) {
+				this.lastInputMethodTouch = event.type() >= 9 && event.type() <= 12
+			}
+		})
+	}
 	disable() {
 		this._indicator.destroy();
 		this._indicator = null;
 		this.Keyboard.destroy();
 		this.settings.disconnect(this.settingsHandler);
 		this.settings = null;
-		if (this.tapGesture) {
-			global.stage.remove_action(this.tapGesture)
+		if (this.openInterval !== null) {
+			clearInterval(this.openInterval);
+			this.openInterval = null;
 		}
-		this.tapGesture = null
 	}
 }
 
@@ -124,7 +144,7 @@ const Keyboard = GObject.registerClass({
 				}
 				this.settings = settings;
 				let monitor = Main.layoutManager.primaryMonitor;
-				super._init(Main.layoutManager.modalDialogGroup, 'db-keyboard-content');
+				super._init(Main.layoutManager.uiGroup, 'db-keyboard-content');
 				this.box = new St.BoxLayout({
 					vertical: true
 				});
@@ -146,7 +166,6 @@ const Keyboard = GObject.registerClass({
 				this.state = "closed";
 				this.delta = [];
 				this.checkMonitor();
-				this.checkTextbox();
 				this._dragging = false;
 				this.inputDevice = Clutter.get_default_backend().get_default_seat().create_virtual_device(Clutter.InputDeviceType.KEYBOARD_DEVICE);
 				clearInterval(this.startupInterval);
@@ -177,7 +196,7 @@ const Keyboard = GObject.registerClass({
 
 		}
 		vfunc_button_press_event() {
-			this.delta = [global.get_pointer()[0] - this.translation_x, global.get_pointer()[1] - this.translation_y];
+			this.delta = [Clutter.get_current_event().get_coords()[0] - this.translation_x, Clutter.get_current_event().get_coords()[1] - this.translation_y];
 			return this.startDragging(Clutter.get_current_event(), this.delta)
 		}
 		startDragging(event, delta) {
@@ -251,7 +270,9 @@ const Keyboard = GObject.registerClass({
 		}
 		motionEvent(event) {
 			if (this.draggable) {
+				console.log(event.type())
 				let [absX, absY] = event.get_coords();
+				console.log(event.get_coords());
 				this.snapMovement(absX - this.delta[0], absY - this.delta[1]);
 				return Clutter.EVENT_STOP
 			} else {
@@ -305,10 +326,6 @@ const Keyboard = GObject.registerClass({
 				}
 			}, 200);
 		}
-		checkTextbox() {
-			//working on it
-		}
-		
 		refresh() {
 			let monitor = Main.layoutManager.primaryMonitor;
 			this.box.remove_all_children();
@@ -425,6 +442,7 @@ const Keyboard = GObject.registerClass({
 					}, 500);
 				},
 			});
+			this.openedFromButton = false
 		}
 		buildUI() {
 			this.keys = [];
@@ -697,7 +715,7 @@ const Keyboard = GObject.registerClass({
 							})
 						}
 					})
-					btn6.connect("clicked", () => this.close());
+					btn6.connect("clicked", () => { this.close(); this.closedFromButton = true; });
 					btn1.char = (keycodes.row6[keycodes.row6.length - 1])[0]
 					btn2.char = (keycodes.row6[keycodes.row6.length - 1])[1]
 					btn3.char = (keycodes.row6[keycodes.row6.length - 1])[2]

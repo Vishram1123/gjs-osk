@@ -80,7 +80,7 @@ function fillPreferencesWindow(window) {
 	row1.activatable_widget = dragToggle;
 	
 	const row1t5 = new Adw.ActionRow({
-		title: 'Enable four-finger tap gesture'
+		title: 'Open upon clicking in a text field'
 	});
 	group1.add(row1t5);
 
