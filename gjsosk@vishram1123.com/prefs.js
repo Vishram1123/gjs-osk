@@ -32,7 +32,8 @@ function fillPreferencesWindow(window) {
 	apply.connect("clicked", () => {
 		settings.set_int("lang", langDrop.selected);
 		settings.set_boolean("enable-drag", dragToggle.active);
-		settings.set_boolean("enable-tap-gesture", dragTogglet.active);
+		settings.set_int("enable-tap-gesture", dragOpt.selected);
+		settings.set_boolean("indicator-enabled", indEnabled.selected);
 		settings.set_int("portrait-width-percent", numChanger_pW.value);
 		settings.set_int("portrait-height-percent", numChanger_pH.value);
 		settings.set_int("landscape-width-percent", numChanger_lW.value);
@@ -79,19 +80,33 @@ function fillPreferencesWindow(window) {
 	row1.add_suffix(dragToggle);
 	row1.activatable_widget = dragToggle;
 	
+	const row1t3 = new Adw.ActionRow({
+		title: 'Enable Panel Indicator'
+	});
+	group1.add(row1t3);
+
+	const indEnabled = new Gtk.Switch({
+		active: settings.get_boolean("indicator-enabled"),
+		valign: Gtk.Align.CENTER,
+	});
+
+	row1t3.add_suffix(indEnabled);
+	row1t3.activatable_widget = indEnabled;
+	
 	const row1t5 = new Adw.ActionRow({
 		title: 'Open upon clicking in a text field'
 	});
 	group1.add(row1t5);
 
-	const dragTogglet = new Gtk.Switch({
-		active: settings.get_boolean('enable-tap-gesture'),
-		valign: Gtk.Align.CENTER,
-	});
 
-	row1t5.add_suffix(dragTogglet);
-	row1t5.activatable_widget = dragTogglet;
+	let dragOptList = ["Never", "Only on Touch", "Always"];
+	let dragOpt = Gtk.DropDown.new_from_strings(dragOptList);
+	dragOpt.valign = Gtk.Align.CENTER;
+	dragOpt.selected = settings.get_int("enable-tap-gesture");
 
+	row1t5.add_suffix(dragOpt);
+	row1t5.activatable_widget = dragOpt;
+	
 	const row2 = new Adw.ExpanderRow({
 		title: 'Portrait Sizing'
 	});
@@ -167,7 +182,7 @@ function fillPreferencesWindow(window) {
 	const row5 = new Adw.ActionRow({
 		title: 'Color'
 	});
-	group2.add(row5);
+	group2.add(row5);settings.set_boolean("enable-tap-gesture", dragOpt.selected);
 
 	let rgba = new Gdk.RGBA();
 	rgba.parse("rgba(" + settings.get_double("background-r") + ", " + settings.get_double("background-g") + ", " + settings.get_double("background-b") + ", 1)");
@@ -277,7 +292,8 @@ function fillPreferencesWindow(window) {
 	window.connect("close-request", () => {
 		settings.set_int("lang", langDrop.selected);
 		settings.set_boolean("enable-drag", dragToggle.active);
-		settings.set_boolean("enable-tap-gesture", dragTogglet.active);
+		settings.set_int("enable-tap-gesture", dragOpt.selected);
+		settings.set_boolean("indicator-enabled", indEnabled.selected);
 		settings.set_int("portrait-width-percent", numChanger_pW.value);
 		settings.set_int("portrait-height-percent", numChanger_pH.value);
 		settings.set_int("landscape-width-percent", numChanger_lW.value);

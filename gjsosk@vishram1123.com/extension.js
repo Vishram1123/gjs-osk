@@ -15,6 +15,52 @@ const PanelMenu = imports.ui.panelMenu;
 const ByteArray = imports.byteArray;
 const Signals = imports.misc.signals;
 const KeyboardManager = imports.misc.keyboardManager;
+const QuickSettings = imports.ui.quickSettings;
+const PopupMenu = imports.ui.popupMenu;
+const QuickSettingsMenu = imports.ui.main.panel.statusArea.quickSettings;
+
+
+const KeyboardMenuToggle = GObject.registerClass(
+class KeyboardMenuToggle extends QuickSettings.QuickMenuToggle {
+    _init(settings) {
+        super._init({
+            title: 'Screen Keyboard',
+            iconName: 'input-keyboard-symbolic',
+            toggleMode: true,
+        });
+        this.menu.setHeader('input-keyboard-symbolic', 'Screen Keyboard',
+            'Opening Mode');
+		this.settings = settings;
+        this._itemsSection = new PopupMenu.PopupMenuSection();
+		this._itemsSection.addMenuItem(new PopupMenu.PopupImageMenuItem('Never', this.settings.get_int("enable-tap-gesture") == 0 ? 'emblem-ok-symbolic' : null));
+		this._itemsSection.addMenuItem(new PopupMenu.PopupImageMenuItem("Only on Touch", this.settings.get_int("enable-tap-gesture")  == 1 ? 'emblem-ok-symbolic' : null));
+		this._itemsSection.addMenuItem(new PopupMenu.PopupImageMenuItem("Always", this.settings.get_int("enable-tap-gesture")  == 2 ? 'emblem-ok-symbolic' : null));
+        for (var i in this._itemsSection._getMenuItems()){
+			const item = this._itemsSection._getMenuItems()[i]
+			const num = i
+			item.connect('activate', () => settings.set_int("enable-tap-gesture", num))
+		}
+        
+        this.menu.addMenuItem(this._itemsSection);
+		this.settings.bind('indicator-enabled',
+            this, 'checked',
+            Gio.SettingsBindFlags.DEFAULT);
+        this.menu.addMenuItem(new PopupMenu.PopupSeparatorMenuItem());
+        const settingsItem = this.menu.addAction('More Settings',
+            () => ExtensionUtils.openPrefs());
+        settingsItem.visible = Main.sessionMode.allowSettings;
+        this.menu._settingsActions[Extension.uuid] = settingsItem;
+
+        QuickSettingsMenu._addItems([this]);
+       
+    }
+    _refresh() {
+		for (var i in this._itemsSection._getMenuItems()){
+			this._itemsSection._getMenuItems()[i].setIcon(this.settings.get_int("enable-tap-gesture") == i ? 'emblem-ok-symbolic' : null)
+		}
+	}
+});
+
 
 let keycodes;
 
@@ -50,29 +96,32 @@ class Extension {
 		if (ok) {
 			keycodes = JSON.parse(contents)[['qwerty', 'azerty', 'dvorak', "qwertz"][this.settings.get_int("lang")]];
 		}
-
-		let indicatorName = `${Me.metadata.name} Indicator`;
 		this.Keyboard = new Keyboard(this.settings);
-		this._indicator = new PanelMenu.Button(0.0, indicatorName, false);
-		let icon = new St.Icon({
-			gicon: new Gio.ThemedIcon({
-				name: 'input-keyboard-symbolic'
-			}),
-			style_class: 'system-status-icon'
-		});
-		this._indicator.add_child(icon);
-
-		this._indicator.connect("button-press-event", () => this._toggleKeyboard());
-		this._indicator.connect("touch-event", (_actor, event) => {
-			if (event.type() == 11) this._toggleKeyboard()
-		});
+		
+		if (this.settings.get_boolean("indicator-enabled")) {
+			this._indicator = new PanelMenu.Button(0.0, "${Me.metadata.name} Indicator", false);
+			let icon = new St.Icon({
+				gicon: new Gio.ThemedIcon({
+					name: 'input-keyboard-symbolic'
+				}),
+				style_class: 'system-status-icon'
+			});
+			this._indicator.add_child(icon);
+			
+			this._indicator.connect("button-press-event", () => this._toggleKeyboard());
+			this._indicator.connect("touch-event", (_actor, event) => {
+				if (event.type() == 11) this._toggleKeyboard()
+			});
+			Main.panel.addToStatusArea("${Me.metadata.name} Indicator", this._indicator);
+		}
+		
+		this._toggle = new KeyboardMenuToggle(this.settings);
 		
 		
-		if (this.settings.get_boolean("enable-tap-gesture")) {
+		if (this.settings.get_int("enable-tap-gesture") > 0) {
 			this.open_interval();
 		}
 
-		Main.panel.addToStatusArea(indicatorName, this._indicator);
 		this.settingsHandler = this.settings.connect("changed", key => {
 			this.Keyboard.openedFromButton = false;
 			let [ok, contents] = GLib.file_get_contents(Me.path + '/keycodes.json');
@@ -80,13 +129,43 @@ class Extension {
 				keycodes = JSON.parse(contents)[["qwerty", "azerty", "dvorak", "qwertz"][this.settings.get_int("lang")]];
 			}
 			this.Keyboard.refresh();
-			if (this.settings.get_boolean("enable-tap-gesture")) {
+			this._toggle._refresh();
+			
+			if (this.settings.get_boolean("indicator-enabled")) {
+				if (this._indicator != null) {
+					this._indicator.destroy();
+					this._indicator = null;
+				}
+				this._indicator = new PanelMenu.Button(0.0, "${Me.metadata.name} Indicator", false);
+				let icon = new St.Icon({
+					gicon: new Gio.ThemedIcon({
+						name: 'input-keyboard-symbolic'
+					}),
+					style_class: 'system-status-icon'
+				});
+				this._indicator.add_child(icon);
+				
+				this._indicator.connect("button-press-event", () => this._toggleKeyboard());
+				this._indicator.connect("touch-event", (_actor, event) => {
+					if (event.type() == 11) this._toggleKeyboard()
+				});
+				Main.panel.addToStatusArea("${Me.metadata.name} Indicator", this._indicator);
+			} else {
+				if (this._indicator != null) {
+					this._indicator.destroy();
+					this._indicator = null;
+				}
+			}
+			
+			if (this.settings.get_int("enable-tap-gesture") > 0) {
+				global.stage.disconnect("event")
 				if (this.openInterval !== null) {
 					clearInterval(this.openInterval);
 					this.openInterval = null;
 				}
 				this.open_interval();
 			} else {
+				global.stage.disconnect("event")
 				if (this.openInterval !== null) {
 					clearInterval(this.openInterval);
 					this.openInterval = null;
@@ -98,7 +177,7 @@ class Extension {
 		this.openInterval = setInterval(() => {
 			this.Keyboard.get_parent().set_child_at_index(this.Keyboard, this.Keyboard.get_parent().get_n_children() - 1);
 			this.Keyboard.set_child_at_index(this.Keyboard.box, this.Keyboard.get_n_children() - 1);
-			if (!this.Keyboard.openedFromButton && this.lastInputMethodTouch) {	
+			if (!this.Keyboard.openedFromButton && this.lastInputMethod) {	
 				if (Main.inputMethod.currentFocus != null && Main.inputMethod.currentFocus.is_focused() && !this.Keyboard.closedFromButton) {
 					this._openKeyboard();
 				} else if (!this.Keyboard.closedFromButton) {
@@ -111,20 +190,25 @@ class Extension {
 		}, 300);
 		global.stage.connect("event", (_actor, event) => {
 			if (event.type() !== 4 && event.type() !== 5) {
-				this.lastInputMethodTouch = event.type() >= 9 && event.type() <= 12
+				this.lastInputMethod = [false, event.type() >= 9 && event.type() <= 12, true][this.settings.get_int("enable-tap-gesture")]
 			}
 		})
 	}
 	disable() {
-		this._indicator.destroy();
-		this._indicator = null;
+		if (this._indicator !== null) {
+			this._indicator.destroy();
+			this._indicator = null;
+		}
 		this.Keyboard.destroy();
 		this.settings.disconnect(this.settingsHandler);
 		this.settings = null;
+		global.stage.disconnect("event")
 		if (this.openInterval !== null) {
 			clearInterval(this.openInterval);
 			this.openInterval = null;
 		}
+		this._toggle.destroy()
+		this._toggle = null
 	}
 }
 
