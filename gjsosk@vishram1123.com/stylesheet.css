@@ -25,9 +25,29 @@
      margin: inherit;
      box-sizing: border-box;
 }
- .boxLay:dragging {
+ .boxLay.regular:dragging {
      background-image: url(ui/icons/hicolor/scalable/actions/move.svg);
      background-size: 100px;
+}
+.boxLay.inverted:dragging {
+     background-image: url(ui/icons/hicolor/scalable/actions/move-dark.svg);
+     background-size: 100px;
+}
+.close_btn, .move_btn {
+     background-repeat: no-repeat;
+     background-position: center;
+}
+.close_btn.regular {
+	 background-image: url(ui/icons/hicolor/scalable/actions/close.svg);
+}
+.close_btn.inverted {
+	 background-image: url(ui/icons/hicolor/scalable/actions/close-dark.svg);
+}
+.move_btn.regular {
+	 background-image: url(ui/icons/hicolor/scalable/actions/move.svg);
+}
+.move_btn.inverted {
+	 background-image: url(ui/icons/hicolor/scalable/actions/move-dark.svg);
 }
  .keyActionBtns {
      background-color: rgba(255, 255, 255, 0.00);

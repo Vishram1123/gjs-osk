@@ -117,7 +117,8 @@ export default class GjsOskExtension extends Extension {
 			keycodes = JSON.parse(contents)[['qwerty', 'azerty', 'dvorak', "qwertz"][this.settings.get_int("lang")]];
 		}
 		this.Keyboard = new Keyboard(this.settings);
-		
+		this._indicator = null;
+		this.openInterval = null;
 		if (this.settings.get_boolean("indicator-enabled")) {
 			this._indicator = new PanelMenu.Button(0.0, "${this.metadata.name} Indicator", false);
 			let icon = new St.Icon({
@@ -432,12 +433,13 @@ class Keyboard extends Dialog {
 	refresh() {
 		let monitor = Main.layoutManager.primaryMonitor;
 		this.box.remove_all_children();
+                this.box.set_style_class_name("boxLay")
 		this.widthPercent = (monitor.width > monitor.height) ? this.settings.get_int("landscape-width-percent") / 100 : this.settings.get_int("portrait-width-percent") / 100;
 		this.heightPercent = (monitor.width > monitor.height) ? this.settings.get_int("landscape-height-percent") / 100 : this.settings.get_int("portrait-height-percent") / 100;
 		this.buildUI();
 		this.draggable = false;
 		this.keys.forEach(keyholder => {
-			if (keyholder.label != "🕂") {
+			if (!keyholder.has_style_class_name("move_btn")) {
 				keyholder.set_opacity(0);
 				keyholder.ease({
 					opacity: 255,
@@ -772,12 +774,10 @@ class Keyboard extends Dialog {
 					label: (keycodes.row6[keycodes.row6.length - 1])[3].lowerName
 				});
 				gbox.add_child(btn4);
-				var btn5 = new St.Button({
-					label: "🕂",
-				});
-				var btn6 = new St.Button({
-					label: "🗙",
-				});
+				var btn5 = new St.Button();
+				btn5.add_style_class_name("move_btn")
+				var btn6 = new St.Button();
+				btn6.add_style_class_name("close_btn")
 				if (this.settings.get_boolean("enable-drag")) {
 					gbox.add_child(btn5);
 				}
@@ -790,7 +790,7 @@ class Keyboard extends Dialog {
 					if (this.settings.get_boolean("enable-drag")) {
 						this.draggable = !this.draggable;
 						this.keys.forEach(keyholder => {
-							if (keyholder.label != "🕂") {
+							if (!keyholder.has_style_class_name("move_btn")) {
 								keyholder.set_opacity(this.draggable ? 255 : 0);
 								keyholder.ease({
 									opacity: this.draggable ? 0 : 255,
@@ -881,10 +881,15 @@ class Keyboard extends Dialog {
 		this.box.add_child(row5);
 		this.box.add_child(row6);
 		var containers_ = this.box.get_children();
+                if (this.lightOrDark(this.settings.get_double("background-r"), this.settings.get_double("background-g"), this.settings.get_double("background-b"))) {
+			this.box.add_style_class_name("inverted");
+		} else {
+			this.box.add_style_class_name("regular");
+		}
 		this.keys.forEach(item => {
 			item.width -= this.settings.get_int("border-spacing-px") * 2;
 			item.height -= this.settings.get_int("border-spacing-px") * 2;
-			item.set_style("margin: " + this.settings.get_int("border-spacing-px") + "px; font-size: " + this.settings.get_int("font-size-px") + "px; border-radius: " + (this.settings.get_boolean("round-key-corners") ? "5px;" : "0;"));
+			item.set_style("margin: " + this.settings.get_int("border-spacing-px") + "px; font-size: " + this.settings.get_int("font-size-px") + "px; border-radius: " + (this.settings.get_boolean("round-key-corners") ? "5px;" : "0;"));item.set_style("margin: " + this.settings.get_int("border-spacing-px") + "px; font-size: " + this.settings.get_int("font-size-px") + "px; border-radius: " + (this.settings.get_boolean("round-key-corners") ? "5px;" : "0;") + "background-size: " + this.settings.get_int("font-size-px") + "px;");
 			if (this.lightOrDark(this.settings.get_double("background-r"), this.settings.get_double("background-g"), this.settings.get_double("background-b"))) {
 				item.add_style_class_name("inverted");
 			} else {
