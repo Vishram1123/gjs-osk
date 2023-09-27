@@ -1,5 +1,5 @@
 # [GJS OSK](https://extensions.gnome.org/extension/5949/gjs-osk/)
-A (marginally) better on screen keyboard for GNOME 45+ (go to the [pre-45 branch](https://github.com/Vishram1123/gjs-osk/tree/pre-45) for compatibility from gnome 42 and up)
+A (marginally) better on screen keyboard for GNOME 45+ (go to the [pre-45 branch](https://github.com/Vishram1123/gjs-osk/tree/pre-45) for compatibility from gnome 42-44)
 # Update
 Sorry, I haven't been able to make progress on the keyboard - I have been busy with school work and life. I will get back to this as soon as possible.
 ## Advantages over the default OSK:
@@ -31,7 +31,7 @@ Sorry, I haven't been able to make progress on the keyboard - I have been busy w
 - To change properties about the keyboard, open up the "Extensions" application, and click on "Settings" under this extension to get a list of changeable properties
   - Close the settings dialog to save any modified settings
 - To type special characters, open GNOME settings, and turn on "Compose Key" under the Keyboard submenu. Choose a modifier (preferably right alt), and use the [key combinations listed here](https://en.wikipedia.org/wiki/Compose_key#Common_compose_combinations) to type special characters
-- To change the keyboard layout, ~~add an input source in GNOME Settings (currently only QWERTY, AZERTY, and Dvorak layouts supported), and~~ change the layout in GJS OSK's settings (method changed as of [this commit](https://github.com/Vishram1123/gjs-osk/commit/6c0058f25713fc02a55b1381660ba7c5ac52b6b7))
+- To change the keyboard layout, change the layout in GJS OSK's settings
 - To add typing prediction, add "Typing Booster" as an input source (in GNOME's settings), and keep it chosen as the primary input source [(extended guide here)](https://mike-fabian.github.io/ibus-typing-booster/docs/user/).
   - Note that this will cause predictive text to be present even without the OSK open, and the input language for Typing Booster's predictions will have to be set in Typing Booster's settings 
 ## Known Problems/Issues and Intended Features (Would appreciate solutions about how to fix):
