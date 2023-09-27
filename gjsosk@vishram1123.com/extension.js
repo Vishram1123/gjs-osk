@@ -889,7 +889,7 @@ class Keyboard extends Dialog {
 		this.keys.forEach(item => {
 			item.width -= this.settings.get_int("border-spacing-px") * 2;
 			item.height -= this.settings.get_int("border-spacing-px") * 2;
-			item.set_style("margin: " + this.settings.get_int("border-spacing-px") + "px; font-size: " + this.settings.get_int("font-size-px") + "px; border-radius: " + (this.settings.get_boolean("round-key-corners") ? "5px;" : "0;"));item.set_style("margin: " + this.settings.get_int("border-spacing-px") + "px; font-size: " + this.settings.get_int("font-size-px") + "px; border-radius: " + (this.settings.get_boolean("round-key-corners") ? "5px;" : "0;") + "background-size: " + this.settings.get_int("font-size-px") + "px;");
+			item.set_style("margin: " + this.settings.get_int("border-spacing-px") + "px; font-size: " + this.settings.get_int("font-size-px") + "px; border-radius: " + (this.settings.get_boolean("round-key-corners") ? "5px;" : "0;") + "background-size: " + this.settings.get_int("font-size-px") + "px;");
 			if (this.lightOrDark(this.settings.get_double("background-r"), this.settings.get_double("background-g"), this.settings.get_double("background-b"))) {
 				item.add_style_class_name("inverted");
 			} else {
