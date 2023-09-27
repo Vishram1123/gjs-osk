@@ -13,54 +13,54 @@ const Me = ExtensionUtils.getCurrentExtension();
 const Main = imports.ui.main;
 const PanelMenu = imports.ui.panelMenu;
 const ByteArray = imports.byteArray;
-const Signals = imports.misc.signals;
+const Config = imports.misc.config;
+const [major, minor] = Config.PACKAGE_VERSION.split('.').map(s => Number(s));
+const Signals = major >= 43 ? imports.misc.signals : imports.signals;
 const KeyboardManager = imports.misc.keyboardManager;
-const QuickSettings = imports.ui.quickSettings;
+const QuickSettings = major >= 43 ? imports.ui.quickSettings : null
 const PopupMenu = imports.ui.popupMenu;
-const QuickSettingsMenu = imports.ui.main.panel.statusArea.quickSettings;
+const QuickSettingsMenu = major >= 43 ? imports.ui.main.panel.statusArea.quickSettings : null;
 
+const KeyboardMenuToggle = QuickSettings != null ? GObject.registerClass(
+	class KeyboardMenuToggle extends QuickSettings.QuickMenuToggle {
+		_init(settings) {
+			super._init({
+				title: 'Screen Keyboard',
+				iconName: 'input-keyboard-symbolic',
+				toggleMode: true,
+			});
+			this.menu.setHeader('input-keyboard-symbolic', 'Screen Keyboard',
+				'Opening Mode');
+			this.settings = settings;
+			this._itemsSection = new PopupMenu.PopupMenuSection();
+			this._itemsSection.addMenuItem(new PopupMenu.PopupImageMenuItem('Never', this.settings.get_int("enable-tap-gesture") == 0 ? 'emblem-ok-symbolic' : null));
+			this._itemsSection.addMenuItem(new PopupMenu.PopupImageMenuItem("Only on Touch", this.settings.get_int("enable-tap-gesture") == 1 ? 'emblem-ok-symbolic' : null));
+			this._itemsSection.addMenuItem(new PopupMenu.PopupImageMenuItem("Always", this.settings.get_int("enable-tap-gesture") == 2 ? 'emblem-ok-symbolic' : null));
+			for (var i in this._itemsSection._getMenuItems()) {
+				const item = this._itemsSection._getMenuItems()[i]
+				const num = i
+				item.connect('activate', () => settings.set_int("enable-tap-gesture", num))
+			}
 
-const KeyboardMenuToggle = GObject.registerClass(
-class KeyboardMenuToggle extends QuickSettings.QuickMenuToggle {
-    _init(settings) {
-        super._init({
-            title: 'Screen Keyboard',
-            iconName: 'input-keyboard-symbolic',
-            toggleMode: true,
-        });
-        this.menu.setHeader('input-keyboard-symbolic', 'Screen Keyboard',
-            'Opening Mode');
-		this.settings = settings;
-        this._itemsSection = new PopupMenu.PopupMenuSection();
-		this._itemsSection.addMenuItem(new PopupMenu.PopupImageMenuItem('Never', this.settings.get_int("enable-tap-gesture") == 0 ? 'emblem-ok-symbolic' : null));
-		this._itemsSection.addMenuItem(new PopupMenu.PopupImageMenuItem("Only on Touch", this.settings.get_int("enable-tap-gesture")  == 1 ? 'emblem-ok-symbolic' : null));
-		this._itemsSection.addMenuItem(new PopupMenu.PopupImageMenuItem("Always", this.settings.get_int("enable-tap-gesture")  == 2 ? 'emblem-ok-symbolic' : null));
-        for (var i in this._itemsSection._getMenuItems()){
-			const item = this._itemsSection._getMenuItems()[i]
-			const num = i
-			item.connect('activate', () => settings.set_int("enable-tap-gesture", num))
+			this.menu.addMenuItem(this._itemsSection);
+			this.settings.bind('indicator-enabled',
+				this, 'checked',
+				Gio.SettingsBindFlags.DEFAULT);
+			this.menu.addMenuItem(new PopupMenu.PopupSeparatorMenuItem());
+			const settingsItem = this.menu.addAction('More Settings',
+				() => ExtensionUtils.openPrefs());
+			settingsItem.visible = Main.sessionMode.allowSettings;
+			this.menu._settingsActions[Extension.uuid] = settingsItem;
+
+			QuickSettingsMenu._addItems([this]);
+
 		}
-        
-        this.menu.addMenuItem(this._itemsSection);
-		this.settings.bind('indicator-enabled',
-            this, 'checked',
-            Gio.SettingsBindFlags.DEFAULT);
-        this.menu.addMenuItem(new PopupMenu.PopupSeparatorMenuItem());
-        const settingsItem = this.menu.addAction('More Settings',
-            () => ExtensionUtils.openPrefs());
-        settingsItem.visible = Main.sessionMode.allowSettings;
-        this.menu._settingsActions[Extension.uuid] = settingsItem;
-
-        QuickSettingsMenu._addItems([this]);
-       
-    }
-    _refresh() {
-		for (var i in this._itemsSection._getMenuItems()){
-			this._itemsSection._getMenuItems()[i].setIcon(this.settings.get_int("enable-tap-gesture") == i ? 'emblem-ok-symbolic' : null)
+		_refresh() {
+			for (var i in this._itemsSection._getMenuItems()) {
+				this._itemsSection._getMenuItems()[i].setIcon(this.settings.get_int("enable-tap-gesture") == i ? 'emblem-ok-symbolic' : null)
+			}
 		}
-	}
-});
-
+	}) : null;
 
 let keycodes;
 
@@ -97,7 +97,8 @@ class Extension {
 			keycodes = JSON.parse(contents)[['qwerty', 'azerty', 'dvorak', "qwertz"][this.settings.get_int("lang")]];
 		}
 		this.Keyboard = new Keyboard(this.settings);
-		
+		this._indicator = null;
+		this.openInterval = null;
 		if (this.settings.get_boolean("indicator-enabled")) {
 			this._indicator = new PanelMenu.Button(0.0, "${Me.metadata.name} Indicator", false);
 			let icon = new St.Icon({
@@ -107,17 +108,16 @@ class Extension {
 				style_class: 'system-status-icon'
 			});
 			this._indicator.add_child(icon);
-			
+
 			this._indicator.connect("button-press-event", () => this._toggleKeyboard());
 			this._indicator.connect("touch-event", (_actor, event) => {
 				if (event.type() == 11) this._toggleKeyboard()
 			});
 			Main.panel.addToStatusArea("${Me.metadata.name} Indicator", this._indicator);
 		}
-		
-		this._toggle = new KeyboardMenuToggle(this.settings);
-		
-		
+
+		this._toggle = KeyboardMenuToggle != null ? new KeyboardMenuToggle(this.settings) : null;
+
 		if (this.settings.get_int("enable-tap-gesture") > 0) {
 			this.open_interval();
 		}
@@ -129,8 +129,10 @@ class Extension {
 				keycodes = JSON.parse(contents)[["qwerty", "azerty", "dvorak", "qwertz"][this.settings.get_int("lang")]];
 			}
 			this.Keyboard.refresh();
-			this._toggle._refresh();
-			
+			try {
+				this._toggle._refresh()
+			} catch (e) {}
+
 			if (this.settings.get_boolean("indicator-enabled")) {
 				if (this._indicator != null) {
 					this._indicator.destroy();
@@ -144,7 +146,7 @@ class Extension {
 					style_class: 'system-status-icon'
 				});
 				this._indicator.add_child(icon);
-				
+
 				this._indicator.connect("button-press-event", () => this._toggleKeyboard());
 				this._indicator.connect("touch-event", (_actor, event) => {
 					if (event.type() == 11) this._toggleKeyboard()
@@ -156,7 +158,7 @@ class Extension {
 					this._indicator = null;
 				}
 			}
-			
+
 			if (this.settings.get_int("enable-tap-gesture") > 0) {
 				global.stage.disconnect("event")
 				if (this.openInterval !== null) {
@@ -177,7 +179,7 @@ class Extension {
 		this.openInterval = setInterval(() => {
 			this.Keyboard.get_parent().set_child_at_index(this.Keyboard, this.Keyboard.get_parent().get_n_children() - 1);
 			this.Keyboard.set_child_at_index(this.Keyboard.box, this.Keyboard.get_n_children() - 1);
-			if (!this.Keyboard.openedFromButton && this.lastInputMethod) {	
+			if (!this.Keyboard.openedFromButton && this.lastInputMethod) {
 				if (Main.inputMethod.currentFocus != null && Main.inputMethod.currentFocus.is_focused() && !this.Keyboard.closedFromButton) {
 					this._openKeyboard();
 				} else if (!this.Keyboard.closedFromButton) {
@@ -207,7 +209,9 @@ class Extension {
 			clearInterval(this.openInterval);
 			this.openInterval = null;
 		}
-		this._toggle.destroy()
+		try {
+			this._toggle.destroy()
+		} catch (e) {}
 		this._toggle = null
 	}
 }
@@ -223,7 +227,7 @@ const Keyboard = GObject.registerClass({
 			this.startupInterval = setInterval(() => {
 				this.init = KeyboardManager.getKeyboardManager()._current.id;
 				this.initLay = Object.keys(KeyboardManager.getKeyboardManager()._layoutInfos);
-				if (this.initLay == undefined || this.init == undefined) { 
+				if (this.initLay == undefined || this.init == undefined) {
 					return;
 				}
 				this.settings = settings;
@@ -253,7 +257,7 @@ const Keyboard = GObject.registerClass({
 				this._dragging = false;
 				this.inputDevice = Clutter.get_default_backend().get_default_seat().create_virtual_device(Clutter.InputDeviceType.KEYBOARD_DEVICE);
 				clearInterval(this.startupInterval);
-			}, 200); 
+			}, 200);
 		}
 		destroy() {
 			if (this.startupTimeout !== null && this.startupTimeout <= 4294967295) {
@@ -413,12 +417,13 @@ const Keyboard = GObject.registerClass({
 		refresh() {
 			let monitor = Main.layoutManager.primaryMonitor;
 			this.box.remove_all_children();
+			this.box.set_style_class_name("boxLay")
 			this.widthPercent = (monitor.width > monitor.height) ? this.settings.get_int("landscape-width-percent") / 100 : this.settings.get_int("portrait-width-percent") / 100;
 			this.heightPercent = (monitor.width > monitor.height) ? this.settings.get_int("landscape-height-percent") / 100 : this.settings.get_int("portrait-height-percent") / 100;
 			this.buildUI();
 			this.draggable = false;
 			this.keys.forEach(keyholder => {
-				if (keyholder.label != "🕂") {
+				if (!keyholder.has_style_class_name("move_btn")) {
 					keyholder.set_opacity(0);
 					keyholder.ease({
 						opacity: 255,
@@ -438,12 +443,12 @@ const Keyboard = GObject.registerClass({
 			this.startupTimeout = setTimeout(() => {
 				this.init = KeyboardManager.getKeyboardManager()._current.id;
 				this.initLay = Object.keys(KeyboardManager.getKeyboardManager()._layoutInfos);
-				if (this.initLay == undefined || this.init == undefined) { 
+				if (this.initLay == undefined || this.init == undefined) {
 					this.refresh();
 					return;
 				}
 				this.close();
-			}, 200); 
+			}, 200);
 			this.mod = [];
 			this.modBtns = [];
 			this.capsL = false;
@@ -464,7 +469,7 @@ const Keyboard = GObject.registerClass({
 			this.startupTimeout = setTimeout(() => {
 				this.init = KeyboardManager.getKeyboardManager()._current.id;
 				this.initLay = Object.keys(KeyboardManager.getKeyboardManager()._layoutInfos);
-				if (this.initLay == undefined || this.init == undefined) { 
+				if (this.initLay == undefined || this.init == undefined) {
 					this.open();
 					return;
 				}
@@ -497,7 +502,7 @@ const Keyboard = GObject.registerClass({
 					}
 				});
 				this.opened = true;
-			}, 200); 
+			}, 200);
 		}
 		close() {
 			if (this.initLay !== undefined && this.init !== undefined) {
@@ -750,12 +755,11 @@ const Keyboard = GObject.registerClass({
 						label: (keycodes.row6[keycodes.row6.length - 1])[3].lowerName
 					});
 					gbox.add_child(btn4);
-					var btn5 = new St.Button({
-						label: "🕂",
-					});
-					var btn6 = new St.Button({
-						label: "🗙",
-					});
+					var btn5 = new St.Button();
+					btn5.add_style_class_name("move_btn")
+					var btn6 = new St.Button();
+					btn6.add_style_class_name("close_btn")
+
 					if (this.settings.get_boolean("enable-drag")) {
 						gbox.add_child(btn5);
 					}
@@ -768,7 +772,7 @@ const Keyboard = GObject.registerClass({
 						if (this.settings.get_boolean("enable-drag")) {
 							this.draggable = !this.draggable;
 							this.keys.forEach(keyholder => {
-								if (keyholder.label != "🕂") {
+								if (!keyholder.has_style_class_name("move_btn")) {
 									keyholder.set_opacity(this.draggable ? 255 : 0);
 									keyholder.ease({
 										opacity: this.draggable ? 0 : 255,
@@ -799,7 +803,10 @@ const Keyboard = GObject.registerClass({
 							})
 						}
 					})
-					btn6.connect("clicked", () => { this.close(); this.closedFromButton = true; });
+					btn6.connect("clicked", () => {
+						this.close();
+						this.closedFromButton = true;
+					});
 					btn1.char = (keycodes.row6[keycodes.row6.length - 1])[0]
 					btn2.char = (keycodes.row6[keycodes.row6.length - 1])[1]
 					btn3.char = (keycodes.row6[keycodes.row6.length - 1])[2]
@@ -859,10 +866,15 @@ const Keyboard = GObject.registerClass({
 			this.box.add_child(row5);
 			this.box.add_child(row6);
 			var containers_ = this.box.get_children();
+			if (this.lightOrDark(this.settings.get_double("background-r"), this.settings.get_double("background-g"), this.settings.get_double("background-b"))) {
+				this.box.add_style_class_name("inverted");
+			} else {
+				this.box.add_style_class_name("regular");
+			}
 			this.keys.forEach(item => {
 				item.width -= this.settings.get_int("border-spacing-px") * 2;
 				item.height -= this.settings.get_int("border-spacing-px") * 2;
-				item.set_style("margin: " + this.settings.get_int("border-spacing-px") + "px; font-size: " + this.settings.get_int("font-size-px") + "px; border-radius: " + (this.settings.get_boolean("round-key-corners") ? "5px;" : "0;"));
+				item.set_style("margin: " + this.settings.get_int("border-spacing-px") + "px; font-size: " + this.settings.get_int("font-size-px") + "px; border-radius: " + (this.settings.get_boolean("round-key-corners") ? "5px;" : "0; background-size: " + this.settings.get_int("font-size-px") + "px;"));
 				if (this.lightOrDark(this.settings.get_double("background-r"), this.settings.get_double("background-g"), this.settings.get_double("background-b"))) {
 					item.add_style_class_name("inverted");
 				} else {
@@ -889,9 +901,9 @@ const Keyboard = GObject.registerClass({
 					this.inputDevice.notify_key(Clutter.get_current_event_time(), keys[i], Clutter.KeyState.PRESSED);
 				}
 				if (this.keyTimeout !== null && this.keyTimeout <= 4294967295) {
-				    clearTimeout(this.keyTimeout);
-				    this.keyTimeout = null;
-			    }
+					clearTimeout(this.keyTimeout);
+					this.keyTimeout = null;
+				}
 				this.keyTimeout = setTimeout(() => {
 					for (var j = keys.length - 1; j >= 0; j--) {
 						this.inputDevice.notify_key(Clutter.get_current_event_time(), keys[j], Clutter.KeyState.RELEASED);

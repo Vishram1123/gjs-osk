@@ -33,7 +33,7 @@ function fillPreferencesWindow(window) {
 		settings.set_int("lang", langDrop.selected);
 		settings.set_boolean("enable-drag", dragToggle.active);
 		settings.set_int("enable-tap-gesture", dragOpt.selected);
-		settings.set_boolean("indicator-enabled", indEnabled.selected);
+		settings.set_boolean("indicator-enabled", indEnabled.active);
 		settings.set_int("portrait-width-percent", numChanger_pW.value);
 		settings.set_int("portrait-height-percent", numChanger_pH.value);
 		settings.set_int("landscape-width-percent", numChanger_lW.value);
@@ -293,7 +293,7 @@ function fillPreferencesWindow(window) {
 		settings.set_int("lang", langDrop.selected);
 		settings.set_boolean("enable-drag", dragToggle.active);
 		settings.set_int("enable-tap-gesture", dragOpt.selected);
-		settings.set_boolean("indicator-enabled", indEnabled.selected);
+		settings.set_boolean("indicator-enabled", indEnabled.active);
 		settings.set_int("portrait-width-percent", numChanger_pW.value);
 		settings.set_int("portrait-height-percent", numChanger_pH.value);
 		settings.set_int("landscape-width-percent", numChanger_lW.value);
