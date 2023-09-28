@@ -91,7 +91,7 @@ class Extension {
 	}
 	enable() {
 		this.settings = ExtensionUtils.getSettings("org.gnome.shell.extensions.gjsosk");
-
+		this.openBit = this.getSettings("org.gnome.shell.extensions.gjsoskindicator");
 		let [ok, contents] = GLib.file_get_contents(Me.path + '/keycodes.json');
 		if (ok) {
 			keycodes = JSON.parse(contents)[['qwerty', 'azerty', 'dvorak', "qwertz"][this.settings.get_int("lang")]];
@@ -121,7 +121,10 @@ class Extension {
 		if (this.settings.get_int("enable-tap-gesture") > 0) {
 			this.open_interval();
 		}
-
+		this.openFromCommandHandler = this.openBit.connect("changed", () => {
+            this.openBit.set_boolean("opened", false)
+            this._toggleKeyboard();
+        })
 		this.settingsHandler = this.settings.connect("changed", key => {
 			this.Keyboard.openedFromButton = false;
 			let [ok, contents] = GLib.file_get_contents(Me.path + '/keycodes.json');
@@ -204,6 +207,8 @@ class Extension {
 		this.Keyboard.destroy();
 		this.settings.disconnect(this.settingsHandler);
 		this.settings = null;
+		this.openBit.disconnect(this.openFromCommandHandler);
+		this.openBit = null;
 		global.stage.disconnect("event")
 		if (this.openInterval !== null) {
 			clearInterval(this.openInterval);
