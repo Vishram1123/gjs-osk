@@ -112,6 +112,7 @@ export default class GjsOskExtension extends Extension {
 
 	enable() {
 		this.settings = this.getSettings();
+		this.openBit = this.getSettings("org.gnome.shell.extensions.gjsoskindicator");
 		let [ok, contents] = GLib.file_get_contents(this.path + '/keycodes.json');
 		if (ok) {
 			keycodes = JSON.parse(contents)[['qwerty', 'azerty', 'dvorak', "qwertz"][this.settings.get_int("lang")]];
@@ -144,7 +145,10 @@ export default class GjsOskExtension extends Extension {
 		if (this.settings.get_int("enable-tap-gesture") > 0) {
 			this.open_interval();
 		}
-
+		this.openFromCommandHandler = this.openBit.connect("changed", () => {
+            this.openBit.set_boolean("opened", false)
+            this._toggleKeyboard();
+        })
 		this.settingsHandler = this.settings.connect("changed", key => {
 			this.Keyboard.openedFromButton = false;
 			let [ok, contents] = GLib.file_get_contents(this.path + '/keycodes.json');
@@ -208,6 +212,8 @@ export default class GjsOskExtension extends Extension {
 		this.Keyboard.destroy();
 		this.settings.disconnect(this.settingsHandler);
 		this.settings = null;
+		this.openBit.disconnect(this.openFromCommandHandler);
+		this.openBit = null;
 		global.stage.disconnect("event")
 		if (this.openInterval !== null) {
 			clearInterval(this.openInterval);
