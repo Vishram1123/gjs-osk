@@ -111,7 +111,7 @@ export default class GjsOskExtension extends Extension {
 	}
 
 	enable() {
-		this.settings = this.getSettings();
+		this.settings = this.getSettings("org.gnome.shell.extensions.gjsosk");
 		this.openBit = this.getSettings("org.gnome.shell.extensions.gjsoskindicator");
 		let [ok, contents] = GLib.file_get_contents(this.path + '/keycodes.json');
 		if (ok) {
