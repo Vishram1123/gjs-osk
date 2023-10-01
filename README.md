@@ -38,7 +38,6 @@ Sorry, I haven't been able to make progress on the keyboard - I have been busy w
 ## Known Problems/Issues and Intended Features (Would appreciate solutions about how to fix):
 - 100% width or height doesn't take up the full monitor width or height (minus 25 px on either side). Instead, it is 1 or 2 px smaller, depending on the monitor size
 - Even though the keyboard displays over system modals, it isn't interactable
-- Open from command line
 ## Help
 - If you find any bugs, or if you have any suggestions, please open an issue or submit a pull request. Thanks!
 ### Keyboard Layouts
