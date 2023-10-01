@@ -175,7 +175,7 @@ export default class GjsOskExtension extends Extension {
 				this._indicator.connect("touch-event", (_actor, event) => {
 					if (event.type() == 11) this._toggleKeyboard()
 				});
-				Main.panel.addToStatusArea("${this.metadata.name} Indicator", this._indicator);
+				Main.panel.addToStatusArea("GJS OSK Indicator", this._indicator);
 			} else {
 				if (this._indicator != null) {
 					this._indicator.destroy();
