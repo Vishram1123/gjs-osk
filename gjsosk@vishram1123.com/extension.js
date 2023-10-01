@@ -162,7 +162,7 @@ export default class GjsOskExtension extends Extension {
 					this._indicator.destroy();
 					this._indicator = null;
 				}
-				this._indicator = new PanelMenu.Button(0.0, "${this.metadata.name} Indicator", false);
+				this._indicator = new PanelMenu.Button(0.0, "GJS OSK Indicator", false);
 				let icon = new St.Icon({
 					gicon: new Gio.ThemedIcon({
 						name: 'input-keyboard-symbolic'
