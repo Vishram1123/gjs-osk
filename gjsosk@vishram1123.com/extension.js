@@ -113,7 +113,7 @@ class Extension {
 			this._indicator.connect("touch-event", (_actor, event) => {
 				if (event.type() == 11) this._toggleKeyboard()
 			});
-			Main.panel.addToStatusArea("${Me.metadata.name} Indicator", this._indicator);
+			Main.panel.addToStatusArea("GJS OSK Indicator", this._indicator);
 		}
 
 		this._toggle = KeyboardMenuToggle != null ? new KeyboardMenuToggle(this.settings) : null;
