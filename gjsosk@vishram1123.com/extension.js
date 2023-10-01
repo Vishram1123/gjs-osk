@@ -100,7 +100,7 @@ class Extension {
 		this._indicator = null;
 		this.openInterval = null;
 		if (this.settings.get_boolean("indicator-enabled")) {
-			this._indicator = new PanelMenu.Button(0.0, "${Me.metadata.name} Indicator", false);
+			this._indicator = new PanelMenu.Button(0.0, "GJS OSK Indicator", false);
 			let icon = new St.Icon({
 				gicon: new Gio.ThemedIcon({
 					name: 'input-keyboard-symbolic'
