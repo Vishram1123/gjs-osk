@@ -91,7 +91,7 @@ class Extension {
 	}
 	enable() {
 		this.settings = ExtensionUtils.getSettings("org.gnome.shell.extensions.gjsosk");
-		this.openBit = this.getSettings("org.gnome.shell.extensions.gjsoskindicator");
+		this.openBit = ExtensionUtils.getSettings("org.gnome.shell.extensions.gjsoskindicator");
 		let [ok, contents] = GLib.file_get_contents(Me.path + '/keycodes.json');
 		if (ok) {
 			keycodes = JSON.parse(contents)[['qwerty', 'azerty', 'dvorak', "qwertz"][this.settings.get_int("lang")]];
