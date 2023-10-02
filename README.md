@@ -21,7 +21,7 @@ Sorry, I haven't been able to make progress on the keyboard - I have been busy w
 3. Click Install, and accept the prompt
 [^1]: Keep in mind that this version isn't updated yet
 ## Install from Source
-1. [Head to the "Releases" in the sidebar](https://github.com/Vishram1123/gjs-osk/releases/tag/Releases)
+1. [Head to the releases in the sidebar and download the appropriate version](https://github.com/Vishram1123/gjs-osk/releases/tag/Releases)
 2. Copy `gjsosk@vishram1123.com/` to `~/.local/share/gnome-shell/extensions/`
 3. Log out of GNOME and log back in
 4. Click on the keyboard button in the dash bar
