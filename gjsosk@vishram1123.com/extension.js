@@ -141,7 +141,7 @@ class Extension {
 					this._indicator.destroy();
 					this._indicator = null;
 				}
-				this._indicator = new PanelMenu.Button(0.0, "${Me.metadata.name} Indicator", false);
+				this._indicator = new PanelMenu.Button(0.0, "GJS OSK Indicator", false);
 				let icon = new St.Icon({
 					gicon: new Gio.ThemedIcon({
 						name: 'input-keyboard-symbolic'
@@ -154,7 +154,7 @@ class Extension {
 				this._indicator.connect("touch-event", (_actor, event) => {
 					if (event.type() == 11) this._toggleKeyboard()
 				});
-				Main.panel.addToStatusArea("${Me.metadata.name} Indicator", this._indicator);
+				Main.panel.addToStatusArea("GJS OSK Indicator", this._indicator);
 			} else {
 				if (this._indicator != null) {
 					this._indicator.destroy();
