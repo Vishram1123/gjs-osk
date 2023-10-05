@@ -10,5 +10,6 @@
   ],
   "url": "https://github.com/Vishram1123/gjs-osk",
   "uuid": "gjsosk@vishram1123.com",
+  "gettext-domain": "gjsosk@vishram1123.com",
   "version": 4
 }
