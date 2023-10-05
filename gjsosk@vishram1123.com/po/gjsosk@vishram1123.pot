@@ -1,0 +1,158 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2023-10-05 17:31+0200\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=CHARSET\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: extension.js:24 extension.js:32
+msgid "Screen Keyboard"
+msgstr ""
+
+#: extension.js:32
+msgid "Opening Mode"
+msgstr ""
+
+#: extension.js:34 prefs.js:98
+msgid "Never"
+msgstr ""
+
+#: extension.js:35 prefs.js:98
+msgid "Only on Touch"
+msgstr ""
+
+#: extension.js:36 prefs.js:98
+msgid "Always"
+msgstr ""
+
+#: extension.js:48
+msgid "More Settings"
+msgstr ""
+
+#: prefs.js:20
+msgid "General"
+msgstr ""
+
+#: prefs.js:27
+msgid "Apply Changes"
+msgstr ""
+
+#: prefs.js:49
+msgid "Behavior"
+msgstr ""
+
+#: prefs.js:54
+msgid "Language"
+msgstr ""
+
+#: prefs.js:67
+msgid "Enable Dragging"
+msgstr ""
+
+#: prefs.js:80
+msgid "Enable Panel Indicator"
+msgstr ""
+
+#: prefs.js:93
+msgid "Open upon clicking in a text field"
+msgstr ""
+
+#: prefs.js:107
+msgid "Portrait Sizing"
+msgstr ""
+
+#: prefs.js:112 prefs.js:139
+msgid "Width (%)"
+msgstr ""
+
+#: prefs.js:115 prefs.js:142
+msgid "Height (%)"
+msgstr ""
+
+#: prefs.js:134
+msgid "Landscape Sizing"
+msgstr ""
+
+#: prefs.js:161
+msgid "Default Position"
+msgstr ""
+
+#: prefs.js:166
+msgid "Top Left"
+msgstr ""
+
+#: prefs.js:166
+msgid "Top Center"
+msgstr ""
+
+#: prefs.js:166
+msgid "Top Right"
+msgstr ""
+
+#: prefs.js:167
+msgid "Center Left"
+msgstr ""
+
+#: prefs.js:167
+msgid "Center"
+msgstr ""
+
+#: prefs.js:167
+msgid "Center Right"
+msgstr ""
+
+#: prefs.js:168
+msgid "Bottom Left"
+msgstr ""
+
+#: prefs.js:168
+msgid "Bottom Center"
+msgstr ""
+
+#: prefs.js:168
+msgid "Bottom Right"
+msgstr ""
+
+#: prefs.js:178
+msgid "Appearance"
+msgstr ""
+
+#: prefs.js:183
+msgid "Color"
+msgstr ""
+
+#: prefs.js:198
+msgid "Font Size (px)"
+msgstr ""
+
+#: prefs.js:209
+msgid "Border Spacing (px)"
+msgstr ""
+
+#: prefs.js:220
+msgid "Round Corners"
+msgstr ""
+
+#: prefs.js:235
+msgid "About"
+msgstr ""
+
+#: prefs.js:265
+msgid "Version "
+msgstr ""
+
+#: prefs.js:271
+msgid "More Information, submit feedback, and get help"
+msgstr ""
