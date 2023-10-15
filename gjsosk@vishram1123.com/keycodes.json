@@ -101,67 +101,67 @@
       },
       {
         "code": 2,
-        "lowerName": "1",
+        "lowerName": "ㄅ\n1",
         "upperName": "!",
         "altName": ""
       },
       {
         "code": 3,
-        "lowerName": "2",
+        "lowerName": "ㄉ\n2",
         "upperName": "@",
         "altName": ""
       },
       {
         "code": 4,
-        "lowerName": "3",
+        "lowerName": "ˇ\n3",
         "upperName": "#",
         "altName": ""
       },
       {
         "code": 5,
-        "lowerName": "4",
+        "lowerName": "ˋ\n4",
         "upperName": "$",
         "altName": ""
       },
       {
         "code": 6,
-        "lowerName": "5",
+        "lowerName": "ㄓ\n5",
         "upperName": "%",
         "altName": ""
       },
       {
         "code": 7,
-        "lowerName": "6",
+        "lowerName": "ˊ\n6",
         "upperName": "^",
         "altName": ""
       },
       {
         "code": 8,
-        "lowerName": "7",
+        "lowerName": "˙\n7",
         "upperName": "&",
         "altName": ""
       },
       {
         "code": 9,
-        "lowerName": "8",
+        "lowerName": "ㄚ\n8",
         "upperName": "*",
         "altName": ""
       },
       {
         "code": 10,
-        "lowerName": "9",
+        "lowerName": "ㄞ\n9",
         "upperName": "(",
         "altName": ""
       },
       {
         "code": 11,
-        "lowerName": "0",
+        "lowerName": "ㄢ\n0",
         "upperName": ")",
         "altName": ""
       },
       {
         "code": 12,
-        "lowerName": "-",
+        "lowerName": "ㄦ\n-",
         "upperName": "_",
         "altName": ""
       },
@@ -187,70 +187,70 @@
       },
       {
         "code": 16,
-        "lowerName": "q",
+        "lowerName": "ㄆ\nq",
         "letter": "primary",
         "upperName": "Q",
         "altName": ""
       },
       {
         "code": 17,
-        "lowerName": "w",
+        "lowerName": "ㄊ\nw",
         "letter": "primary",
         "upperName": "W",
         "altName": ""
       },
       {
         "code": 18,
-        "lowerName": "e",
+        "lowerName": "ㄍ\ne",
         "letter": "primary",
         "upperName": "E",
         "altName": ""
       },
       {
         "code": 19,
-        "lowerName": "r",
+        "lowerName": "ㄐ\nr",
         "letter": "primary",
         "upperName": "R",
         "altName": ""
       },
       {
         "code": 20,
-        "lowerName": "t",
+        "lowerName": "ㄔ\nt",
         "letter": "primary",
         "upperName": "T",
         "altName": ""
       },
       {
         "code": 21,
-        "lowerName": "y",
+        "lowerName": "ㄗ\ny",
         "letter": "primary",
         "upperName": "Y",
         "altName": ""
       },
       {
         "code": 22,
-        "lowerName": "u",
+        "lowerName": "ㄧ\nu",
         "letter": "primary",
         "upperName": "U",
         "altName": ""
       },
       {
         "code": 23,
-        "lowerName": "i",
+        "lowerName": "ㄛ\ni",
         "letter": "primary",
         "upperName": "I",
         "altName": ""
       },
       {
         "code": 24,
-        "lowerName": "o",
+        "lowerName": "ㄟ\no",
         "letter": "primary",
         "upperName": "O",
         "altName": ""
       },
       {
         "code": 25,
-        "lowerName": "p",
+        "lowerName": "ㄣ\np",
         "letter": "primary",
         "upperName": "P",
         "altName": ""
@@ -283,70 +283,70 @@
       },
       {
         "code": 30,
-        "lowerName": "a",
+        "lowerName": "ㄇ\na",
         "letter": "primary",
         "upperName": "A",
         "altName": ""
       },
       {
         "code": 31,
-        "lowerName": "s",
+        "lowerName": "ㄋ\ns",
         "letter": "primary",
         "upperName": "S",
         "altName": ""
       },
       {
         "code": 32,
-        "lowerName": "d",
+        "lowerName": "ㄎ\nd",
         "letter": "primary",
         "upperName": "D",
         "altName": ""
       },
       {
         "code": 33,
-        "lowerName": "f",
+        "lowerName": "ㄑ\nf",
         "letter": "primary",
         "upperName": "F",
         "altName": ""
       },
       {
         "code": 34,
-        "lowerName": "g",
+        "lowerName": "ㄕ\ng",
         "letter": "primary",
         "upperName": "G",
         "altName": ""
       },
       {
         "code": 35,
-        "lowerName": "h",
+        "lowerName": "ㄘ\nh",
         "letter": "primary",
         "upperName": "H",
         "altName": ""
       },
       {
         "code": 36,
-        "lowerName": "j",
+        "lowerName": "ㄨ\nj",
         "letter": "primary",
         "upperName": "J",
         "altName": ""
       },
       {
         "code": 37,
-        "lowerName": "k",
+        "lowerName": "ㄜ\nk",
         "letter": "primary",
         "upperName": "K",
         "altName": ""
       },
       {
         "code": 38,
-        "lowerName": "l",
+        "lowerName": "ㄠ\nl",
         "letter": "primary",
         "upperName": "L",
         "altName": ""
       },
       {
         "code": 39,
-        "lowerName": ";",
+        "lowerName": "ㄤ\n;",
         "upperName": ":",
         "altName": ""
       },
@@ -372,68 +372,68 @@
       },
       {
         "code": 44,
-        "lowerName": "z",
+        "lowerName": "ㄈ\nz",
         "letter": "primary",
         "upperName": "Z",
         "altName": ""
       },
       {
         "code": 45,
-        "lowerName": "x",
+        "lowerName": "ㄌ\nx",
         "letter": "primary",
         "upperName": "X",
         "altName": ""
       },
       {
         "code": 46,
-        "lowerName": "c",
+        "lowerName": "ㄏ\nc",
         "letter": "primary",
         "upperName": "C",
         "altName": ""
       },
       {
         "code": 47,
-        "lowerName": "v",
+        "lowerName": "ㄒ\nv",
         "letter": "primary",
         "upperName": "V",
         "altName": ""
       },
       {
         "code": 48,
-        "lowerName": "b",
+        "lowerName": "ㄖ\nb",
         "letter": "primary",
         "upperName": "B",
         "altName": ""
       },
       {
         "code": 49,
-        "lowerName": "n",
+        "lowerName": "ㄙ\nn",
         "letter": "primary",
         "upperName": "N",
         "altName": ""
       },
       {
         "code": 50,
-        "lowerName": "m",
+        "lowerName": "ㄩ\nm",
         "letter": "primary",
         "upperName": "M",
         "altName": ""
       },
       {
         "code": 51,
-        "lowerName": ",",
+        "lowerName": "ㄝ\n,",
         "upperName": "<",
         "altName": ""
       },
       {
         "code": 52,
-        "lowerName": ".",
+        "lowerName": "ㄡ\n.",
         "upperName": ">",
         "altName": ""
       },
       {
         "code": 53,
-        "lowerName": "/",
+        "lowerName": "ㄥ\n/",
         "upperName": "?",
         "altName": ""
       },
@@ -447,38 +447,38 @@
     "row6": [
       {
         "code": 29,
-        "lowerName": "⌃",
-        "upperName": "⌃",
+        "lowerName": "Ctrl",
+        "upperName": "",
         "altName": ""
       },
       {
         "code": 125,
-        "lowerName": "❖",
-        "upperName": "❖",
+        "lowerName": "Super",
+        "upperName": "Super",
         "altName": ""
       },
       {
         "code": 56,
-        "lowerName": "⌥",
-        "upperName": "⌥",
+        "lowerName": "Alt",
+        "upperName": "Alt",
         "altName": ""
       },
       {
         "code": 57,
-        "lowerName": "␣",
-        "upperName": "␣",
+        "lowerName": " ",
+        "upperName": " ",
         "altName": ""
       },
       {
         "code": 100,
-        "lowerName": "⌥",
-        "upperName": "⌥",
+        "lowerName": "Alt",
+        "upperName": "Alt",
         "altName": ""
       },
       {
         "code": 97,
-        "lowerName": "⌃",
-        "upperName": "⌃",
+        "lowerName": "Ctrl",
+        "upperName": "Ctrl",
         "altName": ""
       },
       [
