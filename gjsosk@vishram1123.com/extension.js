@@ -11,7 +11,7 @@ import * as QuickSettings from 'resource:///org/gnome/shell/ui/quickSettings.js'
 import * as KeyboardManager from 'resource:///org/gnome/shell/misc/keyboardManager.js';
 import { Dialog } from 'resource:///org/gnome/shell/ui/dialog.js';
 
-import { Extension } from 'resource:///org/gnome/shell/extensions/extension.js';
+import { Extension, gettext as _ } from 'resource:///org/gnome/shell/extensions/extension.js';
 
 
 class KeyboardMenuToggle extends QuickSettings.QuickMenuToggle {
@@ -21,7 +21,7 @@ class KeyboardMenuToggle extends QuickSettings.QuickMenuToggle {
 
 	constructor(extensionObject) {
 		super({
-			title: 'Screen Keyboard',
+			title: _('Screen Keyboard'),
 			iconName: 'input-keyboard-symbolic',
 			toggleMode: true,
 		});
@@ -29,11 +29,11 @@ class KeyboardMenuToggle extends QuickSettings.QuickMenuToggle {
 		this.extensionObject = extensionObject;
 		this.settings = extensionObject.getSettings();
 		
-		this.menu.setHeader('input-keyboard-symbolic', 'Screen Keyboard', 'Opening Mode');
+		this.menu.setHeader('input-keyboard-symbolic', _('Screen Keyboard'), _('Opening Mode'));
 		this._itemsSection = new PopupMenu.PopupMenuSection();
-		this._itemsSection.addMenuItem(new PopupMenu.PopupImageMenuItem('Never', this.settings.get_int("enable-tap-gesture") == 0 ? 'emblem-ok-symbolic' : null));
-		this._itemsSection.addMenuItem(new PopupMenu.PopupImageMenuItem("Only on Touch", this.settings.get_int("enable-tap-gesture")  == 1 ? 'emblem-ok-symbolic' : null));
-		this._itemsSection.addMenuItem(new PopupMenu.PopupImageMenuItem("Always", this.settings.get_int("enable-tap-gesture")  == 2 ? 'emblem-ok-symbolic' : null));
+		this._itemsSection.addMenuItem(new PopupMenu.PopupImageMenuItem(_('Never'), this.settings.get_int("enable-tap-gesture") == 0 ? 'emblem-ok-symbolic' : null));
+		this._itemsSection.addMenuItem(new PopupMenu.PopupImageMenuItem(_("Only on Touch"), this.settings.get_int("enable-tap-gesture")  == 1 ? 'emblem-ok-symbolic' : null));
+		this._itemsSection.addMenuItem(new PopupMenu.PopupImageMenuItem(_("Always"), this.settings.get_int("enable-tap-gesture")  == 2 ? 'emblem-ok-symbolic' : null));
 		for (var i in this._itemsSection._getMenuItems()){
 			const item = this._itemsSection._getMenuItems()[i]
 			const num = i
@@ -45,7 +45,7 @@ class KeyboardMenuToggle extends QuickSettings.QuickMenuToggle {
 			this, 'checked',
 			Gio.SettingsBindFlags.DEFAULT);
 		this.menu.addMenuItem(new PopupMenu.PopupSeparatorMenuItem());
-		const settingsItem = this.menu.addAction('More Settings',
+		const settingsItem = this.menu.addAction(_('More Settings'),
 			() => this.extensionObject.openPreferences());
 		settingsItem.visible = Main.sessionMode.allowSettings;
 		this.menu._settingsActions[this.extensionObject.uuid] = settingsItem;
