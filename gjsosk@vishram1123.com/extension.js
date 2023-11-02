@@ -8,7 +8,9 @@ const {
 	Atk
 } = imports.gi;
 
+const Gettext = imports.gettext;
 const ExtensionUtils = imports.misc.extensionUtils;
+const { gettext: _ } = ExtensionUtils;
 const Me = ExtensionUtils.getCurrentExtension();
 const Main = imports.ui.main;
 const PanelMenu = imports.ui.panelMenu;
@@ -25,17 +27,17 @@ const KeyboardMenuToggle = QuickSettings != null ? GObject.registerClass(
 	class KeyboardMenuToggle extends QuickSettings.QuickMenuToggle {
 		_init(settings) {
 			super._init({
-				title: 'Screen Keyboard',
+				title: _('Screen Keyboard'),
 				iconName: 'input-keyboard-symbolic',
 				toggleMode: true,
 			});
-			this.menu.setHeader('input-keyboard-symbolic', 'Screen Keyboard',
-				'Opening Mode');
+			this.menu.setHeader('input-keyboard-symbolic', _('Screen Keyboard'),
+				_('Opening Mode'));
 			this.settings = settings;
 			this._itemsSection = new PopupMenu.PopupMenuSection();
-			this._itemsSection.addMenuItem(new PopupMenu.PopupImageMenuItem('Never', this.settings.get_int("enable-tap-gesture") == 0 ? 'emblem-ok-symbolic' : null));
-			this._itemsSection.addMenuItem(new PopupMenu.PopupImageMenuItem("Only on Touch", this.settings.get_int("enable-tap-gesture") == 1 ? 'emblem-ok-symbolic' : null));
-			this._itemsSection.addMenuItem(new PopupMenu.PopupImageMenuItem("Always", this.settings.get_int("enable-tap-gesture") == 2 ? 'emblem-ok-symbolic' : null));
+			this._itemsSection.addMenuItem(new PopupMenu.PopupImageMenuItem(_('Never'), this.settings.get_int("enable-tap-gesture") == 0 ? 'emblem-ok-symbolic' : null));
+			this._itemsSection.addMenuItem(new PopupMenu.PopupImageMenuItem(_("Only on Touch"), this.settings.get_int("enable-tap-gesture") == 1 ? 'emblem-ok-symbolic' : null));
+			this._itemsSection.addMenuItem(new PopupMenu.PopupImageMenuItem(_("Always"), this.settings.get_int("enable-tap-gesture") == 2 ? 'emblem-ok-symbolic' : null));
 			for (var i in this._itemsSection._getMenuItems()) {
 				const item = this._itemsSection._getMenuItems()[i]
 				const num = i
@@ -47,7 +49,7 @@ const KeyboardMenuToggle = QuickSettings != null ? GObject.registerClass(
 				this, 'checked',
 				Gio.SettingsBindFlags.DEFAULT);
 			this.menu.addMenuItem(new PopupMenu.PopupSeparatorMenuItem());
-			const settingsItem = this.menu.addAction('More Settings',
+			const settingsItem = this.menu.addAction(_('More Settings'),
 				() => ExtensionUtils.openPrefs());
 			settingsItem.visible = Main.sessionMode.allowSettings;
 			this.menu._settingsActions[Extension.uuid] = settingsItem;
@@ -1116,5 +1118,6 @@ const Keyboard = GObject.registerClass({
 	});
 
 function init() {
+    ExtensionUtils.initTranslations(Me.metadata.uuid);
 	return new Extension();
 }

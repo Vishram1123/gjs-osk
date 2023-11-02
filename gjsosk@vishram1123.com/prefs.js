@@ -7,12 +7,14 @@ const {
 	Gdk
 } = imports.gi;
 
+const Gettext = imports.gettext;
 const ExtensionUtils = imports.misc.extensionUtils;
+const { gettext: _ } = ExtensionUtils;
 const Me = ExtensionUtils.getCurrentExtension();
 const UIFolderPath = Me.dir.get_child('ui').get_path();
 
 function init() {
-
+    ExtensionUtils.initTranslations(Me.metadata.uuid);
 }
 
 function fillPreferencesWindow(window) {
@@ -21,14 +23,14 @@ function fillPreferencesWindow(window) {
 	const settings = ExtensionUtils.getSettings('org.gnome.shell.extensions.gjsosk');
 
 	const page1 = new Adw.PreferencesPage({
-		title: "General",
+		title: _("General"),
 		icon_name: "general-symbolic"
 	});
 
 	const group0 = new Adw.PreferencesGroup();
 	page1.add(group0)
 
-	const apply = Gtk.Button.new_with_label("Apply Changes");
+	const apply = Gtk.Button.new_with_label(_("Apply Changes"));
 	apply.connect("clicked", () => {
 		settings.set_int("lang", langDrop.selected);
 		settings.set_boolean("enable-drag", dragToggle.active);
@@ -50,12 +52,12 @@ function fillPreferencesWindow(window) {
 	group0.add(apply)
 
 	const group1 = new Adw.PreferencesGroup({
-		title: "Behavior"
+		title: _("Behavior")
 	});
 	page1.add(group1);
 
 	const row0 = new Adw.ActionRow({
-		title: 'Language'
+		title: _('Language')
 	});
 	group1.add(row0);
 
@@ -68,7 +70,7 @@ function fillPreferencesWindow(window) {
 	row0.activatable_widget = langDrop;
 
 	const row1 = new Adw.ActionRow({
-		title: 'Enable Dragging'
+		title: _('Enable Dragging')
 	});
 	group1.add(row1);
 
@@ -81,7 +83,7 @@ function fillPreferencesWindow(window) {
 	row1.activatable_widget = dragToggle;
 	
 	const row1t3 = new Adw.ActionRow({
-		title: 'Enable Panel Indicator'
+		title: _('Enable Panel Indicator')
 	});
 	group1.add(row1t3);
 
@@ -94,12 +96,12 @@ function fillPreferencesWindow(window) {
 	row1t3.activatable_widget = indEnabled;
 	
 	const row1t5 = new Adw.ActionRow({
-		title: 'Open upon clicking in a text field'
+		title: _('Open upon clicking in a text field')
 	});
 	group1.add(row1t5);
 
 
-	let dragOptList = ["Never", "Only on Touch", "Always"];
+	let dragOptList = [_("Never"), _("Only on Touch"), _("Always")];
 	let dragOpt = Gtk.DropDown.new_from_strings(dragOptList);
 	dragOpt.valign = Gtk.Align.CENTER;
 	dragOpt.selected = settings.get_int("enable-tap-gesture");
@@ -108,15 +110,15 @@ function fillPreferencesWindow(window) {
 	row1t5.activatable_widget = dragOpt;
 	
 	const row2 = new Adw.ExpanderRow({
-		title: 'Portrait Sizing'
+		title: _('Portrait Sizing')
 	});
 	group1.add(row2);
 
 	let pW = new Adw.ActionRow({
-		title: 'Width (%)'
+		title: _('Width (%)')
 	})
 	let pH = new Adw.ActionRow({
-		title: 'Height (%)'
+		title: _('Height (%)')
 	})
 
 	let numChanger_pW = Gtk.SpinButton.new_with_range(0, 100, 5);
@@ -135,15 +137,15 @@ function fillPreferencesWindow(window) {
 	row2.add_row(pH);
 
 	const row3 = new Adw.ExpanderRow({
-		title: 'Landscape Sizing'
+		title: _('Landscape Sizing')
 	});
 	group1.add(row3);
 
 	let lW = new Adw.ActionRow({
-		title: 'Width (%)'
+		title: _('Width (%)')
 	});
 	let lH = new Adw.ActionRow({
-		title: 'Height (%)'
+		title: _('Height (%)')
 	});
 
 	let numChanger_lW = Gtk.SpinButton.new_with_range(0, 100, 5);
@@ -162,11 +164,15 @@ function fillPreferencesWindow(window) {
 	row3.add_row(lH);
 
 	const row4 = new Adw.ActionRow({
-		title: 'Default Position'
+		title: _('Default Position')
 	});
 	group1.add(row4);
 
-	let posList = ["Top Left", "Top Center", "Top Right", "Center Left", "Center", "Center Right", "Bottom Left", "Bottom Center", "Bottom Right"];
+	let posList = [
+	    _("Top Left"), _("Top Center"), _("Top Right"),
+	    _("Center Left"), _("Center"), _("Center Right"),
+	    _("Bottom Left"), _("Bottom Center"), _("Bottom Right")
+	];
 	let dropDown = Gtk.DropDown.new_from_strings(posList);
 	dropDown.valign = Gtk.Align.CENTER;
 	dropDown.selected = settings.get_int("default-snap");
@@ -175,12 +181,12 @@ function fillPreferencesWindow(window) {
 	row4.activatable_widget = dropDown;
 
 	const group2 = new Adw.PreferencesGroup({
-		title: "Appearance"
+		title: _("Appearance")
 	});
 	page1.add(group2);
 
 	const row5 = new Adw.ActionRow({
-		title: 'Color'
+		title: _('Color')
 	});
 	group2.add(row5);settings.set_boolean("enable-tap-gesture", dragOpt.selected);
 
@@ -195,7 +201,7 @@ function fillPreferencesWindow(window) {
 	row5.activatable_widget = colorButton;
 
 	let row6 = new Adw.ActionRow({
-		title: 'Font Size (px)'
+		title: _('Font Size (px)')
 	});
 	group2.add(row6);
 
@@ -206,7 +212,7 @@ function fillPreferencesWindow(window) {
 	row6.activatable_widget = numChanger_font;
 
 	let row7 = new Adw.ActionRow({
-		title: 'Border Spacing (px)'
+		title: _('Border Spacing (px)')
 	});
 	group2.add(row7);
 
@@ -217,7 +223,7 @@ function fillPreferencesWindow(window) {
 	row7.activatable_widget = numChanger_bord;
 
 	const row8 = new Adw.ActionRow({
-		title: 'Round Corners'
+		title: _('Round Corners')
 	});
 	group2.add(row8);
 
@@ -232,7 +238,7 @@ function fillPreferencesWindow(window) {
 	window.add(page1);
 
 	let page2 = new Adw.PreferencesPage({
-		title: "About",
+		title: _("About"),
 		icon_name: 'info-symbolic',
 	});
 
@@ -262,13 +268,13 @@ function fillPreferencesWindow(window) {
 	context.add_class("title-1");
 
 	let another_label = new Gtk.Label({
-		label: "Version " + Me.metadata.version
+		label: _("Version ") + Me.metadata.version
 	});
 
 	let links_pref_group = new Adw.PreferencesGroup();
 	let code_row = new Adw.ActionRow({
 		icon_name: "code-symbolic",
-		title: "More Information, submit feedback, and get help"
+		title: _("More Information, submit feedback, and get help")
 	});
 	let github_link = new Gtk.LinkButton({
 		label: "Github",
