@@ -408,18 +408,18 @@ class Keyboard extends Dialog {
 	snapMovement(xPos, yPos) {
 		let monitor = Main.layoutManager.primaryMonitor
 		let snap_px = this.settings.get_int("snap-spacing-px")
-		if (Math.abs(xPos - ((monitor.width * .5) - ((this.width * .5)))) <= snap_px) {
+		if (Math.abs(xPos - ((monitor.width * .5) - ((this.width * .5)))) <= snap_px * 2) {
 			xPos = ((monitor.width * .5) - ((this.width * .5)));
-		} else if (Math.abs(xPos - snap_px / 2) <= snap_px) {
-			xPos = snap_px / 2;
-		} else if (Math.abs(xPos - (monitor.width - this.width - snap_px / 2)) <= snap_px) {
-			xPos = monitor.width - this.width - snap_px / 2
+		} else if (Math.abs(xPos - snap_px) <= snap_px * 2) {
+			xPos = snap_px;
+		} else if (Math.abs(xPos - (monitor.width - this.width - snap_px)) <= snap_px * 2) {
+			xPos = monitor.width - this.width - snap_px
 		}
-		if (Math.abs(yPos - (monitor.height - this.height - snap_px / 2)) <= snap_px) {
-			yPos = monitor.height - this.height - snap_px / 2;
-		} else if (Math.abs(yPos - snap_px / 2) <= snap_px) {
-			yPos = snap_px / 2;
-		} else if (Math.abs(yPos - ((monitor.height * .5) - (this.height * .5))) <= snap_px) {
+		if (Math.abs(yPos - (monitor.height - this.height - snap_px)) <= snap_px * 2) {
+			yPos = monitor.height - this.height - snap_px;
+		} else if (Math.abs(yPos - snap_px) <= snap_px * 2) {
+			yPos = snap_px;
+		} else if (Math.abs(yPos - ((monitor.height * .5) - (this.height * .5))) <= snap_px * 2) {
 			yPos = (monitor.height * .5) - (this.height * .5);
 		}
 		this.set_translation(xPos, yPos, 0);

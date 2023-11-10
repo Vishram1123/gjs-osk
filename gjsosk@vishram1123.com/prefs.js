@@ -82,7 +82,7 @@ export default class GjsOskPreferences extends ExtensionPreferences {
 		});
 		group1.add(row1t2);
 
-		let numChanger_snap = Gtk.SpinButton.new_with_range(0, 100, 5);
+		let numChanger_snap = Gtk.SpinButton.new_with_range(0, 50, 5);
 		numChanger_snap.value = settings.get_int('snap-spacing-px');
 		numChanger_snap.valign = Gtk.Align.CENTER;
 		row1t2.add_suffix(numChanger_snap);
