@@ -28,6 +28,7 @@ export default class GjsOskPreferences extends ExtensionPreferences {
 		apply.connect("clicked", () => {
 			settings.set_int("lang", langDrop.selected);
 			settings.set_boolean("enable-drag", dragToggle.active);
+			settings.set_int("snap-spacing-px", numChanger_snap.value)
 			settings.set_int("enable-tap-gesture", dragOpt.selected);
 			settings.set_boolean("indicator-enabled", indEnabled.active);
 			settings.set_int("portrait-width-percent", numChanger_pW.value);
@@ -75,6 +76,17 @@ export default class GjsOskPreferences extends ExtensionPreferences {
 
 		row1.add_suffix(dragToggle);
 		row1.activatable_widget = dragToggle;
+
+		let row1t2 = new Adw.ActionRow({
+			title: _('Drag snap spacing (px)')
+		});
+		group1.add(row1t2);
+
+		let numChanger_snap = Gtk.SpinButton.new_with_range(0, 100, 5);
+		numChanger_snap.value = settings.get_int('snap-spacing-px');
+		numChanger_snap.valign = Gtk.Align.CENTER;
+		row1t2.add_suffix(numChanger_snap);
+		row1t2.activatable_widget = numChanger_snap;
 
 		const row1t3 = new Adw.ActionRow({
 			title: _('Enable Panel Indicator')
@@ -292,6 +304,7 @@ export default class GjsOskPreferences extends ExtensionPreferences {
 		window.connect("close-request", () => {
 			settings.set_int("lang", langDrop.selected);
 			settings.set_boolean("enable-drag", dragToggle.active);
+			settings.set_int("snap-spacing-px", numChanger_snap.value);
 			settings.set_int("enable-tap-gesture", dragOpt.selected);
 			settings.set_boolean("indicator-enabled", indEnabled.active);
 			settings.set_int("portrait-width-percent", numChanger_pW.value);

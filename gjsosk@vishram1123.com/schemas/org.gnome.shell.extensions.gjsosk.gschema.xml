@@ -37,7 +37,7 @@
     <key name="default-snap" type="i">
       <default>7</default>
     </key>
-	<key name="lang" type="i">
+	  <key name="lang" type="i">
       <default>0</default>
     </key>
     <key name="enable-tap-gesture" type="i">
@@ -45,6 +45,9 @@
     </key>
     <key name="indicator-enabled" type="b">
       <default>true</default>
+    </key>
+    <key name="snap-spacing-px" type="i">
+      <default>50</default>
     </key>
   </schema>
   <schema id="org.gnome.shell.extensions.gjsoskindicator" path="/org/gnome/shell/extensions/gjsoskindicator/">
