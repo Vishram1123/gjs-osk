@@ -885,6 +885,14 @@ const Keyboard = GObject.registerClass({
 				this.box.add_style_class_name("regular");
 			}
 			this.keys.forEach(item => {
+				item.width -= this.settings.get_int("border-spacing-px") * 2;
+				item.height -= this.settings.get_int("border-spacing-px") * 2;
+				item.set_style("margin: " + this.settings.get_int("border-spacing-px") + "px; font-size: " + this.settings.get_int("font-size-px") + "px; border-radius: " + (this.settings.get_boolean("round-key-corners") ? "5px;" : "0;") + "background-size: " + this.settings.get_int("font-size-px") + "px;");
+				if (this.lightOrDark(this.settings.get_double("background-r"), this.settings.get_double("background-g"), this.settings.get_double("background-b"))) {
+					item.add_style_class_name("inverted");
+				} else {
+					item.add_style_class_name("regular");
+				}
 				let isMod = false
 			        for (var j of [42, 54, 29, 125, 56, 100, 97, 58]) {
 				        try {
