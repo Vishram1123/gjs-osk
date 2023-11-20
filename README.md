@@ -34,7 +34,7 @@ Sorry, I haven't been able to make progress on the keyboard - I have been busy w
 - To change the keyboard layout, change the layout in GJS OSK's settings
 - To add typing prediction, add "Typing Booster" as an input source (in GNOME's settings), and keep it chosen as the primary input source [(extended guide here)](https://mike-fabian.github.io/ibus-typing-booster/docs/user/).
   - Note that this will cause predictive text to be present even without the OSK open, and the input language for Typing Booster's predictions will have to be set in Typing Booster's settings 
-- To open the keyboard from the command line (or with a shortcut), run the command `dconf write /org/gnome/shell/extensions/gjsoskindicator/opened true` which will open the keyboard 
+- To open the keyboard from the command line (or with a shortcut), run the command `dconf write /org/gnome/shell/extensions/gjsosk/indicator/opened true` which will open the keyboard 
 ## Known Problems/Issues and Intended Features (Would appreciate solutions about how to fix):
 - 100% width or height doesn't take up the full monitor width or height (minus 25 px on either side). Instead, it is 1 or 2 px smaller, depending on the monitor size
 - Even though the keyboard displays over system modals, it isn't interactable
