@@ -93,7 +93,7 @@ class Extension {
 	}
 	enable() {
 		this.settings = ExtensionUtils.getSettings("org.gnome.shell.extensions.gjsosk");
-		this.openBit = ExtensionUtils.getSettings("org.gnome.shell.extensions.gjsoskindicator");
+		this.openBit = this.settings.get_child("indicator");
 		let [ok, contents] = GLib.file_get_contents(Me.path + '/keycodes.json');
 		if (ok) {
 			keycodes = JSON.parse(contents)[['qwerty', 'azerty', 'dvorak', "qwertz"][this.settings.get_int("lang")]];
@@ -165,14 +165,14 @@ class Extension {
 			}
 
 			if (this.settings.get_int("enable-tap-gesture") > 0) {
-				global.stage.disconnect("event")
+				global.stage.disconnect(this.tapConnect)
 				if (this.openInterval !== null) {
 					clearInterval(this.openInterval);
 					this.openInterval = null;
 				}
 				this.open_interval();
 			} else {
-				global.stage.disconnect("event")
+				global.stage.disconnect(this.tapConnect)
 				if (this.openInterval !== null) {
 					clearInterval(this.openInterval);
 					this.openInterval = null;
@@ -195,7 +195,7 @@ class Extension {
 				}
 			}
 		}, 300);
-		global.stage.connect("event", (_actor, event) => {
+		this.tapConnect = global.stage.connect("event", (_actor, event) => {
 			if (event.type() !== 4 && event.type() !== 5) {
 				this.lastInputMethod = [false, event.type() >= 9 && event.type() <= 12, true][this.settings.get_int("enable-tap-gesture")]
 			}
@@ -211,7 +211,7 @@ class Extension {
 		this.settings = null;
 		this.openBit.disconnect(this.openFromCommandHandler);
 		this.openBit = null;
-		global.stage.disconnect("event")
+		global.stage.disconnect(this.tapConnect)
 		if (this.openInterval !== null) {
 			clearInterval(this.openInterval);
 			this.openInterval = null;
@@ -220,6 +220,8 @@ class Extension {
 			this._toggle.destroy()
 		} catch (e) {}
 		this._toggle = null
+		this.settings = null
+		this.Keyboard = null
 	}
 }
 
@@ -267,23 +269,27 @@ const Keyboard = GObject.registerClass({
 			}, 200);
 		}
 		destroy() {
-			if (this.startupTimeout !== null && this.startupTimeout <= 4294967295) {
+			if (this.startupInterval !== null) {
+				clearInterval(this.startupInterval);
+				this.startupInterval = null;
+			}
+			if (this.startupTimeout !== null) {
 				clearInterval(this.startupTimeout);
 				this.startupTimeout = null;
 			}
-			if (this.monitorChecker !== null && this.monitorChecker <= 4294967295) {
+			if (this.monitorChecker !== null) {
 				clearInterval(this.monitorChecker);
 				this.monitorChecker = null;
 			}
-			if (this.textboxChecker !== null && this.textboxChecker <= 4294967295) {
+			if (this.textboxChecker !== null) {
 				clearInterval(this.textboxChecker);
 				this.textboxChecker = null;
 			}
-			if (this.stateTimeout !== null && this.stateTimeout <= 4294967295) {
+			if (this.stateTimeout !== null ) {
 				clearTimeout(this.stateTimeout);
 				this.stateTimeout = null;
 			}
-			if (this.keyTimeout !== null && this.keyTimeout <= 4294967295) {
+			if (this.keyTimeout !== null) {
 				clearTimeout(this.keyTimeout);
 				this.keyTimeout = null;
 			}
@@ -879,15 +885,100 @@ const Keyboard = GObject.registerClass({
 				this.box.add_style_class_name("regular");
 			}
 			this.keys.forEach(item => {
-				item.width -= this.settings.get_int("border-spacing-px") * 2;
-				item.height -= this.settings.get_int("border-spacing-px") * 2;
-				item.set_style("margin: " + this.settings.get_int("border-spacing-px") + "px; font-size: " + this.settings.get_int("font-size-px") + "px; border-radius: " + (this.settings.get_boolean("round-key-corners") ? "5px;" : "0;") + "background-size: " + this.settings.get_int("font-size-px") + "px;");
-				if (this.lightOrDark(this.settings.get_double("background-r"), this.settings.get_double("background-g"), this.settings.get_double("background-b"))) {
-					item.add_style_class_name("inverted");
-				} else {
-					item.add_style_class_name("regular");
-				}
-			});
+				let isMod = false
+			        for (var j of [42, 54, 29, 125, 56, 100, 97, 58]) {
+				        try {
+					        if (item.char.code == j) {
+						        isMod = true;
+						        break;
+					        }
+				        } catch {
+					        print(item)
+				        }
+			        }
+			        item.set_pivot_point(0.5, 0.5)
+			        item.connect("button-press-event", () => {
+				        item.set_scale(1.2, 1.2)
+				        if (this.settings.get_boolean("play-sound")) {
+					        let player = global.display.get_sound_player();
+					        player.play_from_theme("dialog-information", "tap", null)
+				        }
+				        item.button_pressed = setTimeout(() => {
+					        if (!isMod) {
+						        const oldModBtns = this.modBtns
+						        item.button_repeat = setInterval(() => {
+							        if (this.settings.get_boolean("play-sound")) {
+								        player.play_from_theme("dialog-information", "tap", null)
+							        }
+							        this.decideMod(item.char)
+							        console.log(oldModBtns)
+							        for (var i of oldModBtns) {
+								        this.decideMod(i.char, i)
+							        }
+						        }, 100);
+						        
+					        }
+				        }, 750);
+			        })
+			        item.connect("button-release-event", () => {
+				        item.ease({
+					        scale_x: 1,
+					        scale_y: 1,
+					        duration: 100,
+					        mode: Clutter.AnimationMode.EASE_OUT_QUAD,
+					        onComplete: () => {item.set_scale(1, 1)}
+				        })
+				        if (item.button_pressed !== null){
+					        clearTimeout(item.button_pressed)
+					        item.button_pressed == null
+				        }
+				        if (item.button_repeat !== null){
+					        clearInterval(item.button_repeat)
+					        item.button_repeat == null
+				        }
+			        })
+			        item.connect("touch-event", () => {
+				        if (Clutter.get_current_event().type() == Clutter.EventType.TOUCH_BEGIN) {
+					        item.set_scale(1.2, 1.2)
+					        let player = global.display.get_sound_player();
+					        player.play_from_theme("dialog-information", "tap", null)
+					        item.button_pressed = setTimeout(() => {
+						        console.log("held")
+						        
+						        if (!isMod) {
+							        const oldModBtns = this.modBtns
+							        item.button_repeat = setInterval(() => {
+								        console.log("holding")
+								        player.play_from_theme("dialog-information", "tap", null)
+								        this.decideMod(item.char)
+								        console.log(oldModBtns)
+								        for (var i of oldModBtns) {
+									        this.decideMod(i.char, i)
+								        }
+							        }, 100);
+							        
+						        }
+					        }, 750);
+				        player.play_from_theme("dialog-information", "tap", null)
+				        } else if (Clutter.get_current_event().type() == Clutter.EventType.TOUCH_END) {	
+					        item.ease({
+						        scale_x: 1,
+						        scale_y: 1,
+						        duration: 100,
+						        mode: Clutter.AnimationMode.EASE_OUT_QUAD,
+						        onComplete: () => {item.set_scale(1, 1)}
+					        })
+					        if (item.button_pressed !== null){
+						        clearTimeout(item.button_pressed)
+						        item.button_pressed == null
+					        }
+					        if (item.button_repeat !== null){
+						        clearInterval(item.button_repeat)
+						        item.button_repeat == null
+					        }
+				        }
+			        })
+		        });
 		}
 		lightOrDark(r, g, b) {
 			var hsp;

@@ -45,11 +45,16 @@
     </key>
     <key name="indicator-enabled" type="b">
       <default>true</default>
+    </key>   
+    <key name="play-sound" type="b">
+		<default>true</default>
     </key>
+    <child name="indicator" schema="org.gnome.shell.extensions.gjsosk.indicator"/>
+	
   </schema>
-  <schema id="org.gnome.shell.extensions.gjsoskindicator" path="/org/gnome/shell/extensions/gjsoskindicator/">
-    <key name="opened" type="b">
-      <default>false</default>
-    </key>
-  </schema>
+  <schema id="org.gnome.shell.extensions.gjsosk.indicator" path="/org/gnome/shell/extensions/gjsosk/indicator/">
+  <key name="opened" type="b">
+		<default>false</default>
+	</key>
+	</schema>
 </schemalist>

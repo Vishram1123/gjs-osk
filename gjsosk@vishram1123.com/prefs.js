@@ -47,6 +47,7 @@ function fillPreferencesWindow(window) {
 		settings.set_int("font-size-px", numChanger_font.value);
 		settings.set_int("border-spacing-px", numChanger_bord.value);
 		settings.set_boolean("round-key-corners", dragToggle2.active);
+                settings.set_boolean("play-sound", dragToggle3.active);
 		settings.set_int("default-snap", dropDown.selected);
 	});
 	group0.add(apply)
@@ -235,6 +236,19 @@ function fillPreferencesWindow(window) {
 	row8.add_suffix(dragToggle2);
 	row8.activatable_widget = dragToggle2;
 
+
+        const row9 = new Adw.ActionRow({
+		title: _('Play sound')
+	});
+	group2.add(row9);
+
+	const dragToggle3 = new Gtk.Switch({
+	        active: settings.get_boolean('play-sound'),
+		valign: Gtk.Align.CENTER,
+	});
+
+	row9.add_suffix(dragToggle3);
+	row9.activatable_widget = dragToggle3;
 	window.add(page1);
 
 	let page2 = new Adw.PreferencesPage({
@@ -311,6 +325,7 @@ function fillPreferencesWindow(window) {
 		settings.set_int("font-size-px", numChanger_font.value);
 		settings.set_int("border-spacing-px", numChanger_bord.value);
 		settings.set_boolean("round-key-corners", dragToggle2.active);
+                settings.set_boolean("play-sound", dragToggle3.active);
 		settings.set_int("default-snap", dropDown.selected);
 	});
 }
