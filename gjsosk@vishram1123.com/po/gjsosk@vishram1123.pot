@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2023-10-05 17:31+0200\n"
+"POT-Creation-Date: 2023-11-20 17:25-0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -25,15 +25,15 @@ msgstr ""
 msgid "Opening Mode"
 msgstr ""
 
-#: extension.js:34 prefs.js:98
+#: extension.js:34 prefs.js:99
 msgid "Never"
 msgstr ""
 
-#: extension.js:35 prefs.js:98
+#: extension.js:35 prefs.js:99
 msgid "Only on Touch"
 msgstr ""
 
-#: extension.js:36 prefs.js:98
+#: extension.js:36 prefs.js:99
 msgid "Always"
 msgstr ""
 
@@ -49,110 +49,114 @@ msgstr ""
 msgid "Apply Changes"
 msgstr ""
 
-#: prefs.js:49
+#: prefs.js:50
 msgid "Behavior"
 msgstr ""
 
-#: prefs.js:54
+#: prefs.js:55
 msgid "Language"
 msgstr ""
 
-#: prefs.js:67
+#: prefs.js:68
 msgid "Enable Dragging"
 msgstr ""
 
-#: prefs.js:80
+#: prefs.js:81
 msgid "Enable Panel Indicator"
 msgstr ""
 
-#: prefs.js:93
+#: prefs.js:94
 msgid "Open upon clicking in a text field"
 msgstr ""
 
-#: prefs.js:107
+#: prefs.js:108
 msgid "Portrait Sizing"
 msgstr ""
 
-#: prefs.js:112 prefs.js:139
+#: prefs.js:113 prefs.js:140
 msgid "Width (%)"
 msgstr ""
 
-#: prefs.js:115 prefs.js:142
+#: prefs.js:116 prefs.js:143
 msgid "Height (%)"
 msgstr ""
 
-#: prefs.js:134
+#: prefs.js:135
 msgid "Landscape Sizing"
 msgstr ""
 
-#: prefs.js:161
+#: prefs.js:162
 msgid "Default Position"
 msgstr ""
 
-#: prefs.js:166
+#: prefs.js:167
 msgid "Top Left"
 msgstr ""
 
-#: prefs.js:166
+#: prefs.js:167
 msgid "Top Center"
 msgstr ""
 
-#: prefs.js:166
+#: prefs.js:167
 msgid "Top Right"
 msgstr ""
 
-#: prefs.js:167
+#: prefs.js:168
 msgid "Center Left"
 msgstr ""
 
-#: prefs.js:167
+#: prefs.js:168
 msgid "Center"
 msgstr ""
 
-#: prefs.js:167
+#: prefs.js:168
 msgid "Center Right"
 msgstr ""
 
-#: prefs.js:168
+#: prefs.js:169
 msgid "Bottom Left"
 msgstr ""
 
-#: prefs.js:168
+#: prefs.js:169
 msgid "Bottom Center"
 msgstr ""
 
-#: prefs.js:168
+#: prefs.js:169
 msgid "Bottom Right"
 msgstr ""
 
-#: prefs.js:178
+#: prefs.js:179
 msgid "Appearance"
 msgstr ""
 
-#: prefs.js:183
+#: prefs.js:184
 msgid "Color"
 msgstr ""
 
-#: prefs.js:198
+#: prefs.js:199
 msgid "Font Size (px)"
 msgstr ""
 
-#: prefs.js:209
+#: prefs.js:210
 msgid "Border Spacing (px)"
 msgstr ""
 
-#: prefs.js:220
+#: prefs.js:221
 msgid "Round Corners"
 msgstr ""
 
-#: prefs.js:235
+#: prefs.js:234
+msgid "Play sound"
+msgstr ""
+
+#: prefs.js:249
 msgid "About"
 msgstr ""
 
-#: prefs.js:265
+#: prefs.js:279
 msgid "Version "
 msgstr ""
 
-#: prefs.js:271
+#: prefs.js:285
 msgid "More Information, submit feedback, and get help"
 msgstr ""
