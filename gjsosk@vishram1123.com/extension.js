@@ -89,6 +89,11 @@ export default class GjsOskExtension extends Extension {
 	}
 
 	open_interval() {
+		global.stage.disconnect(this.tapConnect)
+		if (this.openInterval !== null) {
+			clearInterval(this.openInterval);
+			this.openInterval = null;
+		}
 		this.openInterval = setInterval(() => {
 			this.Keyboard.get_parent().set_child_at_index(this.Keyboard, this.Keyboard.get_parent().get_n_children() - 1);
 			this.Keyboard.set_child_at_index(this.Keyboard.box, this.Keyboard.get_n_children() - 1);
@@ -182,20 +187,13 @@ export default class GjsOskExtension extends Extension {
 					this._indicator = null;
 				}
 			}
-			
+			global.stage.disconnect(this.tapConnect)
+			if (this.openInterval !== null) {
+				clearInterval(this.openInterval);
+				this.openInterval = null;
+			}
 			if (this.settings.get_int("enable-tap-gesture") > 0) {
-				global.stage.disconnect(this.tapConnect)
-				if (this.openInterval !== null) {
-					clearInterval(this.openInterval);
-					this.openInterval = null;
-				}
 				this.open_interval();
-			} else {
-				global.stage.disconnect(this.tapConnect)
-				if (this.openInterval !== null) {
-					clearInterval(this.openInterval);
-					this.openInterval = null;
-				}
 			}
 		});
 	}
@@ -223,6 +221,7 @@ export default class GjsOskExtension extends Extension {
 		this._toggle = null
 		this.settings = null
 		this.Keyboard = null
+		keycodes = null
 	}
 }
 
@@ -382,9 +381,7 @@ class Keyboard extends Dialog {
 
 	motionEvent(event) {
 		if (this.draggable) {
-			console.log(event.type())
 			let [absX, absY] = event.get_coords();
-			console.log(event.get_coords());
 			this.snapMovement(absX - this.delta[0], absY - this.delta[1]);
 			return Clutter.EVENT_STOP
 		} else {
@@ -919,10 +916,29 @@ class Keyboard extends Dialog {
 				}
 			}
 			item.set_pivot_point(0.5, 0.5)
+			item.connect("destroy", () => {
+				if (item.button_pressed !== null){
+					clearTimeout(item.button_pressed)
+					item.button_pressed == null
+				}
+				if (item.button_repeat !== null){
+					clearInterval(item.button_repeat)
+					item.button_repeat == null
+				}
+				if (item.tap_pressed !== null){
+						clearTimeout(item.tap_pressed)
+						item.tap_pressed == null
+				}
+				if (item.tap_repeat !== null){
+					clearInterval(item.tap_repeat)
+					item.tap_repeat == null
+				}
+			})
 			item.connect("button-press-event", () => {
 				item.set_scale(1.2, 1.2)
+				let player
 				if (this.settings.get_boolean("play-sound")) {
-					let player = global.display.get_sound_player();
+					player = global.display.get_sound_player();
 					player.play_from_theme("dialog-information", "tap", null)
 				}
 				item.button_pressed = setTimeout(() => {
@@ -933,7 +949,7 @@ class Keyboard extends Dialog {
 								player.play_from_theme("dialog-information", "tap", null)
 							}
 							this.decideMod(item.char)
-							console.log(oldModBtns)
+							
 							for (var i of oldModBtns) {
 								this.decideMod(i.char, i)
 							}
@@ -962,18 +978,24 @@ class Keyboard extends Dialog {
 			item.connect("touch-event", () => {
 				if (Clutter.get_current_event().type() == Clutter.EventType.TOUCH_BEGIN) {
 					item.set_scale(1.2, 1.2)
-					let player = global.display.get_sound_player();
-					player.play_from_theme("dialog-information", "tap", null)
-					item.button_pressed = setTimeout(() => {
-						console.log("held")
+					let player
+					if (this.settings.get_boolean("play-sound")) {
+						player = global.display.get_sound_player();
+						player.play_from_theme("dialog-information", "tap", null)
+					}
+					
+					item.tap_pressed = setTimeout(() => {
+						
 						
 						if (!isMod) {
 							const oldModBtns = this.modBtns
-							item.button_repeat = setInterval(() => {
-								console.log("holding")
-								player.play_from_theme("dialog-information", "tap", null)
+							item.tap_repeat = setInterval(() => {
+								
+								if (this.settings.get_boolean("play-sound")) {
+									player.play_from_theme("dialog-information", "tap", null)
+								}
 								this.decideMod(item.char)
-								console.log(oldModBtns)
+								
 								for (var i of oldModBtns) {
 									this.decideMod(i.char, i)
 								}
@@ -981,7 +1003,6 @@ class Keyboard extends Dialog {
 							
 						}
 					}, 750);
-				player.play_from_theme("dialog-information", "tap", null)
 				} else if (Clutter.get_current_event().type() == Clutter.EventType.TOUCH_END) {	
 					item.ease({
 						scale_x: 1,
@@ -990,13 +1011,13 @@ class Keyboard extends Dialog {
 						mode: Clutter.AnimationMode.EASE_OUT_QUAD,
 						onComplete: () => {item.set_scale(1, 1)}
 					})
-					if (item.button_pressed !== null){
-						clearTimeout(item.button_pressed)
-						item.button_pressed == null
+					if (item.tap_pressed !== null){
+						clearTimeout(item.tap_pressed)
+						item.tap_pressed == null
 					}
-					if (item.button_repeat !== null){
-						clearInterval(item.button_repeat)
-						item.button_repeat == null
+					if (item.tap_repeat !== null){
+						clearInterval(item.tap_repeat)
+						item.tap_repeat == null
 					}
 				}
 			})
