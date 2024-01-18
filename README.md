@@ -7,7 +7,7 @@ A (marginally) better on screen keyboard for GNOME 45+ (go to the [pre-45 branch
 ## Requirements
 - GNOME 45 or above
 - Wayland (X11 is not working properly)
-- [Block Caribou 36](https://extensions.gnome.org/extension/3222/block-caribou-36/) for blocking default GNOME OSK (see [this issue](https://github.com/Vishram1123/gjs-osk/issues/33) if you are having problems with the keyboard also being blocked on lockscreen 
+- [Block Caribou 36](https://extensions.gnome.org/extension/3222/block-caribou-36/) for blocking default GNOME OSK (see [this issue](https://github.com/Vishram1123/gjs-osk/issues/33) if you are having problems with the keyboard also being blocked on lockscreen)
 ## Demo
 [Keyboard Demo.webm](https://user-images.githubusercontent.com/64966832/210458851-1b91adba-f6e4-4d40-b0d5-dba2c46cc354.webm)
 
