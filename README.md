@@ -1,7 +1,5 @@
 # [GJS OSK](https://extensions.gnome.org/extension/5949/gjs-osk/)
 A (marginally) better on screen keyboard for GNOME 42-44 (go to the [main branch](https://github.com/Vishram1123/gjs-osk/) for compatibility from gnome 45 and up)
-# Update
-Sorry, I haven't been able to make progress on the keyboard - I have been busy with school work and life. I will get back to this as soon as possible.
 ## Advantages over the default OSK:
 -	Function, modifier, tab, and arrow key support
 -	Ability to move around the screen
@@ -9,7 +7,7 @@ Sorry, I haven't been able to make progress on the keyboard - I have been busy w
 ## Requirements
 - GNOME 42-44
 - Wayland (X11 is not working properly)
-- [Block Caribou 36](https://extensions.gnome.org/extension/3222/block-caribou-36/) for blocking default GNOME OSK
+- [Block Caribou 36](https://extensions.gnome.org/extension/3222/block-caribou-36/) for blocking default GNOME OSK (see this issue if you are having problems with the keyboard also being blocked on lockscreen)
 ## Demo
 [Keyboard Demo.webm](https://user-images.githubusercontent.com/64966832/210458851-1b91adba-f6e4-4d40-b0d5-dba2c46cc354.webm)
 
