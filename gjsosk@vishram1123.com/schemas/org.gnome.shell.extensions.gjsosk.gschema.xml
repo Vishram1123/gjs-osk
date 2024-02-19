@@ -31,6 +31,9 @@
     <key name="border-spacing-px" type="i">
       <default>2</default>
     </key>
+    <key name="snap-spacing-px" type="i">
+      <default>25</default>
+    </key>
     <key name="round-key-corners" type="b">
       <default>false</default>
     </key>

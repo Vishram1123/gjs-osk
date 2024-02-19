@@ -410,17 +410,18 @@ class Keyboard extends Dialog {
 
 	snapMovement(xPos, yPos) {
 		let monitor = Main.layoutManager.primaryMonitor
+		let snap_px = this.settings.get_int("snap-spacing-px")
 		if (Math.abs(xPos - ((monitor.width * .5) - ((this.width * .5)))) <= 50) {
 			xPos = ((monitor.width * .5) - ((this.width * .5)));
-		} else if (Math.abs(xPos - 25) <= 50) {
-			xPos = 25;
-		} else if (Math.abs(xPos - (monitor.width - this.width - 25)) <= 50) {
-			xPos = monitor.width - this.width - 25
+		} else if (Math.abs(xPos - snap_px) <= 50) {
+			xPos = snap_px;
+		} else if (Math.abs(xPos - (monitor.width - this.width - snap_px)) <= 50) {
+			xPos = monitor.width - this.width - snap_px
 		}
-		if (Math.abs(yPos - (monitor.height - this.height - 25)) <= 50) {
-			yPos = monitor.height - this.height - 25;
-		} else if (Math.abs(yPos - 25) <= 50) {
-			yPos = 25;
+		if (Math.abs(yPos - (monitor.height - this.height - snap_px)) <= 50) {
+			yPos = monitor.height - this.height - snap_px;
+		} else if (Math.abs(yPos - snap_px) <= 50) {
+			yPos = snap_px;
 		} else if (Math.abs(yPos - ((monitor.height * .5) - (this.height * .5))) <= 50) {
 			yPos = (monitor.height * .5) - (this.height * .5);
 		}
@@ -522,8 +523,8 @@ class Keyboard extends Dialog {
 						this.state = "opened"
 					}, 500);
 					let monitor = Main.layoutManager.primaryMonitor;
-					let posX = [25, ((monitor.width * .5) - ((this.width * .5))), monitor.width - this.width - 25][(this.settings.get_int("default-snap") % 3)];
-					let posY = [25, ((monitor.height * .5) - ((this.height * .5))), monitor.height - this.height - 25][Math.floor((this.settings.get_int("default-snap") / 3))];
+					let posX = [this.settings.get_int("snap-spacing-px"), ((monitor.width * .5) - ((this.width * .5))), monitor.width - this.width - this.settings.get_int("snap-spacing-px")][(this.settings.get_int("default-snap") % 3)];
+					let posY = [this.settings.get_int("snap-spacing-px"), ((monitor.height * .5) - ((this.height * .5))), monitor.height - this.height - this.settings.get_int("snap-spacing-px")][Math.floor((this.settings.get_int("default-snap") / 3))];
 					this.set_translation(posX, posY, 0);
 				}
 			});
@@ -537,8 +538,8 @@ class Keyboard extends Dialog {
 			KeyboardManager.getKeyboardManager().apply(this.init);
 		}
 		let monitor = Main.layoutManager.primaryMonitor;
-		let posX = [25, ((monitor.width * .5) - ((this.width * .5))), monitor.width - this.width - 25][(this.settings.get_int("default-snap") % 3)];
-		let posY = [25, ((monitor.height * .5) - ((this.height * .5))), monitor.height - this.height - 25][Math.floor((this.settings.get_int("default-snap") / 3))];
+		let posX = [this.settings.get_int("snap-spacing-px"), ((monitor.width * .5) - ((this.width * .5))), monitor.width - this.width - this.settings.get_int("snap-spacing-px")][(this.settings.get_int("default-snap") % 3)];
+		let posY = [this.settings.get_int("snap-spacing-px"), ((monitor.height * .5) - ((this.height * .5))), monitor.height - this.height - this.settings.get_int("snap-spacing-px")][Math.floor((this.settings.get_int("default-snap") / 3))];
 		this.state = "closing"
 		this.box.ease({
 			opacity: 0,
@@ -564,8 +565,8 @@ class Keyboard extends Dialog {
 	buildUI() {
 		this.keys = [];
 		let monitor = Main.layoutManager.primaryMonitor
-		var topRowWidth = Math.round(((monitor.width - 90) * this.widthPercent) / 15);
-		var topRowHeight = Math.round(((monitor.height - 190) * this.heightPercent) / 6);
+		var topRowWidth = Math.round((monitor.width - 40 - this.settings.get_int("snap-spacing-px") * 2) * this.widthPercent / 15)
+		var topRowHeight = Math.round((monitor.height - 140 - this.settings.get_int("snap-spacing-px") * 2) * this.heightPercent / 6)
 
 		let row1 = new St.BoxLayout({
 			pack_start: true
@@ -636,7 +637,7 @@ class Keyboard extends Dialog {
 				w = (topRowWidth) + 5;
 			}
 			let params = {
-				height: topRowHeight,
+				height: topRowHeight + 20,
 				width: w
 			}
 			let styleClass = ""
@@ -698,7 +699,7 @@ class Keyboard extends Dialog {
 				w = (topRowWidth) + 5;
 			}
 			let params = {
-				height: topRowHeight,
+				height: topRowHeight + 20,
 				width: w
 			}
 			let styleClass = ""
@@ -758,7 +759,7 @@ class Keyboard extends Dialog {
 				w = (topRowWidth) + 5;
 			}
 			let params = {
-				height: topRowHeight,
+				height: topRowHeight + 20,
 				width: w
 			}
 			let styleClass = ""
@@ -818,7 +819,7 @@ class Keyboard extends Dialog {
 				w = (topRowWidth) + 5;
 			}
 			let params = {
-				height: topRowHeight,
+				height: topRowHeight + 20,
 				width: w
 			}
 			let styleClass = ""
@@ -875,7 +876,7 @@ class Keyboard extends Dialog {
 			if (num == 3) {
 				w = ((row1.width - ((keycodes.row6.length + 1) * ((topRowWidth) + 5))));
 				let params = {
-					height: topRowHeight,
+					height: topRowHeight + 20,
 					width: w
 				}
 				let styleClass = ""
@@ -1017,7 +1018,7 @@ class Keyboard extends Dialog {
 			} else {
 				w = (topRowWidth) + 5;
 				let params = {
-					height: topRowHeight,
+					height: topRowHeight + 20,
 					width: w
 				}
 				let styleClass = ""
@@ -1073,7 +1074,6 @@ class Keyboard extends Dialog {
 		this.box.add_child(row4);
 		this.box.add_child(row5);
 		this.box.add_child(row6);
-		var containers_ = this.box.get_children();
 		if (this.lightOrDark(this.settings.get_double("background-r"), this.settings.get_double("background-g"), this.settings.get_double("background-b"))) {
 			this.box.add_style_class_name("inverted");
 		} else {
