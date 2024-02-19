@@ -87,8 +87,8 @@
       },
       {
         "code": 111,
-        "lowerName": "⌦",
-        "upperName": "⌦",
+        "lowerName": "delete",
+        "upperName": "delete",
         "altName": ""
       }
     ],
@@ -173,16 +173,16 @@
       },
       {
         "code": 14,
-        "lowerName": "⌫",
-        "upperName": "⌫",
+        "lowerName": "backspace",
+        "upperName": "backspace",
         "altName": ""
       }
     ],
     "row3": [
       {
         "code": 15,
-        "lowerName": "⇥",
-        "upperName": "⇥",
+        "lowerName": "tab",
+        "upperName": "tab",
         "altName": ""
       },
       {
@@ -277,8 +277,8 @@
     "row4": [
       {
         "code": 58,
-        "lowerName": "⇪",
-        "upperName": "⇪",
+        "lowerName": "capslock",
+        "upperName": "capslock",
         "altName": ""
       },
       {
@@ -358,16 +358,16 @@
       },
       {
         "code": 28,
-        "lowerName": "⏎",
-        "upperName": "⏎",
+        "lowerName": "enter",
+        "upperName": "enter",
         "altName": ""
       }
     ],
     "row5": [
       {
         "code": 42,
-        "lowerName": "⇧",
-        "upperName": "⇧",
+        "lowerName": "shift",
+        "upperName": "shift",
         "altName": ""
       },
       {
@@ -439,71 +439,71 @@
       },
       {
         "code": 54,
-        "lowerName": "⇧",
-        "upperName": "⇧",
+        "lowerName": "shift",
+        "upperName": "shift",
         "altName": ""
       }
     ],
     "row6": [
       {
         "code": 29,
-        "lowerName": "⌃",
-        "upperName": "⌃",
+        "lowerName": "ctrl",
+        "upperName": "ctrl",
         "altName": ""
       },
       {
         "code": 125,
-        "lowerName": "❖",
-        "upperName": "❖",
+        "lowerName": "super",
+        "upperName": "super",
         "altName": ""
       },
       {
         "code": 56,
-        "lowerName": "⌥",
-        "upperName": "⌥",
+        "lowerName": "alt",
+        "upperName": "alt",
         "altName": ""
       },
       {
         "code": 57,
-        "lowerName": "␣",
-        "upperName": "␣",
+        "lowerName": "space",
+        "upperName": "space",
         "altName": ""
       },
       {
         "code": 100,
-        "lowerName": "⌥",
-        "upperName": "⌥",
+        "lowerName": "alt",
+        "upperName": "alt",
         "altName": ""
       },
       {
         "code": 97,
-        "lowerName": "⌃",
-        "upperName": "⌃",
+        "lowerName": "ctrl",
+        "upperName": "ctrl",
         "altName": ""
       },
       [
         {
           "code": 105,
-          "lowerName": "←",
-          "upperName": "←",
+          "lowerName": "left",
+          "upperName": "left",
           "altName": ""
         },
         {
           "code": 103,
-          "lowerName": "↑",
-          "upperName": "↑",
+          "lowerName": "up",
+          "upperName": "up",
           "altName": ""
         },
         {
           "code": 108,
-          "lowerName": "↓",
-          "upperName": "↓",
+          "lowerName": "down",
+          "upperName": "down",
           "altName": ""
         },
         {
           "code": 106,
-          "lowerName": "→",
-          "upperName": "→",
+          "lowerName": "right",
+          "upperName": "right",
           "altName": ""
         }
       ]
@@ -597,8 +597,8 @@
       },
       {
         "code": 111,
-        "lowerName": "⌦",
-        "upperName": "⌦",
+        "lowerName": "delete",
+        "upperName": "delete",
         "altName": ""
       }
     ],
@@ -687,16 +687,16 @@
       },
       {
         "code": 14,
-        "lowerName": "⌫",
-        "upperName": "⌫",
+        "lowerName": "backspace",
+        "upperName": "backspace",
         "altName": ""
       }
     ],
     "row3": [
       {
         "code": 15,
-        "lowerName": "⇥",
-        "upperName": "⇥",
+        "lowerName": "tab",
+        "upperName": "tab",
         "altName": ""
       },
       {
@@ -791,8 +791,8 @@
     "row4": [
       {
         "code": 58,
-        "lowerName": "⇪",
-        "upperName": "⇪",
+        "lowerName": "capslock",
+        "upperName": "capslock",
         "altName": ""
       },
       {
@@ -874,16 +874,16 @@
       },
       {
         "code": 28,
-        "lowerName": "⏎",
-        "upperName": "⏎",
+        "lowerName": "enter",
+        "upperName": "enter",
         "altName": ""
       }
     ],
     "row5": [
       {
         "code": 42,
-        "lowerName": "⇧",
-        "upperName": "⇧",
+        "lowerName": "shift",
+        "upperName": "shift",
         "altName": ""
       },
       {
@@ -960,71 +960,71 @@
       },
       {
         "code": 54,
-        "lowerName": "⇧",
-        "upperName": "⇧",
+        "lowerName": "shift",
+        "upperName": "shift",
         "altName": ""
       }
     ],
     "row6": [
       {
         "code": 29,
-        "lowerName": "⌃",
-        "upperName": "⌃",
+        "lowerName": "ctrl",
+        "upperName": "ctrl",
         "altName": ""
       },
       {
         "code": 125,
-        "lowerName": "❖",
-        "upperName": "❖",
+        "lowerName": "super",
+        "upperName": "super",
         "altName": ""
       },
       {
         "code": 56,
-        "lowerName": "⌥",
-        "upperName": "⌥",
+        "lowerName": "alt",
+        "upperName": "alt",
         "altName": ""
       },
       {
         "code": 57,
-        "lowerName": "␣",
-        "upperName": "␣",
+        "lowerName": "space",
+        "upperName": "space",
         "altName": ""
       },
       {
         "code": 100,
-        "lowerName": "⌥",
-        "upperName": "⌥",
+        "lowerName": "alt",
+        "upperName": "alt",
         "altName": ""
       },
       {
         "code": 97,
-        "lowerName": "⌃",
-        "upperName": "⌃",
+        "lowerName": "ctrl",
+        "upperName": "ctrl",
         "altName": ""
       },
       [
         {
           "code": 105,
-          "lowerName": "←",
-          "upperName": "←",
+          "lowerName": "left",
+          "upperName": "left",
           "altName": ""
         },
         {
           "code": 103,
-          "lowerName": "↑",
-          "upperName": "↑",
+          "lowerName": "up",
+          "upperName": "up",
           "altName": ""
         },
         {
           "code": 108,
-          "lowerName": "↓",
-          "upperName": "↓",
+          "lowerName": "down",
+          "upperName": "down",
           "altName": ""
         },
         {
           "code": 106,
-          "lowerName": "→",
-          "upperName": "→",
+          "lowerName": "right",
+          "upperName": "right",
           "altName": ""
         }
       ]
@@ -1118,8 +1118,8 @@
       },
       {
         "code": 111,
-        "lowerName": "⌦",
-        "upperName": "⌦",
+        "lowerName": "delete",
+        "upperName": "delete",
         "altName": ""
       }
     ],
@@ -1204,16 +1204,16 @@
       },
       {
         "code": 14,
-        "lowerName": "⌫",
-        "upperName": "⌫",
+        "lowerName": "backspace",
+        "upperName": "backspace",
         "altName": ""
       }
     ],
     "row3": [
       {
         "code": 15,
-        "lowerName": "⇥",
-        "upperName": "⇥",
+        "lowerName": "tab",
+        "upperName": "tab",
         "altName": ""
       },
       {
@@ -1305,8 +1305,8 @@
     "row4": [
       {
         "code": 58,
-        "lowerName": "⇪",
-        "upperName": "⇪",
+        "lowerName": "capslock",
+        "upperName": "capslock",
         "altName": ""
       },
       {
@@ -1387,16 +1387,16 @@
       },
       {
         "code": 28,
-        "lowerName": "⏎",
-        "upperName": "⏎",
+        "lowerName": "enter",
+        "upperName": "enter",
         "altName": ""
       }
     ],
     "row5": [
       {
         "code": 42,
-        "lowerName": "⇧",
-        "upperName": "⇧",
+        "lowerName": "shift",
+        "upperName": "shift",
         "altName": ""
       },
       {
@@ -1470,71 +1470,71 @@
       },
       {
         "code": 54,
-        "lowerName": "⇧",
-        "upperName": "⇧",
+        "lowerName": "shift",
+        "upperName": "shift",
         "altName": ""
       }
     ],
     "row6": [
       {
         "code": 29,
-        "lowerName": "⌃",
-        "upperName": "⌃",
+        "lowerName": "ctrl",
+        "upperName": "ctrl",
         "altName": ""
       },
       {
         "code": 125,
-        "lowerName": "❖",
-        "upperName": "❖",
+        "lowerName": "super",
+        "upperName": "super",
         "altName": ""
       },
       {
         "code": 56,
-        "lowerName": "⌥",
-        "upperName": "⌥",
+        "lowerName": "alt",
+        "upperName": "alt",
         "altName": ""
       },
       {
         "code": 57,
-        "lowerName": "␣",
-        "upperName": "␣",
+        "lowerName": "space",
+        "upperName": "space",
         "altName": ""
       },
       {
         "code": 100,
-        "lowerName": "⌥",
-        "upperName": "⌥",
+        "lowerName": "alt",
+        "upperName": "alt",
         "altName": ""
       },
       {
         "code": 97,
-        "lowerName": "⌃",
-        "upperName": "⌃",
+        "lowerName": "ctrl",
+        "upperName": "ctrl",
         "altName": ""
       },
       [
         {
           "code": 105,
-          "lowerName": "←",
-          "upperName": "←",
+          "lowerName": "left",
+          "upperName": "left",
           "altName": ""
         },
         {
           "code": 103,
-          "lowerName": "↑",
-          "upperName": "↑",
+          "lowerName": "up",
+          "upperName": "up",
           "altName": ""
         },
         {
           "code": 108,
-          "lowerName": "↓",
-          "upperName": "↓",
+          "lowerName": "down",
+          "upperName": "down",
           "altName": ""
         },
         {
           "code": 106,
-          "lowerName": "→",
-          "upperName": "→",
+          "lowerName": "right",
+          "upperName": "right",
           "altName": ""
         }
       ]
@@ -1628,8 +1628,8 @@
       },
       {
         "code": 111,
-        "lowerName": "⌦",
-        "upperName": "⌦",
+        "lowerName": "delete",
+        "upperName": "delete",
         "altName": ""
       }
     ],
@@ -1714,16 +1714,16 @@
       },
       {
         "code": 14,
-        "lowerName": "⌫",
-        "upperName": "⌫",
+        "lowerName": "backspace",
+        "upperName": "backspace",
         "altName": ""
       }
     ],
     "row3": [
       {
         "code": 15,
-        "lowerName": "⇥",
-        "upperName": "⇥",
+        "lowerName": "tab",
+        "upperName": "tab",
         "altName": ""
       },
       {
@@ -1780,7 +1780,7 @@
         "lowerName": "i",
         "letter": "primary",
         "upperName": "I",
-        "altName": "→"
+        "altName": "right"
       },
       {
         "code": 24,
@@ -1819,8 +1819,8 @@
     "row4": [
       {
         "code": 58,
-        "lowerName": "⇪",
-        "upperName": "⇪",
+        "lowerName": "capslock",
+        "upperName": "capslock",
         "altName": ""
       },
       {
@@ -1902,16 +1902,16 @@
       },
       {
         "code": 28,
-        "lowerName": "⏎",
-        "upperName": "⏎",
+        "lowerName": "enter",
+        "upperName": "enter",
         "altName": ""
       }
     ],
     "row5": [
       {
         "code": 42,
-        "lowerName": "⇧",
-        "upperName": "⇧",
+        "lowerName": "shift",
+        "upperName": "shift",
         "altName": ""
       },
       {
@@ -1989,71 +1989,71 @@
       },
       {
         "code": 54,
-        "lowerName": "⇧",
-        "upperName": "⇧",
+        "lowerName": "shift",
+        "upperName": "shift",
         "altName": ""
       }
     ],
     "row6": [
       {
         "code": 29,
-        "lowerName": "⌃",
-        "upperName": "⌃",
+        "lowerName": "ctrl",
+        "upperName": "ctrl",
         "altName": ""
       },
       {
         "code": 125,
-        "lowerName": "❖",
-        "upperName": "❖",
+        "lowerName": "super",
+        "upperName": "super",
         "altName": ""
       },
       {
         "code": 56,
-        "lowerName": "⌥",
-        "upperName": "⌥",
+        "lowerName": "alt",
+        "upperName": "alt",
         "altName": ""
       },
       {
         "code": 57,
-        "lowerName": "␣",
-        "upperName": "␣",
+        "lowerName": "space",
+        "upperName": "space",
         "altName": ""
       },
       {
         "code": 100,
-        "lowerName": "⌥",
-        "upperName": "⌥",
+        "lowerName": "alt",
+        "upperName": "alt",
         "altName": ""
       },
       {
         "code": 97,
-        "lowerName": "⌃",
-        "upperName": "⌃",
+        "lowerName": "ctrl",
+        "upperName": "ctrl",
         "altName": ""
       },
       [
         {
           "code": 105,
-          "lowerName": "←",
-          "upperName": "←",
+          "lowerName": "left",
+          "upperName": "left",
           "altName": ""
         },
         {
           "code": 103,
-          "lowerName": "↑",
-          "upperName": "↑",
+          "lowerName": "up",
+          "upperName": "up",
           "altName": ""
         },
         {
           "code": 108,
-          "lowerName": "↓",
-          "upperName": "↓",
+          "lowerName": "down",
+          "upperName": "down",
           "altName": ""
         },
         {
           "code": 106,
-          "lowerName": "→",
-          "upperName": "→",
+          "lowerName": "right",
+          "upperName": "right",
           "altName": ""
         }
       ]

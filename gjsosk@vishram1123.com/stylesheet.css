@@ -2,54 +2,194 @@
      background-color: rgba(255, 255, 255, 0.2);
      color: white;
 }
- .inverted:active {
+
+.inverted:active {
      background-color: rgba(0, 0, 0, 0.2);
      color: black;
 }
- .regular {
+
+.regular {
      background-color: rgba(255, 255, 255, 0.05);
      color: white;
 }
- .inverted {
+
+.inverted {
      background-color: rgba(0, 0, 0, 0.05);
      color: black;
 }
- .keysHolder>* {
+
+.keysHolder>* {
      border: 0;
      background-clip: padding-box;
      box-sizing: border-box;
 }
- .dr-b {
+
+.dr-b {
      border: 0;
      background-clip: padding-box;
      margin: inherit;
      box-sizing: border-box;
 }
- .boxLay.regular:dragging {
+
+.boxLay.regular:dragging {
      background-image: url(ui/icons/hicolor/scalable/actions/move.svg);
      background-size: 100px;
 }
+
 .boxLay.inverted:dragging {
      background-image: url(ui/icons/hicolor/scalable/actions/move-dark.svg);
      background-size: 100px;
 }
-.close_btn, .move_btn {
+
+.close_btn,
+.move_btn,
+.delete_btn,
+.backspace_btn,
+.tab_btn,
+.capslock_btn,
+.shift_btn,
+.enter_btn,
+.ctrl_btn,
+.super_btn,
+.alt_btn,
+.space_btn,
+.left_btn,
+.up_btn,
+.down_btn,
+.right_btn {
      background-repeat: no-repeat;
      background-position: center;
 }
-.close_btn.regular {
-	 background-image: url(ui/icons/hicolor/scalable/actions/close.svg);
+
+.close_btn.regular, .close_btn.selected.inverted {
+     background-image: url(ui/icons/hicolor/scalable/actions/close.svg);
 }
-.close_btn.inverted {
-	 background-image: url(ui/icons/hicolor/scalable/actions/close-dark.svg);
+
+.close_btn.inverted, .close_btn.selected.regular {
+     background-image: url(ui/icons/hicolor/scalable/actions/close-dark.svg);
 }
-.move_btn.regular {
-	 background-image: url(ui/icons/hicolor/scalable/actions/move.svg);
+
+.move_btn.regular, .move_btn.selected.inverted {
+     background-image: url(ui/icons/hicolor/scalable/actions/move.svg);
 }
-.move_btn.inverted {
-	 background-image: url(ui/icons/hicolor/scalable/actions/move-dark.svg);
+
+.move_btn.inverted, .move_btn.selected.regular {
+     background-image: url(ui/icons/hicolor/scalable/actions/move-dark.svg);
 }
- .keyActionBtns {
+
+.delete_btn.regular, .delete_btn.selected.inverted {
+     background-image: url(ui/icons/hicolor/scalable/actions/delete.svg);
+}
+
+.delete_btn.inverted, .delete_btn.selected.regular {
+     background-image: url(ui/icons/hicolor/scalable/actions/delete-dark.svg);
+}
+
+.backspace_btn.regular, .backspace_btn.selected.inverted {
+     background-image: url(ui/icons/hicolor/scalable/actions/backspace.svg);
+}
+
+.backspace_btn.inverted, .backspace_btn.selected.regular {
+     background-image: url(ui/icons/hicolor/scalable/actions/backspace-dark.svg);
+}
+
+.tab_btn.regular, .tab_btn.selected.inverted {
+     background-image: url(ui/icons/hicolor/scalable/actions/tab.svg);
+}
+
+.tab_btn.inverted, .tab_btn.selected.regular {
+     background-image: url(ui/icons/hicolor/scalable/actions/tab-dark.svg);
+}
+
+.capslock_btn.regular, .capslock_btn.selected.inverted {
+     background-image: url(ui/icons/hicolor/scalable/actions/capslock.svg);
+}
+
+.capslock_btn.inverted, .capslock_btn.selected.regular {
+     background-image: url(ui/icons/hicolor/scalable/actions/capslock-dark.svg);
+}
+
+.shift_btn.regular, .shift_btn.selected.inverted {
+     background-image: url(ui/icons/hicolor/scalable/actions/shift.svg);
+}
+
+.shift_btn.inverted, .shift_btn.selected.regular {
+     background-image: url(ui/icons/hicolor/scalable/actions/shift-dark.svg);
+}
+
+.enter_btn.regular, .enter_btn.selected.inverted {
+     background-image: url(ui/icons/hicolor/scalable/actions/enter.svg);
+}
+
+.enter_btn.inverted, .enter_btn.selected.regular {
+     background-image: url(ui/icons/hicolor/scalable/actions/enter-dark.svg);
+}
+
+.ctrl_btn.regular, .ctrl_btn.selected.inverted {
+     background-image: url(ui/icons/hicolor/scalable/actions/ctrl.svg);
+}
+
+.ctrl_btn.inverted, .ctrl_btn.selected.regular {
+     background-image: url(ui/icons/hicolor/scalable/actions/ctrl-dark.svg);
+}
+
+.super_btn.regular, .super_btn.selected.inverted {
+     background-image: url(ui/icons/hicolor/scalable/actions/super.svg);
+}
+
+.super_btn.inverted, .super_btn.selected.regular {
+     background-image: url(ui/icons/hicolor/scalable/actions/super-dark.svg);
+}
+
+.alt_btn.regular, .alt_btn.selected.inverted {
+     background-image: url(ui/icons/hicolor/scalable/actions/alt.svg);
+}
+
+.alt_btn.inverted, .alt_btn.selected.regular {
+     background-image: url(ui/icons/hicolor/scalable/actions/alt-dark.svg);
+}
+
+.space_btn.regular, .space_btn.selected.inverted {
+     background-image: url(ui/icons/hicolor/scalable/actions/space.svg);
+}
+
+.space_btn.inverted, .space_btn.selected.regular {
+     background-image: url(ui/icons/hicolor/scalable/actions/space-dark.svg);
+}
+
+.left_btn.regular, .left_btn.selected.inverted {
+     background-image: url(ui/icons/hicolor/scalable/actions/left.svg);
+}
+
+.left_btn.inverted, .left_btn.selected.regular {
+     background-image: url(ui/icons/hicolor/scalable/actions/left-dark.svg);
+}
+
+.up_btn.regular, .up_btn.selected.inverted {
+     background-image: url(ui/icons/hicolor/scalable/actions/up.svg);
+}
+
+.up_btn.inverted, .up_btn.selected.regular {
+     background-image: url(ui/icons/hicolor/scalable/actions/up-dark.svg);
+}
+
+.down_btn.regular, .down_btn.selected.inverted {
+     background-image: url(ui/icons/hicolor/scalable/actions/down.svg);
+}
+
+.down_btn.inverted, .down_btn.selected.regular {
+     background-image: url(ui/icons/hicolor/scalable/actions/down-dark.svg);
+}
+
+.right_btn.regular, .right_btn.selected.inverted {
+     background-image: url(ui/icons/hicolor/scalable/actions/right.svg);
+}
+
+.right_btn.inverted, .right_btn.selected.regular {
+     background-image: url(ui/icons/hicolor/scalable/actions/right-dark.svg);
+}
+
+.keyActionBtns {
      background-color: rgba(255, 255, 255, 0.00);
      border: 0;
      border-radius: 0px;
@@ -57,20 +197,23 @@
      margin: 0px !important;
      box-sizing: border-box;
 }
- .selected.regular {
+
+.selected.regular {
      background-color: rgba(255, 255, 255, 0.7);
      color: black;
 }
- .selected.inverted {
+
+.selected.inverted {
      background-color: rgba(0, 0, 0, 0.7);
      color: white;
 }
- .db-keyboard-content {
+
+.db-keyboard-content {
      background-color: rgba(0, 0, 0, 0);
      border: 0;
 }
- .boxLay {
+
+.boxLay {
      padding: 20px;
      border-radius: 10px;
 }
- 

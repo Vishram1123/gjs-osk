@@ -28,13 +28,13 @@ class KeyboardMenuToggle extends QuickSettings.QuickMenuToggle {
 
 		this.extensionObject = extensionObject;
 		this.settings = extensionObject.getSettings();
-		
+
 		this.menu.setHeader('input-keyboard-symbolic', _('Screen Keyboard'), _('Opening Mode'));
 		this._itemsSection = new PopupMenu.PopupMenuSection();
 		this._itemsSection.addMenuItem(new PopupMenu.PopupImageMenuItem(_('Never'), this.settings.get_int("enable-tap-gesture") == 0 ? 'emblem-ok-symbolic' : null));
-		this._itemsSection.addMenuItem(new PopupMenu.PopupImageMenuItem(_("Only on Touch"), this.settings.get_int("enable-tap-gesture")  == 1 ? 'emblem-ok-symbolic' : null));
-		this._itemsSection.addMenuItem(new PopupMenu.PopupImageMenuItem(_("Always"), this.settings.get_int("enable-tap-gesture")  == 2 ? 'emblem-ok-symbolic' : null));
-		for (var i in this._itemsSection._getMenuItems()){
+		this._itemsSection.addMenuItem(new PopupMenu.PopupImageMenuItem(_("Only on Touch"), this.settings.get_int("enable-tap-gesture") == 1 ? 'emblem-ok-symbolic' : null));
+		this._itemsSection.addMenuItem(new PopupMenu.PopupImageMenuItem(_("Always"), this.settings.get_int("enable-tap-gesture") == 2 ? 'emblem-ok-symbolic' : null));
+		for (var i in this._itemsSection._getMenuItems()) {
 			const item = this._itemsSection._getMenuItems()[i]
 			const num = i
 			item.connect('activate', () => this.settings.set_int("enable-tap-gesture", num))
@@ -52,7 +52,7 @@ class KeyboardMenuToggle extends QuickSettings.QuickMenuToggle {
 	}
 
 	_refresh() {
-		for (var i in this._itemsSection._getMenuItems()){
+		for (var i in this._itemsSection._getMenuItems()) {
 			this._itemsSection._getMenuItems()[i].setIcon(this.settings.get_int("enable-tap-gesture") == i ? 'emblem-ok-symbolic' : null)
 		}
 	}
@@ -97,7 +97,7 @@ export default class GjsOskExtension extends Extension {
 		this.openInterval = setInterval(() => {
 			this.Keyboard.get_parent().set_child_at_index(this.Keyboard, this.Keyboard.get_parent().get_n_children() - 1);
 			this.Keyboard.set_child_at_index(this.Keyboard.box, this.Keyboard.get_n_children() - 1);
-			if (!this.Keyboard.openedFromButton && this.lastInputMethod) {	
+			if (!this.Keyboard.openedFromButton && this.lastInputMethod) {
 				if (Main.inputMethod.currentFocus != null && Main.inputMethod.currentFocus.is_focused() && !this.Keyboard.closedFromButton) {
 					this._openKeyboard();
 				} else if (!this.Keyboard.closedFromButton) {
@@ -151,9 +151,9 @@ export default class GjsOskExtension extends Extension {
 			this.open_interval();
 		}
 		this.openFromCommandHandler = this.openBit.connect("changed", () => {
-            this.openBit.set_boolean("opened", false)
-            this._toggleKeyboard();
-        })
+			this.openBit.set_boolean("opened", false)
+			this._toggleKeyboard();
+		})
 		this.settingsHandler = this.settings.connect("changed", key => {
 			this.Keyboard.openedFromButton = false;
 			let [ok, contents] = GLib.file_get_contents(this.path + '/keycodes.json');
@@ -175,7 +175,7 @@ export default class GjsOskExtension extends Extension {
 					style_class: 'system-status-icon'
 				});
 				this._indicator.add_child(icon);
-				
+
 				this._indicator.connect("button-press-event", () => this._toggleKeyboard());
 				this._indicator.connect("touch-event", (_actor, event) => {
 					if (event.type() == 11) this._toggleKeyboard()
@@ -240,7 +240,7 @@ class Keyboard extends Dialog {
 		this.startupInterval = setInterval(() => {
 			this.init = KeyboardManager.getKeyboardManager()._current.id;
 			this.initLay = Object.keys(KeyboardManager.getKeyboardManager()._layoutInfos);
-			if (this.initLay == undefined || this.init == undefined) { 
+			if (this.initLay == undefined || this.init == undefined) {
 				return;
 			}
 			this.settings = settings;
@@ -270,7 +270,7 @@ class Keyboard extends Dialog {
 			this._dragging = false;
 			this.inputDevice = Clutter.get_default_backend().get_default_seat().create_virtual_device(Clutter.InputDeviceType.KEYBOARD_DEVICE);
 			clearInterval(this.startupInterval);
-		}, 200); 
+		}, 200);
 	}
 
 	destroy() {
@@ -290,7 +290,7 @@ class Keyboard extends Dialog {
 			clearInterval(this.textboxChecker);
 			this.textboxChecker = null;
 		}
-		if (this.stateTimeout !== null ) {
+		if (this.stateTimeout !== null) {
 			clearTimeout(this.stateTimeout);
 			this.stateTimeout = null;
 		}
@@ -316,7 +316,7 @@ class Keyboard extends Dialog {
 				opacity: 200,
 				duration: 100,
 				mode: Clutter.AnimationMode.EASE_OUT_QUAD,
-				onComplete: () => {}
+				onComplete: () => { }
 			});
 			let device = event.get_device();
 			let sequence = event.get_event_sequence();
@@ -356,7 +356,7 @@ class Keyboard extends Dialog {
 					opacity: 255,
 					duration: 100,
 					mode: Clutter.AnimationMode.EASE_OUT_QUAD,
-					onComplete: () => {}
+					onComplete: () => { }
 				});
 				this._grabbedSequence = null;
 				this._grabbedDevice = null;
@@ -442,7 +442,7 @@ class Keyboard extends Dialog {
 	refresh() {
 		let monitor = Main.layoutManager.primaryMonitor;
 		this.box.remove_all_children();
-                this.box.set_style_class_name("boxLay")
+		this.box.set_style_class_name("boxLay")
 		this.widthPercent = (monitor.width > monitor.height) ? this.settings.get_int("landscape-width-percent") / 100 : this.settings.get_int("portrait-width-percent") / 100;
 		this.heightPercent = (monitor.width > monitor.height) ? this.settings.get_int("landscape-height-percent") / 100 : this.settings.get_int("portrait-height-percent") / 100;
 		this.buildUI();
@@ -468,12 +468,12 @@ class Keyboard extends Dialog {
 		this.startupTimeout = setTimeout(() => {
 			this.init = KeyboardManager.getKeyboardManager()._current.id;
 			this.initLay = Object.keys(KeyboardManager.getKeyboardManager()._layoutInfos);
-			if (this.initLay == undefined || this.init == undefined) { 
+			if (this.initLay == undefined || this.init == undefined) {
 				this.refresh();
 				return;
 			}
 			this.close();
-		}, 200); 
+		}, 200);
 		this.mod = [];
 		this.modBtns = [];
 		this.capsL = false;
@@ -495,7 +495,7 @@ class Keyboard extends Dialog {
 		this.startupTimeout = setTimeout(() => {
 			this.init = KeyboardManager.getKeyboardManager()._current.id;
 			this.initLay = Object.keys(KeyboardManager.getKeyboardManager()._layoutInfos);
-			if (this.initLay == undefined || this.init == undefined) { 
+			if (this.initLay == undefined || this.init == undefined) {
 				this.open();
 				return;
 			}
@@ -528,7 +528,7 @@ class Keyboard extends Dialog {
 				}
 			});
 			this.opened = true;
-		}, 200); 
+		}, 200);
 	}
 
 	close() {
@@ -573,11 +573,38 @@ class Keyboard extends Dialog {
 		for (var num in keycodes.row1) {
 			const i = keycodes.row1[num]
 			var w = topRowWidth;
-			row1.add_child(new St.Button({
-				label: i.lowerName,
+			let params = {
 				height: topRowHeight,
 				width: w
-			}));
+			}
+			let styleClass = ""
+			switch (i.lowerName) {
+				case "delete":
+				case "backspace":
+				case "tab":
+				case "capslock":
+				case "shift":
+				case "enter":
+				case "ctrl":
+				case "super":
+				case "alt":
+				case "space":
+				case "left":
+				case "up":
+				case "down":
+				case "right":
+					styleClass = i.lowerName;
+					i.lowerName = "";
+					i.upperName = "";
+					break;
+				default:
+					params.label = i.lowerName;
+					break;
+			}
+			row1.add_child(new St.Button(params));
+			if (styleClass != "") {
+				row1.get_children()[num].add_style_class_name(styleClass + "_btn");
+			}
 			var isMod = false;
 			for (var j of [42, 54, 29, 125, 56, 100, 97, 58]) {
 				if (i.code == j) {
@@ -608,11 +635,38 @@ class Keyboard extends Dialog {
 			} else {
 				w = (topRowWidth) + 5;
 			}
-			row2.add_child(new St.Button({
-				label: i.lowerName,
-				height: topRowHeight + 20,
+			let params = {
+				height: topRowHeight,
 				width: w
-			}));
+			}
+			let styleClass = ""
+			switch (i.lowerName) {
+				case "delete":
+				case "backspace":
+				case "tab":
+				case "capslock":
+				case "shift":
+				case "enter":
+				case "ctrl":
+				case "super":
+				case "alt":
+				case "space":
+				case "left":
+				case "up":
+				case "down":
+				case "right":
+					styleClass = i.lowerName;
+					i.lowerName = "";
+					i.upperName = "";
+					break;
+				default:
+					params.label = i.lowerName;
+					break;
+			}
+			row2.add_child(new St.Button(params));
+			if (styleClass != "") {
+				row2.get_children()[num].add_style_class_name(styleClass + "_btn");
+			}
 			var isMod = false;
 			for (var j of [42, 54, 29, 125, 56, 100, 97, 58]) {
 				if (i.code == j) {
@@ -643,11 +697,38 @@ class Keyboard extends Dialog {
 			} else {
 				w = (topRowWidth) + 5;
 			}
-			row3.add_child(new St.Button({
-				label: i.lowerName,
-				height: topRowHeight + 20,
+			let params = {
+				height: topRowHeight,
 				width: w
-			}));
+			}
+			let styleClass = ""
+			switch (i.lowerName) {
+				case "delete":
+				case "backspace":
+				case "tab":
+				case "capslock":
+				case "shift":
+				case "enter":
+				case "ctrl":
+				case "super":
+				case "alt":
+				case "space":
+				case "left":
+				case "up":
+				case "down":
+				case "right":
+					styleClass = i.lowerName;
+					i.lowerName = "";
+					i.upperName = "";
+					break;
+				default:
+					params.label = i.lowerName;
+					break;
+			}
+			row3.add_child(new St.Button(params));
+			if (styleClass != "") {
+				row3.get_children()[num].add_style_class_name(styleClass + "_btn");
+			}
 			var isMod = false;
 			for (var j of [42, 54, 29, 125, 56, 100, 97, 58]) {
 				if (i.code == j) {
@@ -676,11 +757,38 @@ class Keyboard extends Dialog {
 			} else {
 				w = (topRowWidth) + 5;
 			}
-			row4.add_child(new St.Button({
-				label: i.lowerName,
-				height: topRowHeight + 20,
+			let params = {
+				height: topRowHeight,
 				width: w
-			}));
+			}
+			let styleClass = ""
+			switch (i.lowerName) {
+				case "delete":
+				case "backspace":
+				case "tab":
+				case "capslock":
+				case "shift":
+				case "enter":
+				case "ctrl":
+				case "super":
+				case "alt":
+				case "space":
+				case "left":
+				case "up":
+				case "down":
+				case "right":
+					styleClass = i.lowerName;
+					i.lowerName = "";
+					i.upperName = "";
+					break;
+				default:
+					params.label = i.lowerName;
+					break;
+			}
+			row4.add_child(new St.Button(params));
+			if (styleClass != "") {
+				row4.get_children()[num].add_style_class_name(styleClass + "_btn");
+			}
 			var isMod = false;
 			for (var j of [42, 54, 29, 125, 56, 100, 97, 58]) {
 				if (i.code == j) {
@@ -709,11 +817,38 @@ class Keyboard extends Dialog {
 			} else {
 				w = (topRowWidth) + 5;
 			}
-			row5.add_child(new St.Button({
-				label: i.lowerName,
-				height: topRowHeight + 20,
+			let params = {
+				height: topRowHeight,
 				width: w
-			}));
+			}
+			let styleClass = ""
+			switch (i.lowerName) {
+				case "delete":
+				case "backspace":
+				case "tab":
+				case "capslock":
+				case "shift":
+				case "enter":
+				case "ctrl":
+				case "super":
+				case "alt":
+				case "space":
+				case "left":
+				case "up":
+				case "down":
+				case "right":
+					styleClass = i.lowerName;
+					i.lowerName = "";
+					i.upperName = "";
+					break;
+				default:
+					params.label = i.lowerName;
+					break;
+			}
+			row5.add_child(new St.Button(params));
+			if (styleClass != "") {
+				row5.get_children()[num].add_style_class_name(styleClass + "_btn");
+			}
 			var isMod = false;
 			for (var j of [42, 54, 29, 125, 56, 100, 97, 58]) {
 				if (i.code == j) {
@@ -739,11 +874,38 @@ class Keyboard extends Dialog {
 			var w;
 			if (num == 3) {
 				w = ((row1.width - ((keycodes.row6.length + 1) * ((topRowWidth) + 5))));
-				row6.add_child(new St.Button({
-					label: i.lowerName,
-					height: topRowHeight + 20,
+				let params = {
+					height: topRowHeight,
 					width: w
-				}));
+				}
+				let styleClass = ""
+				switch (i.lowerName) {
+					case "delete":
+					case "backspace":
+					case "tab":
+					case "capslock":
+					case "shift":
+					case "enter":
+					case "ctrl":
+					case "super":
+					case "alt":
+					case "space":
+					case "left":
+					case "up":
+					case "down":
+					case "right":
+						styleClass = i.lowerName;
+						i.lowerName = "";
+						i.upperName = "";
+						break;
+					default:
+						params.label = i.lowerName;
+						break;
+				}
+				row6.add_child(new St.Button(params));
+				if (styleClass != "") {
+					row6.get_children()[num].add_style_class_name(styleClass + "_btn");
+				}
 				var isMod = false;
 				for (var j of [42, 54, 29, 125, 56, 100, 97, 58]) {
 					if (i.code == j) {
@@ -763,25 +925,21 @@ class Keyboard extends Dialog {
 				var gbox = new St.BoxLayout({
 					pack_start: true
 				});
-				var btn1 = new St.Button({
-					label: (keycodes.row6[keycodes.row6.length - 1])[0].lowerName
-				});
+				var btn1 = new St.Button();
+				btn1.add_style_class_name("left_btn");
 				gbox.add_child(btn1);
 				var vbox = new St.BoxLayout({
 					vertical: true
 				});
-				var btn2 = new St.Button({
-					label: (keycodes.row6[keycodes.row6.length - 1])[1].lowerName
-				});
-				var btn3 = new St.Button({
-					label: (keycodes.row6[keycodes.row6.length - 1])[2].lowerName
-				});
+				var btn2 = new St.Button();
+				btn2.add_style_class_name("up_btn");
+				var btn3 = new St.Button();
+				btn3.add_style_class_name("down_btn");
 				vbox.add_child(btn2);
 				vbox.add_child(btn3);
 				gbox.add_child(vbox);
-				var btn4 = new St.Button({
-					label: (keycodes.row6[keycodes.row6.length - 1])[3].lowerName
-				});
+				var btn4 = new St.Button();
+				btn4.add_style_class_name("right_btn");
 				gbox.add_child(btn4);
 				var btn5 = new St.Button();
 				btn5.add_style_class_name("move_btn")
@@ -820,13 +978,13 @@ class Keyboard extends Dialog {
 							width: btn5.width * (this.draggable ? 2 : 0.5),
 							duration: 100,
 							mode: Clutter.AnimationMode.EASE_OUT_QUAD,
-							onComplete: () => {}
+							onComplete: () => { }
 						})
 						btn6.ease({
 							width: this.draggable ? 0 : btn5.width / 2,
 							duration: 100,
 							mode: Clutter.AnimationMode.EASE_OUT_QUAD,
-							onComplete: () => {}
+							onComplete: () => { }
 						})
 					}
 				})
@@ -858,12 +1016,38 @@ class Keyboard extends Dialog {
 				row6.add_child(gbox);
 			} else {
 				w = (topRowWidth) + 5;
-				row6.add_child(new St.Button({
-					label: i.lowerName,
-					height: topRowHeight + 20,
+				let params = {
+					height: topRowHeight,
 					width: w
-				}));
-
+				}
+				let styleClass = ""
+				switch (i.lowerName) {
+					case "delete":
+					case "backspace":
+					case "tab":
+					case "capslock":
+					case "shift":
+					case "enter":
+					case "ctrl":
+					case "super":
+					case "alt":
+					case "space":
+					case "left":
+					case "up":
+					case "down":
+					case "right":
+						styleClass = i.lowerName;
+						i.lowerName = "";
+						i.upperName = "";
+						break;
+					default:
+						params.label = i.lowerName;
+						break;
+				}
+				row6.add_child(new St.Button(params));
+				if (styleClass != "") {
+					row6.get_children()[num].add_style_class_name(styleClass + "_btn");
+				}
 				var isMod = false;
 				for (var j of [42, 54, 29, 125, 56, 100, 97, 58]) {
 					if (i.code == j) {
@@ -890,7 +1074,7 @@ class Keyboard extends Dialog {
 		this.box.add_child(row5);
 		this.box.add_child(row6);
 		var containers_ = this.box.get_children();
-                if (this.lightOrDark(this.settings.get_double("background-r"), this.settings.get_double("background-g"), this.settings.get_double("background-b"))) {
+		if (this.lightOrDark(this.settings.get_double("background-r"), this.settings.get_double("background-g"), this.settings.get_double("background-b"))) {
 			this.box.add_style_class_name("inverted");
 		} else {
 			this.box.add_style_class_name("regular");
@@ -917,19 +1101,19 @@ class Keyboard extends Dialog {
 			}
 			item.set_pivot_point(0.5, 0.5)
 			item.connect("destroy", () => {
-				if (item.button_pressed !== null){
+				if (item.button_pressed !== null) {
 					clearTimeout(item.button_pressed)
 					item.button_pressed == null
 				}
-				if (item.button_repeat !== null){
+				if (item.button_repeat !== null) {
 					clearInterval(item.button_repeat)
 					item.button_repeat == null
 				}
-				if (item.tap_pressed !== null){
-						clearTimeout(item.tap_pressed)
-						item.tap_pressed == null
+				if (item.tap_pressed !== null) {
+					clearTimeout(item.tap_pressed)
+					item.tap_pressed == null
 				}
-				if (item.tap_repeat !== null){
+				if (item.tap_repeat !== null) {
 					clearInterval(item.tap_repeat)
 					item.tap_repeat == null
 				}
@@ -949,12 +1133,12 @@ class Keyboard extends Dialog {
 								player.play_from_theme("dialog-information", "tap", null)
 							}
 							this.decideMod(item.char)
-							
+
 							for (var i of oldModBtns) {
 								this.decideMod(i.char, i)
 							}
 						}, 100);
-						
+
 					}
 				}, 750);
 			})
@@ -964,13 +1148,13 @@ class Keyboard extends Dialog {
 					scale_y: 1,
 					duration: 100,
 					mode: Clutter.AnimationMode.EASE_OUT_QUAD,
-					onComplete: () => {item.set_scale(1, 1)}
+					onComplete: () => { item.set_scale(1, 1) }
 				})
-				if (item.button_pressed !== null){
+				if (item.button_pressed !== null) {
 					clearTimeout(item.button_pressed)
 					item.button_pressed == null
 				}
-				if (item.button_repeat !== null){
+				if (item.button_repeat !== null) {
 					clearInterval(item.button_repeat)
 					item.button_repeat == null
 				}
@@ -983,39 +1167,39 @@ class Keyboard extends Dialog {
 						player = global.display.get_sound_player();
 						player.play_from_theme("dialog-information", "tap", null)
 					}
-					
+
 					item.tap_pressed = setTimeout(() => {
-						
-						
+
+
 						if (!isMod) {
 							const oldModBtns = this.modBtns
 							item.tap_repeat = setInterval(() => {
-								
+
 								if (this.settings.get_boolean("play-sound")) {
 									player.play_from_theme("dialog-information", "tap", null)
 								}
 								this.decideMod(item.char)
-								
+
 								for (var i of oldModBtns) {
 									this.decideMod(i.char, i)
 								}
 							}, 100);
-							
+
 						}
 					}, 750);
-				} else if (Clutter.get_current_event().type() == Clutter.EventType.TOUCH_END) {	
+				} else if (Clutter.get_current_event().type() == Clutter.EventType.TOUCH_END) {
 					item.ease({
 						scale_x: 1,
 						scale_y: 1,
 						duration: 100,
 						mode: Clutter.AnimationMode.EASE_OUT_QUAD,
-						onComplete: () => {item.set_scale(1, 1)}
+						onComplete: () => { item.set_scale(1, 1) }
 					})
-					if (item.tap_pressed !== null){
+					if (item.tap_pressed !== null) {
 						clearTimeout(item.tap_pressed)
 						item.tap_pressed == null
 					}
-					if (item.tap_repeat !== null){
+					if (item.tap_repeat !== null) {
 						clearInterval(item.tap_repeat)
 						item.tap_repeat == null
 					}
