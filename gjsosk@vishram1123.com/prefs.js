@@ -52,7 +52,7 @@ export default class GjsOskPreferences extends ExtensionPreferences {
 		page1.add(group1);
 
 		const row0 = new Adw.ActionRow({
-			title: _('Language')
+			title: _('Layout')
 		});
 		group1.add(row0);
 
@@ -175,6 +175,19 @@ export default class GjsOskPreferences extends ExtensionPreferences {
 		row4.add_suffix(dropDown);
 		row4.activatable_widget = dropDown;
 
+		const row9 = new Adw.ActionRow({
+			title: _('Play sound')
+		});
+		group1.add(row9);
+
+		const dragToggle3 = new Gtk.Switch({
+			active: settings.get_boolean('play-sound'),
+			valign: Gtk.Align.CENTER,
+		});
+
+		row9.add_suffix(dragToggle3);
+		row9.activatable_widget = dragToggle3;
+
 		const group2 = new Adw.PreferencesGroup({
 			title: _("Appearance")
 		});
@@ -240,19 +253,6 @@ export default class GjsOskPreferences extends ExtensionPreferences {
 
 		row8.add_suffix(dragToggle2);
 		row8.activatable_widget = dragToggle2;
-
-		const row9 = new Adw.ActionRow({
-			title: _('Play sound')
-		});
-		group2.add(row9);
-
-		const dragToggle3 = new Gtk.Switch({
-			active: settings.get_boolean('play-sound'),
-			valign: Gtk.Align.CENTER,
-		});
-
-		row9.add_suffix(dragToggle3);
-		row9.activatable_widget = dragToggle3;
 
 		window.add(page1);
 

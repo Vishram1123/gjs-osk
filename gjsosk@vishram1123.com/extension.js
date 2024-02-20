@@ -9,6 +9,7 @@ import * as PanelMenu from 'resource:///org/gnome/shell/ui/panelMenu.js';
 import * as PopupMenu from 'resource:///org/gnome/shell/ui/popupMenu.js';
 import * as QuickSettings from 'resource:///org/gnome/shell/ui/quickSettings.js';
 import * as KeyboardManager from 'resource:///org/gnome/shell/misc/keyboardManager.js';
+import * as KeyboardUI from 'resource:///org/gnome/shell/ui/keyboard.js';
 import { Dialog } from 'resource:///org/gnome/shell/ui/dialog.js';
 
 import { Extension, gettext as _ } from 'resource:///org/gnome/shell/extensions/extension.js';
@@ -123,6 +124,10 @@ export default class GjsOskExtension extends Extension {
 			keycodes = JSON.parse(contents)[['qwerty', 'azerty', 'dvorak', "qwertz"][this.settings.get_int("lang")]];
 		}
 		this.Keyboard = new Keyboard(this.settings);
+
+		this._originalLastDeviceIsTouchscreen = KeyboardUI.KeyboardManager.prototype._lastDeviceIsTouchscreen;
+		KeyboardUI.KeyboardManager.prototype._lastDeviceIsTouchscreen = () => { return false };
+
 		this._indicator = null;
 		this.openInterval = null;
 		if (this.settings.get_boolean("indicator-enabled")) {
@@ -222,6 +227,10 @@ export default class GjsOskExtension extends Extension {
 		this.settings = null
 		this.Keyboard = null
 		keycodes = null
+		if (this._originalLastDeviceIsTouchscreen !== null) {
+			KeyboardUI.KeyboardManager.prototype._lastDeviceIsTouchscreen = this._originalLastDeviceIsTouchscreen;
+			this._originalLastDeviceIsTouchscreen = null;
+		}
 	}
 }
 
@@ -237,10 +246,11 @@ class Keyboard extends Dialog {
 	}
 
 	_init(settings) {
+		this.inputDevice = Clutter.get_default_backend().get_default_seat().create_virtual_device(Clutter.InputDeviceType.KEYBOARD_DEVICE);
 		this.startupInterval = setInterval(() => {
 			this.init = KeyboardManager.getKeyboardManager()._current.id;
 			this.initLay = Object.keys(KeyboardManager.getKeyboardManager()._layoutInfos);
-			if (this.initLay == undefined || this.init == undefined) {
+			if (this.initLay == undefined || this.init == undefined || this.inputDevice == undefined) {
 				return;
 			}
 			this.settings = settings;
@@ -268,7 +278,6 @@ class Keyboard extends Dialog {
 			this.delta = [];
 			this.checkMonitor();
 			this._dragging = false;
-			this.inputDevice = Clutter.get_default_backend().get_default_seat().create_virtual_device(Clutter.InputDeviceType.KEYBOARD_DEVICE);
 			clearInterval(this.startupInterval);
 		}, 200);
 	}
@@ -560,6 +569,7 @@ class Keyboard extends Dialog {
 			},
 		});
 		this.openedFromButton = false
+		this.releaseAllKeys();
 	}
 
 	buildUI() {
@@ -606,20 +616,11 @@ class Keyboard extends Dialog {
 			if (styleClass != "") {
 				row1.get_children()[num].add_style_class_name(styleClass + "_btn");
 			}
-			var isMod = false;
-			for (var j of [42, 54, 29, 125, 56, 100, 97, 58]) {
-				if (i.code == j) {
-					isMod = true;
-					break;
-				}
+			i.isMod = false
+			if ([42, 54, 29, 125, 56, 100, 97, 58].some(j => { return i.code == j })) {
+				i.isMod = true;
 			}
 			row1.get_children()[num].char = i;
-			if (!isMod) {
-				row1.get_children()[num].connect("clicked", () => this.decideMod(i))
-			} else {
-				const modButton = row1.get_children()[num];
-				row1.get_children()[num].connect("clicked", () => this.decideMod(i, modButton))
-			}
 		}
 		this.keys.push.apply(this.keys, row1.get_children());
 		row1.add_style_class_name("keysHolder");
@@ -668,20 +669,11 @@ class Keyboard extends Dialog {
 			if (styleClass != "") {
 				row2.get_children()[num].add_style_class_name(styleClass + "_btn");
 			}
-			var isMod = false;
-			for (var j of [42, 54, 29, 125, 56, 100, 97, 58]) {
-				if (i.code == j) {
-					isMod = true;
-					break;
-				}
+			i.isMod = false
+			if ([42, 54, 29, 125, 56, 100, 97, 58].some(j => { return i.code == j })) {
+				i.isMod = true;
 			}
 			row2.get_children()[num].char = i;
-			if (!isMod) {
-				row2.get_children()[num].connect("clicked", () => this.decideMod(i))
-			} else {
-				const modButton = row2.get_children()[num];
-				row2.get_children()[num].connect("clicked", () => this.decideMod(i, modButton))
-			}
 		}
 		this.keys.push.apply(this.keys, row2.get_children());
 		row2.add_style_class_name("keysHolder");
@@ -730,20 +722,11 @@ class Keyboard extends Dialog {
 			if (styleClass != "") {
 				row3.get_children()[num].add_style_class_name(styleClass + "_btn");
 			}
-			var isMod = false;
-			for (var j of [42, 54, 29, 125, 56, 100, 97, 58]) {
-				if (i.code == j) {
-					isMod = true;
-					break;
-				}
+			i.isMod = false
+			if ([42, 54, 29, 125, 56, 100, 97, 58].some(j => { return i.code == j })) {
+				i.isMod = true;
 			}
 			row3.get_children()[num].char = i;
-			if (!isMod) {
-				row3.get_children()[num].connect("clicked", () => this.decideMod(i))
-			} else {
-				const modButton = row3.get_children()[num];
-				row3.get_children()[num].connect("clicked", () => this.decideMod(i, modButton))
-			}
 		}
 		this.keys.push.apply(this.keys, row3.get_children());
 		row3.add_style_class_name("keysHolder");
@@ -790,20 +773,11 @@ class Keyboard extends Dialog {
 			if (styleClass != "") {
 				row4.get_children()[num].add_style_class_name(styleClass + "_btn");
 			}
-			var isMod = false;
-			for (var j of [42, 54, 29, 125, 56, 100, 97, 58]) {
-				if (i.code == j) {
-					isMod = true;
-					break;
-				}
+			i.isMod = false
+			if ([42, 54, 29, 125, 56, 100, 97, 58].some(j => { return i.code == j })) {
+				i.isMod = true;
 			}
 			row4.get_children()[num].char = i;
-			if (!isMod) {
-				row4.get_children()[num].connect("clicked", () => this.decideMod(i))
-			} else {
-				const modButton = row4.get_children()[num];
-				row4.get_children()[num].connect("clicked", () => this.decideMod(i, modButton))
-			}
 		}
 		this.keys.push.apply(this.keys, row4.get_children());
 		row4.add_style_class_name("keysHolder");
@@ -850,20 +824,11 @@ class Keyboard extends Dialog {
 			if (styleClass != "") {
 				row5.get_children()[num].add_style_class_name(styleClass + "_btn");
 			}
-			var isMod = false;
-			for (var j of [42, 54, 29, 125, 56, 100, 97, 58]) {
-				if (i.code == j) {
-					isMod = true;
-					break;
-				}
+			i.isMod = false
+			if ([42, 54, 29, 125, 56, 100, 97, 58].some(j => { return i.code == j })) {
+				i.isMod = true;
 			}
 			row5.get_children()[num].char = i;
-			if (!isMod) {
-				row5.get_children()[num].connect("clicked", () => this.decideMod(i))
-			} else {
-				const modButton = row5.get_children()[num];
-				row5.get_children()[num].connect("clicked", () => this.decideMod(i, modButton))
-			}
 		}
 		this.keys.push.apply(this.keys, row5.get_children());
 		row5.add_style_class_name("keysHolder");
@@ -907,21 +872,12 @@ class Keyboard extends Dialog {
 				if (styleClass != "") {
 					row6.get_children()[num].add_style_class_name(styleClass + "_btn");
 				}
-				var isMod = false;
-				for (var j of [42, 54, 29, 125, 56, 100, 97, 58]) {
-					if (i.code == j) {
-						isMod = true;
-						break;
-					}
+				i.isMod = false
+				if ([42, 54, 29, 125, 56, 100, 97, 58].some(j => { return i.code == j })) {
+					i.isMod = true;
 				}
 				row6.get_children()[num].char = i;
 				this.keys.push(row6.get_children()[num]);
-				if (!isMod) {
-					row6.get_children()[num].connect("clicked", () => this.decideMod(i))
-				} else {
-					const modButton = row6.get_children()[num];
-					row6.get_children()[num].connect("clicked", () => this.decideMod(i, modButton))
-				}
 			} else if (num == keycodes.row6.length - 1) {
 				var gbox = new St.BoxLayout({
 					pack_start: true
@@ -950,10 +906,6 @@ class Keyboard extends Dialog {
 					gbox.add_child(btn5);
 				}
 				gbox.add_child(btn6);
-				btn1.connect("clicked", () => this.decideMod((keycodes.row6[keycodes.row6.length - 1])[0]))
-				btn2.connect("clicked", () => this.decideMod((keycodes.row6[keycodes.row6.length - 1])[1]))
-				btn3.connect("clicked", () => this.decideMod((keycodes.row6[keycodes.row6.length - 1])[2]))
-				btn4.connect("clicked", () => this.decideMod((keycodes.row6[keycodes.row6.length - 1])[3]))
 				btn5.connect("clicked", () => {
 					if (this.settings.get_boolean("enable-drag")) {
 						this.draggable = !this.draggable;
@@ -1049,21 +1001,12 @@ class Keyboard extends Dialog {
 				if (styleClass != "") {
 					row6.get_children()[num].add_style_class_name(styleClass + "_btn");
 				}
-				var isMod = false;
-				for (var j of [42, 54, 29, 125, 56, 100, 97, 58]) {
-					if (i.code == j) {
-						isMod = true;
-						break;
-					}
+				i.isMod = false
+				if ([42, 54, 29, 125, 56, 100, 97, 58].some(j => { return i.code == j })) {
+					i.isMod = true;
 				}
 				row6.get_children()[num].char = i;
 				this.keys.push(row6.get_children()[num]);
-				if (!isMod) {
-					row6.get_children()[num].connect("clicked", () => this.decideMod(i))
-				} else {
-					const modButton = row6.get_children()[num];
-					row6.get_children()[num].connect("clicked", () => this.decideMod(i, modButton))
-				}
 			}
 		}
 		row6.add_style_class_name("keysHolder");
@@ -1080,24 +1023,12 @@ class Keyboard extends Dialog {
 			this.box.add_style_class_name("regular");
 		}
 		this.keys.forEach(item => {
-			item.width -= this.settings.get_int("border-spacing-px") * 2;
-			item.height -= this.settings.get_int("border-spacing-px") * 2;
-			item.set_style("margin: " + this.settings.get_int("border-spacing-px") + "px; font-size: " + this.settings.get_int("font-size-px") + "px; border-radius: " + (this.settings.get_boolean("round-key-corners") ? "5px;" : "0;") + "background-size: " + this.settings.get_int("font-size-px") + "px;");
+			item.set_scale((item.width - this.settings.get_int("border-spacing-px") * 2) / item.width, (item.height - this.settings.get_int("border-spacing-px") * 2) / item.height);
+			item.set_style("font-size: " + this.settings.get_int("font-size-px") + "px; border-radius: " + (this.settings.get_boolean("round-key-corners") ? "5px;" : "0;") + "background-size: " + this.settings.get_int("font-size-px") + "px;");
 			if (this.lightOrDark(this.settings.get_double("background-r"), this.settings.get_double("background-g"), this.settings.get_double("background-b"))) {
 				item.add_style_class_name("inverted");
 			} else {
 				item.add_style_class_name("regular");
-			}
-			let isMod = false
-			for (var j of [42, 54, 29, 125, 56, 100, 97, 58]) {
-				try {
-					if (item.char.code == j) {
-						isMod = true;
-						break;
-					}
-				} catch {
-					print(item)
-				}
 			}
 			item.set_pivot_point(0.5, 0.5)
 			item.connect("destroy", () => {
@@ -1118,15 +1049,17 @@ class Keyboard extends Dialog {
 					item.tap_repeat == null
 				}
 			})
-			item.connect("button-press-event", () => {
+			let pressEv = (evType) => {
+				item.space_motion_handler = null
 				item.set_scale(1.2, 1.2)
+				item.add_style_pseudo_class("pressed")
 				let player
 				if (this.settings.get_boolean("play-sound")) {
 					player = global.display.get_sound_player();
 					player.play_from_theme("dialog-information", "tap", null)
 				}
-				item.button_pressed = setTimeout(() => {
-					if (!isMod) {
+				if (["delete_btn", "backspace_btn", "up_btn", "down_btn", "left_btn", "right_btn"].some(e => item.has_style_class_name(e))) {
+					item.button_pressed = setTimeout(() => {
 						const oldModBtns = this.modBtns
 						item.button_repeat = setInterval(() => {
 							if (this.settings.get_boolean("play-sound")) {
@@ -1138,17 +1071,53 @@ class Keyboard extends Dialog {
 								this.decideMod(i.char, i)
 							}
 						}, 100);
-
-					}
-				}, 750);
-			})
-			item.connect("button-release-event", () => {
+					}, 750);
+				} else if (item.has_style_class_name("space_btn")) {
+					item.button_pressed = setTimeout(() => {
+						let lastPos = (item.get_transformed_position()[0] + item.get_transformed_size()[0] / 2)
+						if (evType == "mouse") {
+							item.space_motion_handler = item.connect("motion_event", (actor, event) => {
+								let absX = event.get_coords()[0];
+								if (Math.abs(absX - lastPos) > 20) {
+									if (absX > lastPos) {
+										this.sendKey([106])
+									} else {
+										this.sendKey([105])
+									}
+									lastPos = absX
+								}
+							})
+						} else {
+							item.space_motion_handler = item.connect("touch_event", (actor, event) => {
+								if (event.type() == Clutter.EventType.TOUCH_UPDATE) {
+									let absX = event.get_coords()[0];
+									if (Math.abs(absX - lastPos) > 20) {
+										if (absX > lastPos) {
+											this.sendKey([106])
+										} else {
+											this.sendKey([105])
+										}
+										lastPos = absX
+									}
+								}
+							})
+						}
+					}, 750)
+				} else {
+					item.key_pressed = true;
+					item.button_pressed = setTimeout(() => {
+						releaseEv()
+					}, 1000);
+				}
+			}
+			let releaseEv = () => {
+				item.remove_style_pseudo_class("pressed")
 				item.ease({
-					scale_x: 1,
-					scale_y: 1,
+					scale_x: (item.width - this.settings.get_int("border-spacing-px") * 2) / item.width,
+					scale_y: (item.height - this.settings.get_int("border-spacing-px") * 2) / item.height,
 					duration: 100,
 					mode: Clutter.AnimationMode.EASE_OUT_QUAD,
-					onComplete: () => { item.set_scale(1, 1) }
+					onComplete: () => { item.set_scale((item.width - this.settings.get_int("border-spacing-px") * 2) / item.width, (item.height - this.settings.get_int("border-spacing-px") * 2) / item.height); }
 				})
 				if (item.button_pressed !== null) {
 					clearTimeout(item.button_pressed)
@@ -1158,51 +1127,28 @@ class Keyboard extends Dialog {
 					clearInterval(item.button_repeat)
 					item.button_repeat == null
 				}
-			})
+				if (item.space_motion_handler !== null) {
+					item.disconnect(item.space_motion_handler)
+					item.space_motion_handler = null;
+				} else if (item.key_pressed == true || item.space_motion_handler == null) {
+					try {
+						if (!item.char.isMod) {
+							this.decideMod(item.char)
+						} else {
+							const modButton = item;
+							this.decideMod(item.char, modButton)
+						}
+					} catch { }
+				}
+				item.key_pressed = false;
+			}
+			item.connect("button-press-event", () => pressEv("mouse"))
+			item.connect("button-release-event", releaseEv)
 			item.connect("touch-event", () => {
 				if (Clutter.get_current_event().type() == Clutter.EventType.TOUCH_BEGIN) {
-					item.set_scale(1.2, 1.2)
-					let player
-					if (this.settings.get_boolean("play-sound")) {
-						player = global.display.get_sound_player();
-						player.play_from_theme("dialog-information", "tap", null)
-					}
-
-					item.tap_pressed = setTimeout(() => {
-
-
-						if (!isMod) {
-							const oldModBtns = this.modBtns
-							item.tap_repeat = setInterval(() => {
-
-								if (this.settings.get_boolean("play-sound")) {
-									player.play_from_theme("dialog-information", "tap", null)
-								}
-								this.decideMod(item.char)
-
-								for (var i of oldModBtns) {
-									this.decideMod(i.char, i)
-								}
-							}, 100);
-
-						}
-					}, 750);
-				} else if (Clutter.get_current_event().type() == Clutter.EventType.TOUCH_END) {
-					item.ease({
-						scale_x: 1,
-						scale_y: 1,
-						duration: 100,
-						mode: Clutter.AnimationMode.EASE_OUT_QUAD,
-						onComplete: () => { item.set_scale(1, 1) }
-					})
-					if (item.tap_pressed !== null) {
-						clearTimeout(item.tap_pressed)
-						item.tap_pressed == null
-					}
-					if (item.tap_repeat !== null) {
-						clearInterval(item.tap_repeat)
-						item.tap_repeat == null
-					}
+					pressEv("touch")
+				} else if (Clutter.get_current_event().type() == Clutter.EventType.TOUCH_END || Clutter.get_current_event().type() == Clutter.EventType.TOUCH_CANCEL) {
+					releaseEv()
 				}
 			})
 		});
@@ -1221,7 +1167,42 @@ class Keyboard extends Dialog {
 			return false;
 		}
 	}
+	releaseAllKeys() {
+		let instances = [];
 
+		function traverse(obj) {
+			for (let key in obj) {
+			if (obj.hasOwnProperty(key)) {
+				if (key === "code") {
+				instances.push(obj[key]);
+				} else if (typeof obj[key] === 'object' && obj[key] !== null) {
+				traverse(obj[key]);
+				}
+			}
+			}
+		}
+
+		traverse(keycodes);
+		instances.forEach(i => {
+			this.inputDevice.notify_key(Clutter.get_current_event_time(), i, Clutter.KeyState.RELEASED);
+		})
+
+		this.keys.forEach(item => {
+			item.key_pressed = false;
+			if (item.button_pressed !== null) {
+				clearTimeout(item.button_pressed)
+				item.button_pressed == null
+			}
+			if (item.button_repeat !== null) {
+				clearInterval(item.button_repeat)
+				item.button_repeat == null
+			}
+			if (item.space_motion_handler !== null) {
+				item.disconnect(item.space_motion_handler)
+				item.space_motion_handler = null;
+			}
+		})
+	}
 	sendKey(keys) {
 		try {
 			for (var i = 0; i < keys.length; i++) {
@@ -1249,23 +1230,6 @@ class Keyboard extends Dialog {
 			notification.connect("activated", () => {
 				sendCommand("xdg-open https://github.com/Vishram1123/gjs-osk/issues");
 			});
-		}
-	}
-
-	sendCommand(command_line) {
-		try {
-			let [success, argv] = GLib.shell_parse_argv(command_line);
-			trySpawn(argv);
-		} catch (err) {
-			let source = new imports.ui.messageTray.SystemNotificationSource();
-			source.connect('destroy', () => {
-				source = null;
-			})
-			Main.messageTray.add(source);
-			let notification = new imports.ui.messageTray.Notification(source, "GJS-OSK: An unknown error occured", "Please report this bug to the Issues page:\n\n" + err)
-			notification.setTransient(false);
-			notification.setResident(false);
-			source.showNotification(notification);
 		}
 	}
 
