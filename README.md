@@ -7,7 +7,7 @@ A (marginally) better on screen keyboard for GNOME 45+ (go to the [pre-45 branch
 ## Requirements
 - GNOME 45 or above
 - Wayland (X11 is not working properly)
-- [Block Caribou 36](https://extensions.gnome.org/extension/3222/block-caribou-36/) for blocking default GNOME OSK (see [this issue](https://github.com/Vishram1123/gjs-osk/issues/33) if you are having problems with the keyboard also being blocked on lockscreen)
+*Note - Block Caribou 36 is no longer required*
 ## Demo
 [Keyboard Demo.webm](https://user-images.githubusercontent.com/64966832/210458851-1b91adba-f6e4-4d40-b0d5-dba2c46cc354.webm)
 
@@ -18,10 +18,11 @@ A (marginally) better on screen keyboard for GNOME 45+ (go to the [pre-45 branch
 2. Confirming that you have Chrome GNOME shell installed on your computer and your browser's GNOME Shell Integration plugin
 3. Click Install, and accept the prompt
 ## Install from Source
-1. [Head to the releases in the sidebar and download the appropriate version](https://github.com/Vishram1123/gjs-osk/releases)
-2. Copy `gjsosk@vishram1123.com/` to `~/.local/share/gnome-shell/extensions/`
-3. Log out of GNOME and log back in
-4. Click on the keyboard button in the dash bar
+1. [Head to the releases in the sidebar](https://github.com/Vishram1123/gjs-osk/releases/latest)
+2. Download `gjsosk@vishram1123_[version].zip` (`main` for GNOME version >= 45, `pre-45` for GNOME verison <= 44)
+3. Run `gnome-extensions install /path/to/gjsosk@vishram1123_[version].zip` (replace with appropriate path)
+4. Log out of GNOME and log back in. 
+5. Click on the keyboard button in the dash bar
 ## Usage
 - To drag the keyboard around, click on the move icon in the bottom right, then drag the keyboard around the screen. To get the full keyboard back, press the move icon again.
   - The keyboard will snap to the corners, edges, and center of the screen.

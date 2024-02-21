@@ -38,7 +38,7 @@ jobs:
           3. Log out of GNOME and log back in. 
           4. Click on the keyboard button in the dash bar
 
-          > Updates from branch ${{ github.ref_name }}: ${{ github.event.head_commit.message }}
+          > Updates from branch `${{ github.ref_name }}`: ${{ github.event.head_commit.message }}
     
     - name: Compress directory (main)
       run: |
