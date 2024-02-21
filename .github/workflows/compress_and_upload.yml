@@ -11,16 +11,20 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+    - name: Get Hash
+      id: hash
+      run: echo "git_hash=$(git rev-parse --short "$GITHUB_SHA")" >> $GITHUB_HASH
+      
     - name: Create Release
       id: create_release
       uses: actions/create-release@v1
       env:
         GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
       with:
-        tag_name: ${GITHUB_SHA::6}
-        release_name: Autorelease ${GITHUB_SHA::6}
+        tag_name: ${{ env.hash }}
+        release_name: Autorelease ${{ env.hash }}
         draft: false
-        prerelease: true
+        prerelease: false
         body: |
           Please see [Install From Source](cd gjsosk@vishram1123.com && zip -r ../gjsosk@vishram1123_main.zip ./*) instructions for installation
           ${{ github.ref_name }}: ${{ github.event_name }}
