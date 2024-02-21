@@ -11,6 +11,17 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+
+    - name: Checkout main branch
+      uses: actions/checkout@v2
+      with:
+        ref: 'main'
+
+    - name: Get Hash
+      run: |
+        echo ${{ github.event.head_commit.id }}
+        echo git rev-parse --short ${{ github.event.head_commit.id }}
+        echo "hash=$(git rev-parse --short ${{ github.event.head_commit.id }})" >> "$GITHUB_ENV"
     
     - name: Create Release
       id: create_release
@@ -18,8 +29,8 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
       with:
-        tag_name: ${{ github.event.head_commit.id }}
-        release_name: Autorelease ${{ github.event.head_commit.id }}
+        tag_name: ${{ env.hash }}
+        release_name: Autorelease ${{ env.hash }}
         draft: false
         prerelease: false
         body: |
@@ -27,11 +38,6 @@ jobs:
           
           > ${{ github.ref_name }}: ${{ github.event.head_commit.message }}
     
-    - name: Checkout main branch
-      uses: actions/checkout@v2
-      with:
-        ref: 'main'
-        
     - name: Compress directory (main)
       run: |
         cd gjsosk@vishram1123.com && zip -r ../gjsosk@vishram1123_main.zip ./*
