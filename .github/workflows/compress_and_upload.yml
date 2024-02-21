@@ -33,7 +33,7 @@ jobs:
         draft: false
         prerelease: false
         body: |
-          Please see [Install From Source](cd gjsosk@vishram1123.com && zip -r ../gjsosk@vishram1123_main.zip ./*) instructions for installation
+          Please see [Install From Source](https://github.com/Vishram1123/gjs-osk?tab=readme-ov-file#install-from-source) instructions for installation
           ${{ github.ref_name }}: ${{ github.event_name }}
         
     - name: Compress directory (main)
