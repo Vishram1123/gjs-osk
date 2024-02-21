@@ -13,7 +13,7 @@ jobs:
     steps:
     - name: Get Hash
       id: hash
-      run: echo "git_hash=$(git rev-parse --short "$GITHUB_SHA")" >> $GITHUB_HASH
+      run: echo "hash=$(git rev-parse --short "$GITHUB_SHA")" >> $GITHUB_ENV
       
     - name: Create Release
       id: create_release
