@@ -34,7 +34,8 @@ jobs:
         prerelease: false
         body: |
           Please see [Install From Source](https://github.com/Vishram1123/gjs-osk?tab=readme-ov-file#install-from-source) instructions for installation
-          ${{ github.ref_name }}: ${{ github.event_name }}
+          
+          > ${{ github.ref_name }}: ${{ github.event.head_commit.message }}
         
     - name: Compress directory (main)
       run: |
