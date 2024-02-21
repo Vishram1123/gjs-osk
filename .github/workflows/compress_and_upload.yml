@@ -17,10 +17,13 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
       with:
-        tag_name: ${{ github.ref_name }}
-        release_name: Autorelease ${{ github.ref_name }}
+        tag_name: ${{ github.sha }}
+        release_name: Autorelease ${{ github.sha }}
         draft: false
         prerelease: true
+        body: |
+          Please see [Install From Source](cd gjsosk@vishram1123.com && zip -r ../gjsosk@vishram1123_main.zip ./*) instructions for installation
+          ${{ github.ref_name }}: ${{ github.event_name }}
         
     - name: Checkout main branch
       uses: actions/checkout@v2
