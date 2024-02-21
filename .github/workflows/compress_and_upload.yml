@@ -19,8 +19,8 @@ jobs:
     - name: Get Hash
       id: hash
       run: |
-        echo "hash=$(git rev-parse --short "$GITHUB_HEAD_REF")" >> $GITHUB_ENV
-        echo $GITHUB_HEAD_REF
+        echo "hash=$(git rev-parse --short "$GITHUB_REF_NAME")" >> $GITHUB_ENV
+        echo $GITHUB_REF_NAME
       
     - name: Create Release
       id: create_release
