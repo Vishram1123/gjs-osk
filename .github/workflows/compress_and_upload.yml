@@ -19,8 +19,6 @@ jobs:
 
     - name: Get Hash
       run: |
-        echo ${{ github.event.head_commit.id }}
-        echo git rev-parse --short ${{ github.event.head_commit.id }}
         echo "hash=$(git rev-parse --short ${{ github.event.head_commit.id }})" >> "$GITHUB_ENV"
     
     - name: Create Release
@@ -34,9 +32,13 @@ jobs:
         draft: false
         prerelease: false
         body: |
-          Please see [Install From Source](https://github.com/Vishram1123/gjs-osk?tab=readme-ov-file#install-from-source) instructions for installation
-          
-          > ${{ github.ref_name }}: ${{ github.event.head_commit.message }}
+          ## To install:
+          1. Download `gjsosk@vishram1123_[version].zip` (`main` for GNOME version >= 45, `pre-45` for GNOME verison <= 44)
+          2. Run `gnome-extensions install /path/to/gjsosk@vishram1123_[version].zip` (replace with appropriate path)
+          3. Log out of GNOME and log back in. 
+          4. Click on the keyboard button in the dash bar
+
+          > Updates from branch ${{ github.ref_name }}: ${{ github.event.head_commit.message }}
     
     - name: Compress directory (main)
       run: |
