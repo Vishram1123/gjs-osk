@@ -5,6 +5,8 @@ on:
     branches:
       - main
       - pre-45
+    paths-ignore:
+      - '/README.md'
 
 jobs:
   build:
