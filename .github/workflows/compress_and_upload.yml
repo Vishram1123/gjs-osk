@@ -1,0 +1,63 @@
+name: Compress and Release
+
+on:
+  push:
+    branches:
+      - main
+      - pre-45
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout main branch
+      uses: actions/checkout@v2
+      with:
+        ref: 'main'
+        
+    - name: Compress directory (main)
+      run: |
+        zip -r gjsosk@vishram1123_main.zip gjsosk@vishram1123.com
+
+    - name: Checkout pre-45 branch
+      uses: actions/checkout@v2
+      with:
+        ref: 'pre-45'
+
+    - name: Compress directory (pre-45)
+      run: |
+        zip -r gjsosk@vishram1123_pre-45.zip gjsosk@vishram1123.com
+
+    - name: Create Release
+      id: create_release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
+      with:
+        tag_name: ${{ github.ref_name }}
+        release_name: Autorelease ${{ github.ref_name }}
+        draft: false
+        prerelease: true
+
+    - name: Upload Release Asset (main)
+      id: upload-release-asset-main
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: ./gjsosk@vishram1123_main.zip
+        asset_name: gjsosk@vishram1123_main.zip
+        asset_content_type: application/zip
+
+    - name: Upload Release Asset (pre-45)
+      id: upload-release-asset-pre-45
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: ./gjsosk@vishram1123_pre-45.zip
+        asset_name: gjsosk@vishram1123_pre-45.zip
+        asset_content_type: application/zip
