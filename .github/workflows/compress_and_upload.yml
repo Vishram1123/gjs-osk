@@ -18,7 +18,7 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
       with:
         tag_name: ${{ github.sha }}
-        release_name: Autorelease ${{ github.sha }}
+        release_name: Autorelease ${GITHUB_SHA::6}
         draft: false
         prerelease: true
         body: |
