@@ -586,6 +586,10 @@ class Keyboard extends Dialog {
 		});
 		for (var num in keycodes.row1) {
 			const i = keycodes.row1[num]
+			if (i.lowerName == "") {
+				i.lowerName = i._lowerName;
+				i.upperName = i._upperName;
+			}
 			var w = topRowWidth;
 			let params = {
 				height: topRowHeight,
@@ -632,6 +636,10 @@ class Keyboard extends Dialog {
 		});
 		for (var num in keycodes.row2) {
 			const i = keycodes.row2[num]
+			if (i.lowerName == "") {
+				i.lowerName = i._lowerName;
+				i.upperName = i._upperName;
+			}
 			var w;
 			if (num == 0) {
 				w = ((row1.width - ((keycodes.row2.length - 2) * ((topRowWidth) + 5))) / 2) * 0.5;
@@ -685,6 +693,10 @@ class Keyboard extends Dialog {
 		});
 		for (var num in keycodes.row3) {
 			const i = keycodes.row3[num]
+			if (i.lowerName == "") {
+				i.lowerName = i._lowerName;
+				i.upperName = i._upperName;
+			}
 			var w;
 			if (num == 0) {
 				w = ((row1.width - ((keycodes.row3.length - 2) * ((topRowWidth) + 5))) / 2) * 1.1;
@@ -738,6 +750,10 @@ class Keyboard extends Dialog {
 		});
 		for (var num in keycodes.row4) {
 			const i = keycodes.row4[num]
+			if (i.lowerName == "") {
+				i.lowerName = i._lowerName;
+				i.upperName = i._upperName;
+			}
 			var w;
 			if (num == 0 || num == keycodes.row4.length - 1) {
 				w = ((row1.width - ((keycodes.row4.length - 2) * ((topRowWidth) + 5))) / 2);
@@ -789,6 +805,10 @@ class Keyboard extends Dialog {
 		});
 		for (var num in keycodes.row5) {
 			const i = keycodes.row5[num]
+			if (i.lowerName == "") {
+				i.lowerName = i._lowerName;
+				i.upperName = i._upperName;
+			}
 			var w;
 			if (num == 0 || num == keycodes.row5.length - 1) {
 				w = ((row1.width - ((keycodes.row5.length - 2) * ((topRowWidth) + 5))) / 2);
@@ -840,6 +860,10 @@ class Keyboard extends Dialog {
 		});
 		for (var num in keycodes.row6) {
 			const i = keycodes.row6[num]
+			if (i.lowerName == "") {
+				i.lowerName = i._lowerName;
+				i.upperName = i._upperName;
+			}
 			var w;
 			if (num == 3) {
 				w = ((row1.width - ((keycodes.row6.length + 1) * ((topRowWidth) + 5))));
