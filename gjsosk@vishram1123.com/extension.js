@@ -946,6 +946,14 @@ class Keyboard extends Dialog {
 				btn2.char = (keycodes.row6[keycodes.row6.length - 1])[1]
 				btn3.char = (keycodes.row6[keycodes.row6.length - 1])[2]
 				btn4.char = (keycodes.row6[keycodes.row6.length - 1])[3]
+				btn1.char.lowerName = ""
+				btn1.char.upperName = ""
+				btn2.char.lowerName = ""
+				btn2.char.upperName = ""
+				btn3.char.lowerName = ""
+				btn3.char.upperName = ""
+				btn4.char.lowerName = ""
+				btn4.char.upperName = ""
 				btn1.width = Math.round((((topRowWidth) + 5)) * (2 / 3));
 				btn1.height = topRowHeight + 20;
 				btn2.width = Math.round((((topRowWidth) + 5)) * (2 / 3));
