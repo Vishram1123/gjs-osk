@@ -1,0 +1,78 @@
+name: Compress and Release
+
+on:
+  push:
+    branches:
+      - main
+      - pre-45
+    paths-ignore:
+      - '/README.md'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+
+    - name: Checkout main branch
+      uses: actions/checkout@v2
+      with:
+        ref: 'main'
+
+    - name: Get Hash
+      run: |
+        echo "hash=$(git rev-parse --short ${{ github.event.head_commit.id }})" >> "$GITHUB_ENV"
+    
+    - name: Create Release
+      id: create_release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
+      with:
+        tag_name: ${{ env.hash }}
+        release_name: Autorelease ${{ env.hash }}
+        draft: false
+        prerelease: false
+        body: |
+          ## To install:
+          1. Download `gjsosk@vishram1123_[version].zip` (`main` for GNOME version >= 45, `pre-45` for GNOME verison <= 44)
+          2. Run `gnome-extensions install /path/to/gjsosk@vishram1123_[version].zip` (replace with appropriate path)
+          3. Log out of GNOME and log back in. 
+          4. Click on the keyboard button in the dash bar
+
+          > Updates from branch `${{ github.ref_name }}`: ${{ github.event.head_commit.message }}
+    
+    - name: Compress directory (main)
+      run: |
+        cd gjsosk@vishram1123.com && zip -r ../gjsosk@vishram1123_main.zip ./*
+
+    - name: Upload Release Asset (main)
+      id: upload-release-asset-main
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: ./gjsosk@vishram1123_main.zip
+        asset_name: gjsosk@vishram1123_main.zip
+        asset_content_type: application/zip
+
+    - name: Checkout pre-45 branch
+      uses: actions/checkout@v2
+      with:
+        ref: 'pre-45'
+        
+    - name: Compress directory (pre-45)
+      run: |
+        cd gjsosk@vishram1123.com && zip -r ../gjsosk@vishram1123_pre-45.zip ./*
+
+    - name: Upload Release Asset (pre-45)
+      id: upload-release-asset-pre-45
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: ./gjsosk@vishram1123_pre-45.zip
+        asset_name: gjsosk@vishram1123_pre-45.zip
+        asset_content_type: application/zip

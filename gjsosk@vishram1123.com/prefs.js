@@ -14,10 +14,11 @@ const Me = ExtensionUtils.getCurrentExtension();
 const UIFolderPath = Me.dir.get_child('ui').get_path();
 
 function init() {
-    ExtensionUtils.initTranslations(Me.metadata.uuid);
+	ExtensionUtils.initTranslations(Me.metadata.uuid);
 }
 
 function fillPreferencesWindow(window) {
+
 	let iconTheme = Gtk.IconTheme.get_for_display(Gdk.Display.get_default());
 	iconTheme.add_search_path(UIFolderPath + `/icons`);
 	const settings = ExtensionUtils.getSettings('org.gnome.shell.extensions.gjsosk');
@@ -46,8 +47,9 @@ function fillPreferencesWindow(window) {
 		settings.set_double("background-b", b);
 		settings.set_int("font-size-px", numChanger_font.value);
 		settings.set_int("border-spacing-px", numChanger_bord.value);
+		settings.set_int("snap-spacing-px", numChanger_snap.value)
 		settings.set_boolean("round-key-corners", dragToggle2.active);
-                settings.set_boolean("play-sound", dragToggle3.active);
+		settings.set_boolean("play-sound", dragToggle3.active);
 		settings.set_int("default-snap", dropDown.selected);
 	});
 	group0.add(apply)
@@ -58,7 +60,7 @@ function fillPreferencesWindow(window) {
 	page1.add(group1);
 
 	const row0 = new Adw.ActionRow({
-		title: _('Language')
+		title: _('Layout')
 	});
 	group1.add(row0);
 
@@ -82,7 +84,7 @@ function fillPreferencesWindow(window) {
 
 	row1.add_suffix(dragToggle);
 	row1.activatable_widget = dragToggle;
-	
+
 	const row1t3 = new Adw.ActionRow({
 		title: _('Enable Panel Indicator')
 	});
@@ -95,7 +97,7 @@ function fillPreferencesWindow(window) {
 
 	row1t3.add_suffix(indEnabled);
 	row1t3.activatable_widget = indEnabled;
-	
+
 	const row1t5 = new Adw.ActionRow({
 		title: _('Open upon clicking in a text field')
 	});
@@ -109,7 +111,7 @@ function fillPreferencesWindow(window) {
 
 	row1t5.add_suffix(dragOpt);
 	row1t5.activatable_widget = dragOpt;
-	
+
 	const row2 = new Adw.ExpanderRow({
 		title: _('Portrait Sizing')
 	});
@@ -170,9 +172,9 @@ function fillPreferencesWindow(window) {
 	group1.add(row4);
 
 	let posList = [
-	    _("Top Left"), _("Top Center"), _("Top Right"),
-	    _("Center Left"), _("Center"), _("Center Right"),
-	    _("Bottom Left"), _("Bottom Center"), _("Bottom Right")
+		_("Top Left"), _("Top Center"), _("Top Right"),
+		_("Center Left"), _("Center"), _("Center Right"),
+		_("Bottom Left"), _("Bottom Center"), _("Bottom Right")
 	];
 	let dropDown = Gtk.DropDown.new_from_strings(posList);
 	dropDown.valign = Gtk.Align.CENTER;
@@ -180,6 +182,19 @@ function fillPreferencesWindow(window) {
 
 	row4.add_suffix(dropDown);
 	row4.activatable_widget = dropDown;
+
+	const row9 = new Adw.ActionRow({
+		title: _('Play sound')
+	});
+	group1.add(row9);
+
+	const dragToggle3 = new Gtk.Switch({
+		active: settings.get_boolean('play-sound'),
+		valign: Gtk.Align.CENTER,
+	});
+
+	row9.add_suffix(dragToggle3);
+	row9.activatable_widget = dragToggle3;
 
 	const group2 = new Adw.PreferencesGroup({
 		title: _("Appearance")
@@ -189,7 +204,7 @@ function fillPreferencesWindow(window) {
 	const row5 = new Adw.ActionRow({
 		title: _('Color')
 	});
-	group2.add(row5);settings.set_boolean("enable-tap-gesture", dragOpt.selected);
+	group2.add(row5); settings.set_boolean("enable-tap-gesture", dragOpt.selected);
 
 	let rgba = new Gdk.RGBA();
 	rgba.parse("rgba(" + settings.get_double("background-r") + ", " + settings.get_double("background-g") + ", " + settings.get_double("background-b") + ", 1)");
@@ -223,6 +238,17 @@ function fillPreferencesWindow(window) {
 	row7.add_suffix(numChanger_bord);
 	row7.activatable_widget = numChanger_bord;
 
+	let row1t2 = new Adw.ActionRow({
+		title: _('Drag snap spacing (px)')
+	});
+	group2.add(row1t2);
+
+	let numChanger_snap = Gtk.SpinButton.new_with_range(0, 50, 5);
+	numChanger_snap.value = settings.get_int('snap-spacing-px');
+	numChanger_snap.valign = Gtk.Align.CENTER;
+	row1t2.add_suffix(numChanger_snap);
+	row1t2.activatable_widget = numChanger_snap;
+
 	const row8 = new Adw.ActionRow({
 		title: _('Round Corners')
 	});
@@ -236,19 +262,6 @@ function fillPreferencesWindow(window) {
 	row8.add_suffix(dragToggle2);
 	row8.activatable_widget = dragToggle2;
 
-
-        const row9 = new Adw.ActionRow({
-		title: _('Play sound')
-	});
-	group2.add(row9);
-
-	const dragToggle3 = new Gtk.Switch({
-	        active: settings.get_boolean('play-sound'),
-		valign: Gtk.Align.CENTER,
-	});
-
-	row9.add_suffix(dragToggle3);
-	row9.activatable_widget = dragToggle3;
 	window.add(page1);
 
 	let page2 = new Adw.PreferencesPage({
@@ -295,9 +308,21 @@ function fillPreferencesWindow(window) {
 		uri: "https://github.com/Vishram1123/gjs-osk",
 	});
 
+	let icons_credit = new Adw.ActionRow({
+		icon_name: "app-icon-design-symbolic",
+		title: _("Icons sourced from")
+	});
+	let remixicon_link = new Gtk.LinkButton({
+		label: "RemixIcon",
+		uri: "https://remixicon.com/",
+	});
+
 	code_row.add_suffix(github_link);
 	code_row.set_activatable_widget(github_link);
 	links_pref_group.add(code_row);
+	icons_credit.add_suffix(remixicon_link);
+	icons_credit.set_activatable_widget(remixicon_link);
+	links_pref_group.add(icons_credit);
 
 	label_box.append(label);
 	label_box.append(another_label);
@@ -324,8 +349,10 @@ function fillPreferencesWindow(window) {
 		settings.set_double("background-b", b);
 		settings.set_int("font-size-px", numChanger_font.value);
 		settings.set_int("border-spacing-px", numChanger_bord.value);
+		settings.set_int("snap-spacing-px", numChanger_snap.value)
 		settings.set_boolean("round-key-corners", dragToggle2.active);
-                settings.set_boolean("play-sound", dragToggle3.active);
+		settings.set_boolean("play-sound", dragToggle3.active);
 		settings.set_int("default-snap", dropDown.selected);
 	});
 }
+
