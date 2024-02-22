@@ -208,9 +208,6 @@ class GjsOskExtension {
 	}
 
 	disable() {
-		this._quick_settings_indicator.quickSettingsItems.forEach(item => item.destroy());
-		this._quick_settings_indicator.destroy();
-		this._quick_settings_indicator = null;
 
 		if (this._indicator !== null) {
 			this._indicator.destroy();
