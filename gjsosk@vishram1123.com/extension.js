@@ -573,6 +573,7 @@ class Keyboard extends Dialog {
 	}
 
 	buildUI() {
+		this.box.set_opacity(0);
 		this.keys = [];
 		let monitor = Main.layoutManager.primaryMonitor
 		var topRowWidth = Math.round((monitor.width - 40 - this.settings.get_int("snap-spacing-px") * 2) * this.widthPercent / 15)
