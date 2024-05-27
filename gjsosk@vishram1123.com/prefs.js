@@ -29,6 +29,7 @@ export default class GjsOskPreferences extends ExtensionPreferences {
 			settings.set_boolean("enable-drag", dragToggle.active);
 			settings.set_int("enable-tap-gesture", dragOpt.selected);
 			settings.set_boolean("indicator-enabled", indEnabled.active);
+			settings.set_boolean("split-kbd", splitEnabled.active);
 			settings.set_int("portrait-width-percent", numChanger_pW.value);
 			settings.set_int("portrait-height-percent", numChanger_pH.value);
 			settings.set_int("landscape-width-percent", numChanger_lW.value);
@@ -89,6 +90,19 @@ export default class GjsOskPreferences extends ExtensionPreferences {
 
 		row1t3.add_suffix(indEnabled);
 		row1t3.activatable_widget = indEnabled;
+
+		const row1t4 = new Adw.ActionRow({
+			title:_("Split keyboard")
+		})
+		group1.add(row1t4)
+
+		const splitEnabled = new Gtk.Switch({
+			active: settings.get_boolean("split-kbd"),
+			valign: Gtk.Align.CENTER
+		})
+
+		row1t4.add_suffix(splitEnabled)
+		row1t4.activatable_widget = splitEnabled
 
 		const row1t5 = new Adw.ActionRow({
 			title: _('Open upon clicking in a text field')
@@ -331,6 +345,7 @@ export default class GjsOskPreferences extends ExtensionPreferences {
 			settings.set_boolean("enable-drag", dragToggle.active);
 			settings.set_int("enable-tap-gesture", dragOpt.selected);
 			settings.set_boolean("indicator-enabled", indEnabled.active);
+			settings.set_boolean("split-kbd", splitEnabled.active);
 			settings.set_int("portrait-width-percent", numChanger_pW.value);
 			settings.set_int("portrait-height-percent", numChanger_pH.value);
 			settings.set_int("landscape-width-percent", numChanger_lW.value);

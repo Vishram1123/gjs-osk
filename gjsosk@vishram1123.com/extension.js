@@ -1194,6 +1194,14 @@ class Keyboard extends Dialog {
 		this.box.add_child(row4);
 		this.box.add_child(row5);
 		this.box.add_child(row6);
+		if (this.settings.get_boolean("split-kbd")) {
+			for (var i of [row1, row2, row3, row4, row5]) {
+				i.insert_child_at_index(new St.Widget({width: (monitor.width - this.box.width - 40 - 2 * this.settings.get_int("snap-spacing-px"))}), Math.floor(i.get_children().length / 2))
+			}
+			row6.get_children()[3].width += (monitor.width - this.box.width - 40 - 2 * this.settings.get_int("snap-spacing-px"))
+		}
+		var rgb = "rgb(" + this.settings.get_double("background-r") + "," + this.settings.get_double("background-g") + "," + this.settings.get_double("background-b") + ")"
+		this.box.set_style("background-image: linear-gradient(to right," + rgb + ", transparent, " + rgb + ");")
 		if (this.lightOrDark(this.settings.get_double("background-r"), this.settings.get_double("background-g"), this.settings.get_double("background-b"))) {
 			this.box.add_style_class_name("inverted");
 		} else {
