@@ -3,7 +3,10 @@ import Gio from 'gi://Gio';
 import GLib from 'gi://GLib';
 import GObject from 'gi://GObject';
 import St from 'gi://St';
+import Shell from 'gi://Shell';
 
+
+import * as EdgeDragAction from 'resource:///org/gnome/shell/ui/edgeDragAction.js';
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 import * as PanelMenu from 'resource:///org/gnome/shell/ui/panelMenu.js';
 import * as PopupMenu from 'resource:///org/gnome/shell/ui/popupMenu.js';
@@ -65,14 +68,12 @@ let keycodes;
 export default class GjsOskExtension extends Extension {
 	_openKeyboard() {
 		if (this.Keyboard.state == "closed") {
-			this.Keyboard.opened = true;
 			this.Keyboard.open();
 		}
 	}
 
 	_closeKeyboard() {
 		if (this.Keyboard.state == "opened") {
-			this.Keyboard.opened = false;
 			this.Keyboard.close();
 		}
 	}
@@ -278,11 +279,64 @@ class Keyboard extends Dialog {
 			this.delta = [];
 			this.checkMonitor();
 			this._dragging = false;
+			let side = null;
+			switch (this.settings.get_int("default-snap")) {
+				case 0:
+				case 1:
+				case 2:
+					side = St.Side.TOP;
+					break;
+				case 3:
+					side = St.Side.LEFT;
+					break;
+				case 5:
+					side = St.Side.RIGHT;
+					break;
+				case 6:
+				case 7:
+				case 8:
+					side = St.Side.BOTTOM;
+					break;
+			}
+			this.oldBottomDragAction = global.stage.get_action('osk');
+			global.stage.remove_action(this.oldBottomDragAction);
+			if (side != null) {
+				const mode = Shell.ActionMode.ALL & ~Shell.ActionMode.LOCK_SCREEN;
+				const bottomDragAction = new EdgeDragAction.EdgeDragAction(side, mode);
+				bottomDragAction.connect('activated', () => {
+					this.open(true);
+					this.openedFromButton = true;
+					this.closedFromButton = false;
+					this.gestureInProgress = false;
+				});
+				bottomDragAction.connect('progress', (_action, progress) => {
+					if (!this.gestureInProgress)
+						this.open(false)
+					this.setOpenState(Math.min(Math.max(0, (progress / (side % 2 == 0 ? this.box.height : this.box.width)) * 100), 100))
+					this.gestureInProgress = true;
+				});
+				bottomDragAction.connect('gesture-cancel', () => {
+					if (this.gestureInProgress) {
+						this.close()
+						this.openedFromButton = false;
+						this.closedFromButton = true;
+					}
+					this.gestureInProgress = false;
+					return Clutter.EVENT_PROPAGATE;
+				});
+				global.stage.add_action_full('osk', Clutter.EventPhase.CAPTURE, bottomDragAction);
+				this.bottomDragAction = bottomDragAction;
+			} else {
+				this.bottomDragAction = null;
+			}
+
 			clearInterval(this.startupInterval);
 		}, 200);
 	}
 
 	destroy() {
+		global.stage.remove_action_by_name('osk')
+		global.stage.add_action_full('osk', Clutter.EventPhase.CAPTURE, this.oldBottomDragAction)
 		if (this.startupInterval !== null) {
 			clearInterval(this.startupInterval);
 			this.startupInterval = null;
@@ -404,7 +458,7 @@ class Keyboard extends Dialog {
 
 		if (!this._dragging && event.type() == Clutter.EventType.TOUCH_BEGIN) {
 			this.delta = [event.get_coords()[0] - this.translation_x, event.get_coords()[1] - this.translation_y];
-			this.startDragging(event);
+			this.startDragging(event, this.delta);
 			return Clutter.EVENT_STOP;
 		} else if (this._grabbedSequence && sequence.get_slot() === this._grabbedSequence.get_slot()) {
 			if (event.type() == Clutter.EventType.TOUCH_UPDATE) {
@@ -494,15 +548,74 @@ class Keyboard extends Dialog {
 		this.state = "closed";
 		this.delta = [];
 		this.dragging = false;
+		let side = null;
+		switch (this.settings.get_int("default-snap")) {
+			case 0:
+			case 1:
+			case 2:
+				side = St.Side.TOP;
+				break;
+			case 3:
+				side = St.Side.LEFT;
+				break;
+			case 5:
+				side = St.Side.RIGHT;
+				break;
+			case 6:
+			case 7:
+			case 8:
+				side = St.Side.BOTTOM;
+				break;
+		}
+		if (this.bottomDragAction != null) {
+			global.stage.remove_action_by_name('osk');
+		}
+		if (side != null) {
+			const mode = Shell.ActionMode.ALL & ~Shell.ActionMode.LOCK_SCREEN;
+			const bottomDragAction = new EdgeDragAction.EdgeDragAction(side, mode);
+			bottomDragAction.connect('activated', () => {
+				this.open(true);
+				this.openedFromButton = true;
+				this.closedFromButton = false;
+				this.gestureInProgress = false;
+			});
+			bottomDragAction.connect('progress', (_action, progress) => {
+				if (!this.gestureInProgress)
+					this.open(false)
+				this.setOpenState(Math.min(Math.max(0, (progress / (side % 2 == 0 ? this.box.height : this.box.width)) * 100), 100))
+				this.gestureInProgress = true;
+			});
+			bottomDragAction.connect('gesture-cancel', () => {
+				if (this.gestureInProgress) {
+					this.close()
+					this.openedFromButton = false;
+					this.closedFromButton = true;
+				}
+				this.gestureInProgress = false;
+				return Clutter.EVENT_PROPAGATE;
+			});
+			global.stage.add_action_full('osk', Clutter.EventPhase.CAPTURE, bottomDragAction);
+			this.bottomDragAction = bottomDragAction;
+		} else {
+			this.bottomDragAction = null;
+		}
 	}
 
-	open() {
-		this.inputDevice = Clutter.get_default_backend().get_default_seat().create_virtual_device(Clutter.InputDeviceType.KEYBOARD_DEVICE);
-		if (this.startupTimeout !== null) {
-			clearInterval(this.startupTimeout);
-			this.startupTimeout = null;
-		}
-		this.startupTimeout = setTimeout(() => {
+	setOpenState(percent) {
+		let monitor = Main.layoutManager.primaryMonitor;
+		let posX = [this.settings.get_int("snap-spacing-px"), ((monitor.width * .5) - ((this.width * .5))), monitor.width - this.width - this.settings.get_int("snap-spacing-px")][(this.settings.get_int("default-snap") % 3)];
+		let posY = [this.settings.get_int("snap-spacing-px"), ((monitor.height * .5) - ((this.height * .5))), monitor.height - this.height - this.settings.get_int("snap-spacing-px")][Math.floor((this.settings.get_int("default-snap") / 3))];
+		let mX = [-this.box.width, 0, this.box.width][(this.settings.get_int("default-snap") % 3)];
+		let mY = [-this.box.height, 0, this.box.height][Math.floor((this.settings.get_int("default-snap") / 3))]
+		let [dx, dy] = [posX + mX * ((100 - percent) / 100), posY + mY * ((100 - percent) / 100)]
+		let op = 255 * (percent / 100);
+		this.set_translation(dx, dy, 0)
+		this.box.set_opacity(op)
+	}
+
+	open(noPrep = null) {
+		if (noPrep == null || !noPrep) {
+			this.inputDevice = Clutter.get_default_backend().get_default_seat().create_virtual_device(Clutter.InputDeviceType.KEYBOARD_DEVICE);
 			this.init = KeyboardManager.getKeyboardManager()._current.id;
 			this.initLay = Object.keys(KeyboardManager.getKeyboardManager()._layoutInfos);
 			if (this.initLay == undefined || this.init == undefined) {
@@ -517,8 +630,17 @@ class Keyboard extends Dialog {
 			KeyboardManager.getKeyboardManager().apply(["us", "fr+azerty", "us+dvorak", "de+dsb_qwertz"][this.settings.get_int("lang")]);
 			KeyboardManager.getKeyboardManager().reapply();
 			this.state = "opening"
-			this.box.opacity = 0;
 			this.show();
+		}
+		if (noPrep == null || noPrep) {
+			let monitor = Main.layoutManager.primaryMonitor;
+			let posX = [this.settings.get_int("snap-spacing-px"), ((monitor.width * .5) - ((this.width * .5))), monitor.width - this.width - this.settings.get_int("snap-spacing-px")][(this.settings.get_int("default-snap") % 3)];
+			let posY = [this.settings.get_int("snap-spacing-px"), ((monitor.height * .5) - ((this.height * .5))), monitor.height - this.height - this.settings.get_int("snap-spacing-px")][Math.floor((this.settings.get_int("default-snap") / 3))];
+			if (noPrep == null) {
+				let mX = [-this.box.width, 0, this.box.width][(this.settings.get_int("default-snap") % 3)];
+				let mY = [-this.box.height, 0, this.box.height][Math.floor((this.settings.get_int("default-snap") / 3))]
+				this.set_translation(posX + mX, posY + mY, 0)
+			}
 			this.box.ease({
 				opacity: 255,
 				duration: 100,
@@ -530,18 +652,20 @@ class Keyboard extends Dialog {
 					}
 					this.stateTimeout = setTimeout(() => {
 						this.state = "opened"
-					}, 500);
-					let monitor = Main.layoutManager.primaryMonitor;
-					let posX = [this.settings.get_int("snap-spacing-px"), ((monitor.width * .5) - ((this.width * .5))), monitor.width - this.width - this.settings.get_int("snap-spacing-px")][(this.settings.get_int("default-snap") % 3)];
-					let posY = [this.settings.get_int("snap-spacing-px"), ((monitor.height * .5) - ((this.height * .5))), monitor.height - this.height - this.settings.get_int("snap-spacing-px")][Math.floor((this.settings.get_int("default-snap") / 3))];
-					this.set_translation(posX, posY, 0);
+					}, 500);	
 				}
 			});
+			this.ease({
+				translation_x: posX,
+				translation_y: posY,
+				duration: 100,
+				mode: Clutter.AnimationMode.EASE_OUT_QUAD
+			})
 			this.opened = true;
-		}, 200);
+		}
 	}
 
-	close() {
+	close(instant = null) {
 		if (this.initLay !== undefined && this.init !== undefined) {
 			KeyboardManager.getKeyboardManager().setUserLayouts(this.initLay);
 			KeyboardManager.getKeyboardManager().apply(this.init);
@@ -549,14 +673,14 @@ class Keyboard extends Dialog {
 		let monitor = Main.layoutManager.primaryMonitor;
 		let posX = [this.settings.get_int("snap-spacing-px"), ((monitor.width * .5) - ((this.width * .5))), monitor.width - this.width - this.settings.get_int("snap-spacing-px")][(this.settings.get_int("default-snap") % 3)];
 		let posY = [this.settings.get_int("snap-spacing-px"), ((monitor.height * .5) - ((this.height * .5))), monitor.height - this.height - this.settings.get_int("snap-spacing-px")][Math.floor((this.settings.get_int("default-snap") / 3))];
+		let mX = [-this.box.width, 0, this.box.width][(this.settings.get_int("default-snap") % 3)];
+		let mY = [-this.box.height, 0, this.box.height][Math.floor((this.settings.get_int("default-snap") / 3))]
 		this.state = "closing"
 		this.box.ease({
 			opacity: 0,
-			duration: 100,
+			duration: instant == null || !instant ? 100 : 0,
 			mode: Clutter.AnimationMode.EASE_OUT_QUAD,
 			onComplete: () => {
-				this.set_translation(0, 0, 0);
-				this.set_translation(posX, posY, 0);
 				this.opened = false;
 				this.hide();
 				if (this.stateTimeout !== null) {
@@ -568,6 +692,12 @@ class Keyboard extends Dialog {
 				}, 500);
 			},
 		});
+		this.ease({
+			translation_x: posX + mX,
+			translation_y: posY + mY,
+			duration: 100,
+			mode: Clutter.AnimationMode.EASE_OUT_QUAD
+		})
 		this.openedFromButton = false
 		this.releaseAllKeys();
 	}
