@@ -19,6 +19,10 @@ jobs:
       with:
         ref: 'main'
 
+    - name: Install glib
+      run: |
+        sudo apt-get update && sudo apt-get install -y libglib2.0-bin
+
     - name: Get Hash
       run: |
         echo "hash=$(git rev-parse --short ${{ github.event.head_commit.id }})" >> "$GITHUB_ENV"
@@ -62,6 +66,9 @@ jobs:
       with:
         ref: 'pre-45'
         
+    - name: Compile schemas
+      run: | 
+        cd gjsosk@vishram1123.com/schemas && glib-compile-schemas .
     - name: Compress directory (pre-45)
       run: |
         cd gjsosk@vishram1123.com && zip -r ../gjsosk@vishram1123_pre-45.zip ./*
