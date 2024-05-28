@@ -119,10 +119,10 @@ export default class GjsOskExtension extends Extension {
 
 	enable() {
 		this.settings = this.getSettings();
-		this.settings.scheme = ""
+                this.settings.scheme = ""
 		if (St.Settings.get().color_scheme == 1) 
 			this.settings.scheme = "-dark"
-		this.openBit = this.settings.get_child("indicator");
+                this.openBit = this.settings.get_child("indicator");
 		let [ok, contents] = GLib.file_get_contents(this.path + '/keycodes.json');
 		if (ok) {
 			keycodes = JSON.parse(contents)[['qwerty', 'azerty', 'dvorak', "qwertz"][this.settings.get_int("lang")]];
@@ -1276,13 +1276,13 @@ class Keyboard extends Dialog {
 
 		function traverse(obj) {
 			for (let key in obj) {
-			if (obj.hasOwnProperty(key)) {
-				if (key === "code") {
-				instances.push(obj[key]);
-				} else if (typeof obj[key] === 'object' && obj[key] !== null) {
-				traverse(obj[key]);
-				}
-			}
+			        if (obj.hasOwnProperty(key)) {
+				        if (key === "code") {
+				                instances.push(obj[key]);
+				        } else if (typeof obj[key] === 'object' && obj[key] !== null) {
+				                traverse(obj[key]);
+				        }
+			        }
 			}
 		}
 
