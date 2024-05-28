@@ -37,6 +37,7 @@ function fillPreferencesWindow(window) {
 		settings.set_boolean("enable-drag", dragToggle.active);
 		settings.set_int("enable-tap-gesture", dragOpt.selected);
 		settings.set_boolean("indicator-enabled", indEnabled.active);
+		settings.set_boolean("split-kbd", splitEnabled.active);
 		settings.set_int("portrait-width-percent", numChanger_pW.value);
 		settings.set_int("portrait-height-percent", numChanger_pH.value);
 		settings.set_int("landscape-width-percent", numChanger_lW.value);
@@ -45,6 +46,10 @@ function fillPreferencesWindow(window) {
 		settings.set_double("background-r", r);
 		settings.set_double("background-g", g);
 		settings.set_double("background-b", b);
+		let [rd, gd, bd] = colorButton_d.get_rgba().to_string().replace("rgb(", "").replace(")", "").split(",")
+		settings.set_double("background-r-dark", rd);
+		settings.set_double("background-g-dark", gd);
+		settings.set_double("background-b-dark", bd);
 		settings.set_int("font-size-px", numChanger_font.value);
 		settings.set_int("border-spacing-px", numChanger_bord.value);
 		settings.set_int("snap-spacing-px", numChanger_snap.value)
@@ -97,6 +102,19 @@ function fillPreferencesWindow(window) {
 
 	row1t3.add_suffix(indEnabled);
 	row1t3.activatable_widget = indEnabled;
+
+	const row1t4 = new Adw.ActionRow({
+		title:_("Split keyboard")
+	})
+	group1.add(row1t4)
+
+	const splitEnabled = new Gtk.Switch({
+		active: settings.get_boolean("split-kbd"),
+		valign: Gtk.Align.CENTER
+	})
+
+	row1t4.add_suffix(splitEnabled)
+	row1t4.activatable_widget = splitEnabled
 
 	const row1t5 = new Adw.ActionRow({
 		title: _('Open upon clicking in a text field')
@@ -201,20 +219,41 @@ function fillPreferencesWindow(window) {
 	});
 	page1.add(group2);
 
-	const row5 = new Adw.ActionRow({
-		title: _('Color')
-	});
-	group2.add(row5); settings.set_boolean("enable-tap-gesture", dragOpt.selected);
+	const row5 = new Adw.ExpanderRow({
+		title:_("Color")
+	})
+	group2.add(row5);
 
+
+	const lightCol = new Adw.ActionRow({
+		title: _('Light Mode')
+	});
+	row5.add_row(lightCol)
+	
 	let rgba = new Gdk.RGBA();
 	rgba.parse("rgba(" + settings.get_double("background-r") + ", " + settings.get_double("background-g") + ", " + settings.get_double("background-b") + ", 1)");
 	let colorButton = new Gtk.ColorButton({
-		rgba,
+		rgba: rgba,
 		use_alpha: false,
 		valign: Gtk.Align.CENTER
 	});
-	row5.add_suffix(colorButton);
-	row5.activatable_widget = colorButton;
+	lightCol.add_suffix(colorButton);
+	lightCol.activatable_widget = colorButton;
+
+	const darkCol = new Adw.ActionRow({
+		title: _('Dark Mode')
+	});
+	row5.add_row(darkCol)
+	
+	let rgba_d = new Gdk.RGBA();
+	rgba_d.parse("rgba(" + settings.get_double("background-r-dark") + ", " + settings.get_double("background-g-dark") + ", " + settings.get_double("background-b-dark") + ", 1)");
+	let colorButton_d = new Gtk.ColorButton({
+		rgba: rgba_d,
+		use_alpha: false,
+		valign: Gtk.Align.CENTER
+	});
+	darkCol.add_suffix(colorButton_d);
+	darkCol.activatable_widget = colorButton_d;
 
 	let row6 = new Adw.ActionRow({
 		title: _('Font Size (px)')
@@ -339,6 +378,7 @@ function fillPreferencesWindow(window) {
 		settings.set_boolean("enable-drag", dragToggle.active);
 		settings.set_int("enable-tap-gesture", dragOpt.selected);
 		settings.set_boolean("indicator-enabled", indEnabled.active);
+		settings.set_boolean("split-kbd", splitEnabled.active);
 		settings.set_int("portrait-width-percent", numChanger_pW.value);
 		settings.set_int("portrait-height-percent", numChanger_pH.value);
 		settings.set_int("landscape-width-percent", numChanger_lW.value);
@@ -347,6 +387,10 @@ function fillPreferencesWindow(window) {
 		settings.set_double("background-r", r);
 		settings.set_double("background-g", g);
 		settings.set_double("background-b", b);
+		let [rd, gd, bd] = colorButton_d.get_rgba().to_string().replace("rgb(", "").replace(")", "").split(",")
+		settings.set_double("background-r-dark", rd);
+		settings.set_double("background-g-dark", gd);
+		settings.set_double("background-b-dark", bd);
 		settings.set_int("font-size-px", numChanger_font.value);
 		settings.set_int("border-spacing-px", numChanger_bord.value);
 		settings.set_int("snap-spacing-px", numChanger_snap.value)

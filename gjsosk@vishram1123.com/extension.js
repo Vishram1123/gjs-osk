@@ -123,12 +123,21 @@ class GjsOskExtension {
 
 	enable() {
 		this.settings = ExtensionUtils.getSettings("org.gnome.shell.extensions.gjsosk");
-		this.openBit = this.settings.get_child("indicator");
+                this.settings.scheme = ""
+		if (St.Settings.get().color_scheme == 1) 
+			this.settings.scheme = "-dark"
+                this.openBit = this.settings.get_child("indicator");
 		let [ok, contents] = GLib.file_get_contents(Me.path + '/keycodes.json');
 		if (ok) {
 			keycodes = JSON.parse(contents)[['qwerty', 'azerty', 'dvorak', "qwertz"][this.settings.get_int("lang")]];
 		}
-		this.Keyboard = new Keyboard(this.settings);
+		let refresh = () => {
+			if (this.Keyboard)
+				this.Keyboard.destroy();
+			this.Keyboard = new Keyboard(this.settings)
+			this.Keyboard.refresh = refresh
+		}
+		refresh()
 
 		this._originalLastDeviceIsTouchscreen = KeyboardUI.KeyboardManager.prototype._lastDeviceIsTouchscreen;
 		KeyboardUI.KeyboardManager.prototype._lastDeviceIsTouchscreen = () => { return false };
@@ -147,7 +156,7 @@ class GjsOskExtension {
 
 			this._indicator.connect("button-press-event", () => this._toggleKeyboard());
 			this._indicator.connect("touch-event", (_actor, event) => {
-				if (event.type() == 11) this._toggleKeyboard()
+				if (event.type() == Clutter.EventType.TOUCH_END) this._toggleKeyboard()
 			});
 			Main.panel.addToStatusArea("GJS OSK Indicator", this._indicator);
 		}
@@ -161,13 +170,17 @@ class GjsOskExtension {
 			this.openBit.set_boolean("opened", false)
 			this._toggleKeyboard();
 		})
-		this.settingsHandler = this.settings.connect("changed", key => {
+		let settingsChanged = key => {
+			if (St.Settings.get().color_scheme == 1) 
+				this.settings.scheme = "-dark"
+			else
+				this.settings.scheme = ""
 			this.Keyboard.openedFromButton = false;
 			let [ok, contents] = GLib.file_get_contents(Me.path + '/keycodes.json');
 			if (ok) {
 				keycodes = JSON.parse(contents)[["qwerty", "azerty", "dvorak", "qwertz"][this.settings.get_int("lang")]];
 			}
-			this.Keyboard.refresh();
+			refresh()
 			try {
 				this._toggle._refresh();
 			} catch { }
@@ -187,7 +200,7 @@ class GjsOskExtension {
 
 				this._indicator.connect("button-press-event", () => this._toggleKeyboard());
 				this._indicator.connect("touch-event", (_actor, event) => {
-					if (event.type() == 11) this._toggleKeyboard()
+					if (event.type() == Clutter.EventType.TOUCH_END) this._toggleKeyboard()
 				});
 				Main.panel.addToStatusArea("GJS OSK Indicator", this._indicator);
 			} else {
@@ -204,7 +217,9 @@ class GjsOskExtension {
 			if (this.settings.get_int("enable-tap-gesture") > 0) {
 				this.open_interval();
 			}
-		});
+		}
+		this.settingsHandler = this.settings.connect("changed", settingsChanged);
+		St.Settings.get().connect("notify::color-scheme", settingsChanged)
 	}
 
 	disable() {
@@ -275,17 +290,72 @@ class Keyboard extends Dialog {
 			this.shift = false;
 			this.alt = false;
 			this.box.add_style_class_name("boxLay");
-			this.box.set_style("background-color: rgb(" + settings.get_double("background-r") + "," + settings.get_double("background-g") + "," + settings.get_double("background-b") + ");")
+			this.box.set_style("background-color: rgb(" + settings.get_double("background-r" + this.settings.scheme) + "," + settings.get_double("background-g" + this.settings.scheme) + "," + settings.get_double("background-b" + this.settings.scheme) + ");")
 			this.opened = false;
 			this.state = "closed";
 			this.delta = [];
 			this.checkMonitor();
 			this._dragging = false;
+			let side = null;
+			switch (this.settings.get_int("default-snap")) {
+				case 0:
+				case 1:
+				case 2:
+					side = St.Side.TOP;
+					break;
+				case 3:
+					side = St.Side.LEFT;
+					break;
+				case 5:
+					side = St.Side.RIGHT;
+					break;
+				case 6:
+				case 7:
+				case 8:
+					side = St.Side.BOTTOM;
+					break;
+			}
+			this.oldBottomDragAction = global.stage.get_action('osk');
+			if (this.oldBottomDragAction !== null)
+				global.stage.remove_action(this.oldBottomDragAction);
+			if (side != null) {
+				const mode = Shell.ActionMode.ALL & ~Shell.ActionMode.LOCK_SCREEN;
+				const bottomDragAction = new EdgeDragAction.EdgeDragAction(side, mode);
+				bottomDragAction.connect('activated', () => {
+					this.open(true);
+					this.openedFromButton = true;
+					this.closedFromButton = false;
+					this.gestureInProgress = false;
+				});
+				bottomDragAction.connect('progress', (_action, progress) => {
+					if (!this.gestureInProgress)
+						this.open(false)
+					this.setOpenState(Math.min(Math.max(0, (progress / (side % 2 == 0 ? this.box.height : this.box.width)) * 100), 100))
+					this.gestureInProgress = true;
+				});
+				bottomDragAction.connect('gesture-cancel', () => {
+					if (this.gestureInProgress) {
+						this.close()
+						this.openedFromButton = false;
+						this.closedFromButton = true;
+					}
+					this.gestureInProgress = false;
+					return Clutter.EVENT_PROPAGATE;
+				});
+				global.stage.add_action_full('osk', Clutter.EventPhase.CAPTURE, bottomDragAction);
+				this.bottomDragAction = bottomDragAction;
+			} else {
+				this.bottomDragAction = null;
+			}
+
 			clearInterval(this.startupInterval);
 		}, 200);
 	}
 
 	destroy() {
+		global.stage.remove_action_by_name('osk')
+		if (this.oldBottomDragAction !== null)
+			global.stage.add_action_full('osk', Clutter.EventPhase.CAPTURE, this.oldBottomDragAction)
 		if (this.startupInterval !== null) {
 			clearInterval(this.startupInterval);
 			this.startupInterval = null;
@@ -407,7 +477,7 @@ class Keyboard extends Dialog {
 
 		if (!this._dragging && event.type() == Clutter.EventType.TOUCH_BEGIN) {
 			this.delta = [event.get_coords()[0] - this.translation_x, event.get_coords()[1] - this.translation_y];
-			this.startDragging(event);
+			this.startDragging(event, this.delta);
 			return Clutter.EVENT_STOP;
 		} else if (this._grabbedSequence && sequence.get_slot() === this._grabbedSequence.get_slot()) {
 			if (event.type() == Clutter.EventType.TOUCH_UPDATE) {
@@ -452,60 +522,21 @@ class Keyboard extends Dialog {
 		}, 200);
 	}
 
-	refresh() {
+	setOpenState(percent) {
 		let monitor = Main.layoutManager.primaryMonitor;
-		this.box.remove_all_children();
-		this.box.set_style_class_name("boxLay")
-		this.widthPercent = (monitor.width > monitor.height) ? this.settings.get_int("landscape-width-percent") / 100 : this.settings.get_int("portrait-width-percent") / 100;
-		this.heightPercent = (monitor.width > monitor.height) ? this.settings.get_int("landscape-height-percent") / 100 : this.settings.get_int("portrait-height-percent") / 100;
-		this.buildUI();
-		this.draggable = false;
-		this.keys.forEach(keyholder => {
-			if (!keyholder.has_style_class_name("move_btn")) {
-				keyholder.set_opacity(0);
-				keyholder.ease({
-					opacity: 255,
-					duration: 100,
-					mode: Clutter.AnimationMode.EASE_OUT_QUAD,
-					onComplete: () => {
-						keyholder.set_z_position(0);
-						this.box.remove_style_pseudo_class("dragging");
-					}
-				});
-			}
-		});
-		if (this.startupTimeout !== null) {
-			clearInterval(this.startupTimeout);
-			this.startupTimeout = null;
-		}
-		this.startupTimeout = setTimeout(() => {
-			this.init = KeyboardManager.getKeyboardManager()._current.id;
-			this.initLay = Object.keys(KeyboardManager.getKeyboardManager()._layoutInfos);
-			if (this.initLay == undefined || this.init == undefined) {
-				this.refresh();
-				return;
-			}
-			this.close();
-		}, 200);
-		this.mod = [];
-		this.modBtns = [];
-		this.capsL = false;
-		this.shift = false;
-		this.alt = false;
-		this.box.set_style("background-color: rgb(" + this.settings.get_double("background-r") + "," + this.settings.get_double("background-g") + "," + this.settings.get_double("background-b") + ");")
-		this.opened = false;
-		this.state = "closed";
-		this.delta = [];
-		this.dragging = false;
+		let posX = [this.settings.get_int("snap-spacing-px"), ((monitor.width * .5) - ((this.width * .5))), monitor.width - this.width - this.settings.get_int("snap-spacing-px")][(this.settings.get_int("default-snap") % 3)];
+		let posY = [this.settings.get_int("snap-spacing-px"), ((monitor.height * .5) - ((this.height * .5))), monitor.height - this.height - this.settings.get_int("snap-spacing-px")][Math.floor((this.settings.get_int("default-snap") / 3))];
+		let mX = [-this.box.width, 0, this.box.width][(this.settings.get_int("default-snap") % 3)];
+		let mY = [-this.box.height, 0, this.box.height][Math.floor((this.settings.get_int("default-snap") / 3))]
+		let [dx, dy] = [posX + mX * ((100 - percent) / 100), posY + mY * ((100 - percent) / 100)]
+		let op = 255 * (percent / 100);
+		this.set_translation(dx, dy, 0)
+		this.box.set_opacity(op)
 	}
 
-	open() {
-		this.inputDevice = Clutter.get_default_backend().get_default_seat().create_virtual_device(Clutter.InputDeviceType.KEYBOARD_DEVICE);
-		if (this.startupTimeout !== null) {
-			clearInterval(this.startupTimeout);
-			this.startupTimeout = null;
-		}
-		this.startupTimeout = setTimeout(() => {
+	open(noPrep = null) {
+		if (noPrep == null || !noPrep) {
+			this.inputDevice = Clutter.get_default_backend().get_default_seat().create_virtual_device(Clutter.InputDeviceType.KEYBOARD_DEVICE);
 			this.init = KeyboardManager.getKeyboardManager()._current.id;
 			this.initLay = Object.keys(KeyboardManager.getKeyboardManager()._layoutInfos);
 			if (this.initLay == undefined || this.init == undefined) {
@@ -520,8 +551,17 @@ class Keyboard extends Dialog {
 			KeyboardManager.getKeyboardManager().apply(["us", "fr+azerty", "us+dvorak", "de+dsb_qwertz"][this.settings.get_int("lang")]);
 			KeyboardManager.getKeyboardManager().reapply();
 			this.state = "opening"
-			this.box.opacity = 0;
 			this.show();
+		}
+		if (noPrep == null || noPrep) {
+			let monitor = Main.layoutManager.primaryMonitor;
+			let posX = [this.settings.get_int("snap-spacing-px"), ((monitor.width * .5) - ((this.width * .5))), monitor.width - this.width - this.settings.get_int("snap-spacing-px")][(this.settings.get_int("default-snap") % 3)];
+			let posY = [this.settings.get_int("snap-spacing-px"), ((monitor.height * .5) - ((this.height * .5))), monitor.height - this.height - this.settings.get_int("snap-spacing-px")][Math.floor((this.settings.get_int("default-snap") / 3))];
+			if (noPrep == null) {
+				let mX = [-this.box.width, 0, this.box.width][(this.settings.get_int("default-snap") % 3)];
+				let mY = [-this.box.height, 0, this.box.height][Math.floor((this.settings.get_int("default-snap") / 3))]
+				this.set_translation(posX + mX, posY + mY, 0)
+			}
 			this.box.ease({
 				opacity: 255,
 				duration: 100,
@@ -533,18 +573,20 @@ class Keyboard extends Dialog {
 					}
 					this.stateTimeout = setTimeout(() => {
 						this.state = "opened"
-					}, 500);
-					let monitor = Main.layoutManager.primaryMonitor;
-					let posX = [this.settings.get_int("snap-spacing-px"), ((monitor.width * .5) - ((this.width * .5))), monitor.width - this.width - this.settings.get_int("snap-spacing-px")][(this.settings.get_int("default-snap") % 3)];
-					let posY = [this.settings.get_int("snap-spacing-px"), ((monitor.height * .5) - ((this.height * .5))), monitor.height - this.height - this.settings.get_int("snap-spacing-px")][Math.floor((this.settings.get_int("default-snap") / 3))];
-					this.set_translation(posX, posY, 0);
+					}, 500);	
 				}
 			});
+			this.ease({
+				translation_x: posX,
+				translation_y: posY,
+				duration: 100,
+				mode: Clutter.AnimationMode.EASE_OUT_QUAD
+			})
 			this.opened = true;
-		}, 200);
+		}
 	}
 
-	close() {
+	close(instant = null) {
 		if (this.initLay !== undefined && this.init !== undefined) {
 			KeyboardManager.getKeyboardManager().setUserLayouts(this.initLay);
 			KeyboardManager.getKeyboardManager().apply(this.init);
@@ -552,14 +594,14 @@ class Keyboard extends Dialog {
 		let monitor = Main.layoutManager.primaryMonitor;
 		let posX = [this.settings.get_int("snap-spacing-px"), ((monitor.width * .5) - ((this.width * .5))), monitor.width - this.width - this.settings.get_int("snap-spacing-px")][(this.settings.get_int("default-snap") % 3)];
 		let posY = [this.settings.get_int("snap-spacing-px"), ((monitor.height * .5) - ((this.height * .5))), monitor.height - this.height - this.settings.get_int("snap-spacing-px")][Math.floor((this.settings.get_int("default-snap") / 3))];
+		let mX = [-this.box.width, 0, this.box.width][(this.settings.get_int("default-snap") % 3)];
+		let mY = [-this.box.height, 0, this.box.height][Math.floor((this.settings.get_int("default-snap") / 3))]
 		this.state = "closing"
 		this.box.ease({
 			opacity: 0,
-			duration: 100,
+			duration: instant == null || !instant ? 100 : 0,
 			mode: Clutter.AnimationMode.EASE_OUT_QUAD,
 			onComplete: () => {
-				this.set_translation(0, 0, 0);
-				this.set_translation(posX, posY, 0);
 				this.opened = false;
 				this.hide();
 				if (this.stateTimeout !== null) {
@@ -571,11 +613,18 @@ class Keyboard extends Dialog {
 				}, 500);
 			},
 		});
+		this.ease({
+			translation_x: posX + mX,
+			translation_y: posY + mY,
+			duration: 100,
+			mode: Clutter.AnimationMode.EASE_OUT_QUAD
+		})
 		this.openedFromButton = false
 		this.releaseAllKeys();
 	}
 
 	buildUI() {
+		this.box.set_opacity(0);
 		this.keys = [];
 		let monitor = Main.layoutManager.primaryMonitor
 		var topRowWidth = Math.round((monitor.width - 40 - this.settings.get_int("snap-spacing-px") * 2) * this.widthPercent / 15)
@@ -612,6 +661,8 @@ class Keyboard extends Dialog {
 				case "down":
 				case "right":
 					styleClass = i.lowerName;
+					i._lowerName = i.lowerName;
+					i._upperName = i.upperName;
 					i.lowerName = "";
 					i.upperName = "";
 					break;
@@ -669,6 +720,8 @@ class Keyboard extends Dialog {
 				case "down":
 				case "right":
 					styleClass = i.lowerName;
+					i._lowerName = i.lowerName;
+					i._upperName = i.upperName;
 					i.lowerName = "";
 					i.upperName = "";
 					break;
@@ -726,6 +779,8 @@ class Keyboard extends Dialog {
 				case "down":
 				case "right":
 					styleClass = i.lowerName;
+					i._lowerName = i.lowerName;
+					i._upperName = i.upperName;
 					i.lowerName = "";
 					i.upperName = "";
 					break;
@@ -781,6 +836,8 @@ class Keyboard extends Dialog {
 				case "down":
 				case "right":
 					styleClass = i.lowerName;
+					i._lowerName = i.lowerName;
+					i._upperName = i.upperName;
 					i.lowerName = "";
 					i.upperName = "";
 					break;
@@ -836,6 +893,8 @@ class Keyboard extends Dialog {
 				case "down":
 				case "right":
 					styleClass = i.lowerName;
+					i._lowerName = i.lowerName;
+					i._upperName = i.upperName;
 					i.lowerName = "";
 					i.upperName = "";
 					break;
@@ -888,6 +947,8 @@ class Keyboard extends Dialog {
 					case "down":
 					case "right":
 						styleClass = i.lowerName;
+						i._lowerName = i.lowerName;
+						i._upperName = i.upperName;
 						i.lowerName = "";
 						i.upperName = "";
 						break;
@@ -1025,6 +1086,8 @@ class Keyboard extends Dialog {
 					case "down":
 					case "right":
 						styleClass = i.lowerName;
+						i._lowerName = i.lowerName;
+						i._upperName = i.upperName;
 						i.lowerName = "";
 						i.upperName = "";
 						break;
@@ -1052,7 +1115,15 @@ class Keyboard extends Dialog {
 		this.box.add_child(row4);
 		this.box.add_child(row5);
 		this.box.add_child(row6);
-		if (this.lightOrDark(this.settings.get_double("background-r"), this.settings.get_double("background-g"), this.settings.get_double("background-b"))) {
+		if (this.settings.get_boolean("split-kbd")) {
+			for (var i of [row1, row2, row3, row4, row5]) {
+				i.insert_child_at_index(new St.Widget({width: (monitor.width - this.box.width - 40 - 2 * this.settings.get_int("snap-spacing-px"))}), Math.floor(i.get_children().length / 2))
+			}
+			row6.get_children()[3].width += (monitor.width - this.box.width - 40 - 2 * this.settings.get_int("snap-spacing-px"))
+		}
+		var rgb = "rgb(" + this.settings.get_double("background-r" + this.settings.scheme) + "," + this.settings.get_double("background-g" + this.settings.scheme) + "," + this.settings.get_double("background-b" + this.settings.scheme) + ")"
+		this.box.set_style("background-image: linear-gradient(to right," + rgb + ", transparent, " + rgb + ");")
+		if (this.lightOrDark(this.settings.get_double("background-r" + this.settings.scheme), this.settings.get_double("background-g" + this.settings.scheme), this.settings.get_double("background-b" + this.settings.scheme))) {
 			this.box.add_style_class_name("inverted");
 		} else {
 			this.box.add_style_class_name("regular");
@@ -1060,7 +1131,7 @@ class Keyboard extends Dialog {
 		this.keys.forEach(item => {
 			item.set_scale((item.width - this.settings.get_int("border-spacing-px") * 2) / item.width, (item.height - this.settings.get_int("border-spacing-px") * 2) / item.height);
 			item.set_style("font-size: " + this.settings.get_int("font-size-px") + "px; border-radius: " + (this.settings.get_boolean("round-key-corners") ? "5px;" : "0;") + "background-size: " + this.settings.get_int("font-size-px") + "px;");
-			if (this.lightOrDark(this.settings.get_double("background-r"), this.settings.get_double("background-g"), this.settings.get_double("background-b"))) {
+			if (this.lightOrDark(this.settings.get_double("background-r" + this.settings.scheme), this.settings.get_double("background-g" + this.settings.scheme), this.settings.get_double("background-b" + this.settings.scheme))) {
 				item.add_style_class_name("inverted");
 			} else {
 				item.add_style_class_name("regular");
