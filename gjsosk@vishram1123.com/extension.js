@@ -124,7 +124,13 @@ export default class GjsOskExtension extends Extension {
 		if (ok) {
 			keycodes = JSON.parse(contents)[['qwerty', 'azerty', 'dvorak', "qwertz"][this.settings.get_int("lang")]];
 		}
-		this.Keyboard = new Keyboard(this.settings);
+		let refresh = () => {
+			if (this.Keyboard)
+				this.Keyboard.destroy();
+			this.Keyboard = new Keyboard(this.settings)
+			this.Keyboard.refresh = refresh
+		}
+		refresh()
 
 		this._originalLastDeviceIsTouchscreen = KeyboardUI.KeyboardManager.prototype._lastDeviceIsTouchscreen;
 		KeyboardUI.KeyboardManager.prototype._lastDeviceIsTouchscreen = () => { return false };
@@ -166,7 +172,7 @@ export default class GjsOskExtension extends Extension {
 			if (ok) {
 				keycodes = JSON.parse(contents)[["qwerty", "azerty", "dvorak", "qwertz"][this.settings.get_int("lang")]];
 			}
-			this.Keyboard.refresh();
+			refresh()
 			this._toggle._refresh();
 			if (this.settings.get_boolean("indicator-enabled")) {
 				if (this._indicator != null) {
@@ -501,104 +507,6 @@ class Keyboard extends Dialog {
 				oldMonitorDimensions = [monitor.width, monitor.height];
 			}
 		}, 200);
-	}
-
-	refresh() {
-		let monitor = Main.layoutManager.primaryMonitor;
-		this.box.remove_all_children();
-		this.box.set_style_class_name("boxLay")
-		this.widthPercent = (monitor.width > monitor.height) ? this.settings.get_int("landscape-width-percent") / 100 : this.settings.get_int("portrait-width-percent") / 100;
-		this.heightPercent = (monitor.width > monitor.height) ? this.settings.get_int("landscape-height-percent") / 100 : this.settings.get_int("portrait-height-percent") / 100;
-		this.buildUI();
-		this.draggable = false;
-		this.keys.forEach(keyholder => {
-			if (!keyholder.has_style_class_name("move_btn")) {
-				keyholder.set_opacity(0);
-				keyholder.ease({
-					opacity: 255,
-					duration: 100,
-					mode: Clutter.AnimationMode.EASE_OUT_QUAD,
-					onComplete: () => {
-						keyholder.set_z_position(0);
-						this.box.remove_style_pseudo_class("dragging");
-					}
-				});
-			}
-		});
-		if (this.startupTimeout !== null) {
-			clearInterval(this.startupTimeout);
-			this.startupTimeout = null;
-		}
-		this.startupTimeout = setTimeout(() => {
-			this.init = KeyboardManager.getKeyboardManager()._current.id;
-			this.initLay = Object.keys(KeyboardManager.getKeyboardManager()._layoutInfos);
-			if (this.initLay == undefined || this.init == undefined) {
-				this.refresh();
-				return;
-			}
-			this.close();
-		}, 200);
-		this.mod = [];
-		this.modBtns = [];
-		this.capsL = false;
-		this.shift = false;
-		this.alt = false;
-		this.box.set_style("background-color: rgb(" + this.settings.get_double("background-r") + "," + this.settings.get_double("background-g") + "," + this.settings.get_double("background-b") + ");")
-		this.opened = false;
-		this.state = "closed";
-		this.delta = [];
-		this.dragging = false;
-		let side = null;
-		switch (this.settings.get_int("default-snap")) {
-			case 0:
-			case 1:
-			case 2:
-				side = St.Side.TOP;
-				break;
-			case 3:
-				side = St.Side.LEFT;
-				break;
-			case 5:
-				side = St.Side.RIGHT;
-				break;
-			case 6:
-			case 7:
-			case 8:
-				side = St.Side.BOTTOM;
-				break;
-		}
-		if (this.bottomDragAction != null) {
-			global.stage.remove_action_by_name('osk');
-		}
-		if (side != null) {
-			const mode = Shell.ActionMode.ALL & ~Shell.ActionMode.LOCK_SCREEN;
-			const bottomDragAction = new EdgeDragAction.EdgeDragAction(side, mode);
-			bottomDragAction.connect('activated', () => {
-				this.open(true);
-				this.openedFromButton = true;
-				this.closedFromButton = false;
-				this.gestureInProgress = false;
-			});
-			bottomDragAction.connect('progress', (_action, progress) => {
-				if (!this.gestureInProgress)
-					this.open(false)
-				this.setOpenState(Math.min(Math.max(0, (progress / (side % 2 == 0 ? this.box.height : this.box.width)) * 100), 100))
-				this.gestureInProgress = true;
-			});
-			bottomDragAction.connect('gesture-cancel', () => {
-				if (this.gestureInProgress) {
-					this.close()
-					this.openedFromButton = false;
-					this.closedFromButton = true;
-				}
-				this.gestureInProgress = false;
-				return Clutter.EVENT_PROPAGATE;
-			});
-			global.stage.add_action_full('osk', Clutter.EventPhase.CAPTURE, bottomDragAction);
-			this.bottomDragAction = bottomDragAction;
-		} else {
-			this.bottomDragAction = null;
-		}
 	}
 
 	setOpenState(percent) {
