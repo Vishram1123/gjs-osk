@@ -17,12 +17,21 @@
       <default>true</default>
     </key>
     <key name="background-r" type="d">
-      <default>50</default>
+      <default>250</default>
     </key>
     <key name="background-g" type="d">
-      <default>50</default>
+      <default>250</default>
     </key>
     <key name="background-b" type="d">
+      <default>250</default>
+    </key>
+        <key name="background-r-dark" type="d">
+      <default>50</default>
+    </key>
+    <key name="background-g-dark" type="d">
+      <default>50</default>
+    </key>
+    <key name="background-b-dark" type="d">
       <default>50</default>
     </key>
     <key name="font-size-px" type="i">

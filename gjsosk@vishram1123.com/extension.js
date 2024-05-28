@@ -119,6 +119,9 @@ export default class GjsOskExtension extends Extension {
 
 	enable() {
 		this.settings = this.getSettings();
+		this.settings.scheme = ""
+		if (St.Settings.get().color_scheme == 1) 
+			this.settings.scheme = "-dark"
 		this.openBit = this.settings.get_child("indicator");
 		let [ok, contents] = GLib.file_get_contents(this.path + '/keycodes.json');
 		if (ok) {
@@ -166,7 +169,11 @@ export default class GjsOskExtension extends Extension {
 			this.openBit.set_boolean("opened", false)
 			this._toggleKeyboard();
 		})
-		this.settingsHandler = this.settings.connect("changed", key => {
+		let settingsChanged = key => {
+			if (St.Settings.get().color_scheme == 1) 
+				this.settings.scheme = "-dark"
+			else
+				this.settings.scheme = ""
 			this.Keyboard.openedFromButton = false;
 			let [ok, contents] = GLib.file_get_contents(this.path + '/keycodes.json');
 			if (ok) {
@@ -207,7 +214,9 @@ export default class GjsOskExtension extends Extension {
 			if (this.settings.get_int("enable-tap-gesture") > 0) {
 				this.open_interval();
 			}
-		});
+		}
+		this.settingsHandler = this.settings.connect("changed", settingsChanged);
+		St.Settings.get().connect("notify::color-scheme", settingsChanged)
 	}
 
 	disable() {
@@ -279,7 +288,7 @@ class Keyboard extends Dialog {
 			this.shift = false;
 			this.alt = false;
 			this.box.add_style_class_name("boxLay");
-			this.box.set_style("background-color: rgb(" + settings.get_double("background-r") + "," + settings.get_double("background-g") + "," + settings.get_double("background-b") + ");")
+			this.box.set_style("background-color: rgb(" + settings.get_double("background-r" + this.settings.scheme) + "," + settings.get_double("background-g" + this.settings.scheme) + "," + settings.get_double("background-b" + this.settings.scheme) + ");")
 			this.opened = false;
 			this.state = "closed";
 			this.delta = [];
@@ -305,7 +314,8 @@ class Keyboard extends Dialog {
 					break;
 			}
 			this.oldBottomDragAction = global.stage.get_action('osk');
-			global.stage.remove_action(this.oldBottomDragAction);
+			if (this.oldBottomDragAction !== null)
+				global.stage.remove_action(this.oldBottomDragAction);
 			if (side != null) {
 				const mode = Shell.ActionMode.ALL & ~Shell.ActionMode.LOCK_SCREEN;
 				const bottomDragAction = new EdgeDragAction.EdgeDragAction(side, mode);
@@ -342,7 +352,8 @@ class Keyboard extends Dialog {
 
 	destroy() {
 		global.stage.remove_action_by_name('osk')
-		global.stage.add_action_full('osk', Clutter.EventPhase.CAPTURE, this.oldBottomDragAction)
+		if (this.oldBottomDragAction !== null)
+			global.stage.add_action_full('osk', Clutter.EventPhase.CAPTURE, this.oldBottomDragAction)
 		if (this.startupInterval !== null) {
 			clearInterval(this.startupInterval);
 			this.startupInterval = null;
@@ -1108,9 +1119,9 @@ class Keyboard extends Dialog {
 			}
 			row6.get_children()[3].width += (monitor.width - this.box.width - 40 - 2 * this.settings.get_int("snap-spacing-px"))
 		}
-		var rgb = "rgb(" + this.settings.get_double("background-r") + "," + this.settings.get_double("background-g") + "," + this.settings.get_double("background-b") + ")"
+		var rgb = "rgb(" + this.settings.get_double("background-r" + this.settings.scheme) + "," + this.settings.get_double("background-g" + this.settings.scheme) + "," + this.settings.get_double("background-b" + this.settings.scheme) + ")"
 		this.box.set_style("background-image: linear-gradient(to right," + rgb + ", transparent, " + rgb + ");")
-		if (this.lightOrDark(this.settings.get_double("background-r"), this.settings.get_double("background-g"), this.settings.get_double("background-b"))) {
+		if (this.lightOrDark(this.settings.get_double("background-r" + this.settings.scheme), this.settings.get_double("background-g" + this.settings.scheme), this.settings.get_double("background-b" + this.settings.scheme))) {
 			this.box.add_style_class_name("inverted");
 		} else {
 			this.box.add_style_class_name("regular");
@@ -1118,7 +1129,7 @@ class Keyboard extends Dialog {
 		this.keys.forEach(item => {
 			item.set_scale((item.width - this.settings.get_int("border-spacing-px") * 2) / item.width, (item.height - this.settings.get_int("border-spacing-px") * 2) / item.height);
 			item.set_style("font-size: " + this.settings.get_int("font-size-px") + "px; border-radius: " + (this.settings.get_boolean("round-key-corners") ? "5px;" : "0;") + "background-size: " + this.settings.get_int("font-size-px") + "px;");
-			if (this.lightOrDark(this.settings.get_double("background-r"), this.settings.get_double("background-g"), this.settings.get_double("background-b"))) {
+			if (this.lightOrDark(this.settings.get_double("background-r" + this.settings.scheme), this.settings.get_double("background-g" + this.settings.scheme), this.settings.get_double("background-b" + this.settings.scheme))) {
 				item.add_style_class_name("inverted");
 			} else {
 				item.add_style_class_name("regular");
