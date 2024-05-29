@@ -7,7 +7,6 @@ A (marginally) better on screen keyboard for GNOME 42-44 (go to the [main branch
 ## Requirements
 - GNOME 42-44
 - Wayland (X11 is not working properly)
-*Note - Block Caribou 36 is no longer required*
 ## Demo
 [Keyboard Demo.webm](https://user-images.githubusercontent.com/64966832/210458851-1b91adba-f6e4-4d40-b0d5-dba2c46cc354.webm)
 
