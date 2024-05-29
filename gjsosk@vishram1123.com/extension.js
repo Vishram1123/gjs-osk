@@ -230,7 +230,8 @@ export default class GjsOskExtension extends Extension {
 			this._indicator = null;
 		}
 		this.Keyboard.destroy();
-		this.settings.disconnect(this.settingsHandler);
+		this.settings.disconnect(this.settingsHandlers[0]);
+		this.darkSchemeSettings.disconnect(this.settingsHandlers[1])
 		this.settings = null;
 		this.openBit.disconnect(this.openFromCommandHandler);
 		this.openBit = null;
