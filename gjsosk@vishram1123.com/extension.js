@@ -119,10 +119,11 @@ export default class GjsOskExtension extends Extension {
 
 	enable() {
 		this.settings = this.getSettings();
-                this.settings.scheme = ""
-		if (St.Settings.get().color_scheme == 1) 
+		this.darkSchemeSettings = this.getSettings("org.gnome.desktop.interface");
+		this.settings.scheme = ""
+		if (this.darkSchemeSettings.get_string("color-scheme") == "prefers_dark") 
 			this.settings.scheme = "-dark"
-                this.openBit = this.settings.get_child("indicator");
+		this.openBit = this.settings.get_child("indicator");
 		let [ok, contents] = GLib.file_get_contents(this.path + '/keycodes.json');
 		if (ok) {
 			keycodes = JSON.parse(contents)[['qwerty', 'azerty', 'dvorak', "qwertz"][this.settings.get_int("lang")]];
@@ -169,8 +170,8 @@ export default class GjsOskExtension extends Extension {
 			this.openBit.set_boolean("opened", false)
 			this._toggleKeyboard();
 		})
-		let settingsChanged = key => {
-			if (St.Settings.get().color_scheme == 1) 
+		let settingsChanged = () => {
+			if (this.darkSchemeSettings.get_string("color-scheme") == "prefers_dark") 
 				this.settings.scheme = "-dark"
 			else
 				this.settings.scheme = ""
@@ -215,8 +216,8 @@ export default class GjsOskExtension extends Extension {
 				this.open_interval();
 			}
 		}
-		this.settingsHandler = this.settings.connect("changed", settingsChanged);
-		St.Settings.get().connect("notify::color-scheme", settingsChanged)
+		this.settingsHandlers = [this.settings.connect("changed", settingsChanged),
+								this.darkSchemeSettings.connect("changed", key => {if (key == "color-scheme") settingsChanged()})];
 	}
 
 	disable() {
