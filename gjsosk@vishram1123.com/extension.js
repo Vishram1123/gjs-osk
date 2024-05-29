@@ -217,7 +217,7 @@ export default class GjsOskExtension extends Extension {
 			}
 		}
 		this.settingsHandlers = [this.settings.connect("changed", settingsChanged),
-								this.darkSchemeSettings.connect("changed", key => {if (key == "color-scheme") settingsChanged()})];
+								this.darkSchemeSettings.connect("changed", (_, key) => {if (key == "color-scheme") settingsChanged()})];
 	}
 
 	disable() {
