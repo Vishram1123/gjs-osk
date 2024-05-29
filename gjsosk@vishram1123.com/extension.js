@@ -121,7 +121,7 @@ export default class GjsOskExtension extends Extension {
 		this.settings = this.getSettings();
 		this.darkSchemeSettings = this.getSettings("org.gnome.desktop.interface");
 		this.settings.scheme = ""
-		if (this.darkSchemeSettings.get_string("color-scheme") == "prefers-dark") 
+		if (this.darkSchemeSettings.get_string("color-scheme") == "prefer-dark") 
 			this.settings.scheme = "-dark"
 		this.openBit = this.settings.get_child("indicator");
 		let [ok, contents] = GLib.file_get_contents(this.path + '/keycodes.json');
@@ -171,7 +171,7 @@ export default class GjsOskExtension extends Extension {
 			this._toggleKeyboard();
 		})
 		let settingsChanged = () => {
-			if (this.darkSchemeSettings.get_string("color-scheme") == "prefers-dark") 
+			if (this.darkSchemeSettings.get_string("color-scheme") == "prefer-dark") 
 				this.settings.scheme = "-dark"
 			else
 				this.settings.scheme = ""
