@@ -17,6 +17,12 @@ import { Dialog } from 'resource:///org/gnome/shell/ui/dialog.js';
 
 import { Extension, gettext as _ } from 'resource:///org/gnome/shell/extensions/extension.js';
 
+const State = {
+    OPENED: 0,
+    CLOSED: 1,
+    OPENING: 2,
+    CLOSING: 3,
+};
 
 class KeyboardMenuToggle extends QuickSettings.QuickMenuToggle {
 	static {
@@ -67,13 +73,13 @@ let keycodes;
 
 export default class GjsOskExtension extends Extension {
 	_openKeyboard() {
-		if (this.Keyboard.state == "closed") {
+		if (this.Keyboard.state == State.CLOSED) {
 			this.Keyboard.open();
 		}
 	}
 
 	_closeKeyboard() {
-		if (this.Keyboard.state == "opened") {
+		if (this.Keyboard.state == State.OPENED) {
 			this.Keyboard.close();
 		}
 	}
@@ -97,6 +103,9 @@ export default class GjsOskExtension extends Extension {
 			this.openInterval = null;
 		}
 		this.openInterval = setInterval(() => {
+			if (global.stage.key_focus == this.Keyboard && this.Keyboard.prevKeyFocus != null) {
+				global.stage.key_focus = this.Keyboard.prevKeyFocus
+			}
 			this.Keyboard.get_parent().set_child_at_index(this.Keyboard, this.Keyboard.get_parent().get_n_children() - 1);
 			this.Keyboard.set_child_at_index(this.Keyboard.box, this.Keyboard.get_n_children() - 1);
 			if (!this.Keyboard.openedFromButton && this.lastInputMethod) {
@@ -292,7 +301,7 @@ class Keyboard extends Dialog {
 			this.box.add_style_class_name("boxLay");
 			this.box.set_style("background-color: rgb(" + settings.get_double("background-r" + this.settings.scheme) + "," + settings.get_double("background-g" + this.settings.scheme) + "," + settings.get_double("background-b" + this.settings.scheme) + ");")
 			this.opened = false;
-			this.state = "closed";
+			this.state = State.CLOSED;
 			this.delta = [];
 			this.checkMonitor();
 			this._dragging = false;
@@ -536,6 +545,7 @@ class Keyboard extends Dialog {
 
 	open(noPrep = null) {
 		if (noPrep == null || !noPrep) {
+			this.prevKeyFocus = global.stage.key_focus
 			this.inputDevice = Clutter.get_default_backend().get_default_seat().create_virtual_device(Clutter.InputDeviceType.KEYBOARD_DEVICE);
 			this.init = KeyboardManager.getKeyboardManager()._current.id;
 			this.initLay = Object.keys(KeyboardManager.getKeyboardManager()._layoutInfos);
@@ -550,7 +560,7 @@ class Keyboard extends Dialog {
 			}
 			KeyboardManager.getKeyboardManager().apply(["us", "fr+azerty", "us+dvorak", "de+dsb_qwertz"][this.settings.get_int("lang")]);
 			KeyboardManager.getKeyboardManager().reapply();
-			this.state = "opening"
+			this.state = State.OPENING
 			this.show();
 		}
 		if (noPrep == null || noPrep) {
@@ -572,7 +582,7 @@ class Keyboard extends Dialog {
 						this.stateTimeout = null;
 					}
 					this.stateTimeout = setTimeout(() => {
-						this.state = "opened"
+						this.state = State.OPENED
 					}, 500);	
 				}
 			});
@@ -587,6 +597,7 @@ class Keyboard extends Dialog {
 	}
 
 	close(instant = null) {
+		this.prevKeyFocus = null;
 		if (this.initLay !== undefined && this.init !== undefined) {
 			KeyboardManager.getKeyboardManager().setUserLayouts(this.initLay);
 			KeyboardManager.getKeyboardManager().apply(this.init);
@@ -596,7 +607,7 @@ class Keyboard extends Dialog {
 		let posY = [this.settings.get_int("snap-spacing-px"), ((monitor.height * .5) - ((this.height * .5))), monitor.height - this.height - this.settings.get_int("snap-spacing-px")][Math.floor((this.settings.get_int("default-snap") / 3))];
 		let mX = [-this.box.width, 0, this.box.width][(this.settings.get_int("default-snap") % 3)];
 		let mY = [-this.box.height, 0, this.box.height][Math.floor((this.settings.get_int("default-snap") / 3))]
-		this.state = "closing"
+		this.state = State.CLOSING
 		this.box.ease({
 			opacity: 0,
 			duration: instant == null || !instant ? 100 : 0,
@@ -609,7 +620,7 @@ class Keyboard extends Dialog {
 					this.stateTimeout = null;
 				}
 				this.stateTimeout = setTimeout(() => {
-					this.state = "closed"
+					this.state = State.CLOSED
 				}, 500);
 			},
 		});
