@@ -61,7 +61,7 @@ export default class GjsOskPreferences extends ExtensionPreferences {
 		});
 		group1.add(row0);
 
-		let langList = ["QWERTY", "AZERTY", "Dvorak", "QWERTZ"];
+		let langList = ["QWERTY", "AZERTY", "DVORAK", "QWERTZ"];
 		let langDrop = Gtk.DropDown.new_from_strings(langList);
 		langDrop.valign = Gtk.Align.CENTER;
 		langDrop.selected = settings.get_int("lang");
