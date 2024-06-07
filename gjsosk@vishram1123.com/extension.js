@@ -111,7 +111,7 @@ export default class GjsOskExtension extends Extension {
 			if (!this.Keyboard.openedFromButton && this.lastInputMethod) {
 				if (Main.inputMethod.currentFocus != null && Main.inputMethod.currentFocus.is_focused() && !this.Keyboard.closedFromButton) {
 					this._openKeyboard();
-				} else if (!this.Keyboard.closedFromButton) {
+				} else if (!this.Keyboard.closedFromButton && !this.Keyboard._dragging) {
 					this._closeKeyboard();
 					this.Keyboard.closedFromButton = false
 				} else if (Main.inputMethod.currentFocus == null) {
@@ -282,7 +282,7 @@ class Keyboard extends Dialog {
 			}
 			this.settings = settings;
 			let monitor = Main.layoutManager.primaryMonitor;
-			super._init(Main.layoutManager.uiGroup, 'db-keyboard-content');
+			super._init(Main.layoutManager.modalDialogGroup, 'db-keyboard-content');
 			this.box = new St.BoxLayout({
 				vertical: true
 			});
@@ -356,12 +356,23 @@ class Keyboard extends Dialog {
 			} else {
 				this.bottomDragAction = null;
 			}
-
+			
 			clearInterval(this.startupInterval);
+			this._oldMaybeHandleEvent = Main.keyboard.maybeHandleEvent
+			Main.keyboard.maybeHandleEvent = (e) => {
+				let ac = global.stage.get_event_actor(e)
+				if (this.contains(ac)) {
+					ac.event(e, true);
+					ac.event(e, false);
+					return true;
+				}
+				return false
+			}
 		}, 200);
 	}
 
 	destroy() {
+		Main.keyboard.maybeHandleEvent = this._oldMaybeHandleEvent
 		global.stage.remove_action_by_name('osk')
 		if (this.oldBottomDragAction !== null)
 			global.stage.add_action_full('osk', Clutter.EventPhase.CAPTURE, this.oldBottomDragAction)
