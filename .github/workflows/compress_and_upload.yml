@@ -19,10 +19,6 @@ jobs:
       with:
         ref: 'main'
 
-    - name: Install glib
-      run: |
-        sudo apt-get update && sudo apt-get install -y libglib2.0-bin
-
     - name: Get Hash
       run: |
         echo "hash=$(git rev-parse --short ${{ github.event.head_commit.id }})" >> "$GITHUB_ENV"
