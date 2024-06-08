@@ -23,6 +23,13 @@ const QuickSettings = major >= 43 ? imports.ui.quickSettings : null
 const PopupMenu = imports.ui.popupMenu;
 const QuickSettingsMenu = major >= 43 ? imports.ui.main.panel.statusArea.quickSettings : null;
 
+const State = {
+    OPENED: 0,
+    CLOSED: 1,
+    OPENING: 2,
+    CLOSING: 3,
+};
+
 const KeyboardMenuToggle = QuickSettings != null ? GObject.registerClass(
 	class KeyboardMenuToggle extends QuickSettings.QuickMenuToggle {
 		_init(settings) {
@@ -69,15 +76,13 @@ let keycodes;
 
 class GjsOskExtension {
 	_openKeyboard() {
-		if (this.Keyboard.state == "closed") {
-			this.Keyboard.opened = true;
+		if (this.Keyboard.state == State.CLOSED) {
 			this.Keyboard.open();
 		}
 	}
 
 	_closeKeyboard() {
-		if (this.Keyboard.state == "opened") {
-			this.Keyboard.opened = false;
+		if (this.Keyboard.state == State.OPENED) {
 			this.Keyboard.close();
 		}
 	}
@@ -101,12 +106,15 @@ class GjsOskExtension {
 			this.openInterval = null;
 		}
 		this.openInterval = setInterval(() => {
+			if (global.stage.key_focus == this.Keyboard && this.Keyboard.prevKeyFocus != null) {
+				global.stage.key_focus = this.Keyboard.prevKeyFocus
+			}
 			this.Keyboard.get_parent().set_child_at_index(this.Keyboard, this.Keyboard.get_parent().get_n_children() - 1);
 			this.Keyboard.set_child_at_index(this.Keyboard.box, this.Keyboard.get_n_children() - 1);
 			if (!this.Keyboard.openedFromButton && this.lastInputMethod) {
 				if (Main.inputMethod.currentFocus != null && Main.inputMethod.currentFocus.is_focused() && !this.Keyboard.closedFromButton) {
 					this._openKeyboard();
-				} else if (!this.Keyboard.closedFromButton) {
+				} else if (!this.Keyboard.closedFromButton && !this.Keyboard._dragging) {
 					this._closeKeyboard();
 					this.Keyboard.closedFromButton = false
 				} else if (Main.inputMethod.currentFocus == null) {
@@ -275,7 +283,7 @@ class Keyboard extends Dialog {
 			}
 			this.settings = settings;
 			let monitor = Main.layoutManager.primaryMonitor;
-			super._init(Main.layoutManager.uiGroup, 'db-keyboard-content');
+			super._init(Main.layoutManager.modalDialogGroup, 'db-keyboard-content');
 			this.box = new St.BoxLayout({
 				vertical: true
 			});
@@ -294,7 +302,7 @@ class Keyboard extends Dialog {
 			this.box.add_style_class_name("boxLay");
 			this.box.set_style("background-color: rgb(" + settings.get_double("background-r" + this.settings.scheme) + "," + settings.get_double("background-g" + this.settings.scheme) + "," + settings.get_double("background-b" + this.settings.scheme) + ");")
 			this.opened = false;
-			this.state = "closed";
+			this.state = State.CLOSED;
 			this.delta = [];
 			this.checkMonitor();
 			this._dragging = false;
@@ -351,10 +359,24 @@ class Keyboard extends Dialog {
 			}
 
 			clearInterval(this.startupInterval);
+			this._oldMaybeHandleEvent = Main.keyboard.maybeHandleEvent
+			Main.keyboard.maybeHandleEvent = (e) => {
+				let lastInputMethod = [e.type() == 11, e.type() == 11, e.type() == 7 || e.type() == 11][this.settings.get_int("enable-tap-gesture")]
+				let ac = global.stage.get_event_actor(e)
+				if (this.contains(ac)) {
+					ac.event(e, true);
+					ac.event(e, false);
+					return true;
+				} else if (ac instanceof Clutter.Text && lastInputMethod && !this.opened) {
+					this.open();
+				}
+				return false
+			}
 		}, 200);
 	}
 
 	destroy() {
+		Main.keyboard.maybeHandleEvent = this._oldMaybeHandleEvent
 		global.stage.remove_action_by_name('osk')
 		if (this.oldBottomDragAction !== null)
 			global.stage.add_action_full('osk', Clutter.EventPhase.CAPTURE, this.oldBottomDragAction)
@@ -538,6 +560,7 @@ class Keyboard extends Dialog {
 
 	open(noPrep = null) {
 		if (noPrep == null || !noPrep) {
+			this.prevKeyFocus = global.stage.key_focus
 			this.inputDevice = Clutter.get_default_backend().get_default_seat().create_virtual_device(Clutter.InputDeviceType.KEYBOARD_DEVICE);
 			this.init = KeyboardManager.getKeyboardManager()._current.id;
 			this.initLay = Object.keys(KeyboardManager.getKeyboardManager()._layoutInfos);
@@ -552,7 +575,7 @@ class Keyboard extends Dialog {
 			}
 			KeyboardManager.getKeyboardManager().apply(["us", "fr+azerty", "us+dvorak", "de+dsb_qwertz"][this.settings.get_int("lang")]);
 			KeyboardManager.getKeyboardManager().reapply();
-			this.state = "opening"
+			this.state = State.OPENING
 			this.show();
 		}
 		if (noPrep == null || noPrep) {
@@ -574,7 +597,7 @@ class Keyboard extends Dialog {
 						this.stateTimeout = null;
 					}
 					this.stateTimeout = setTimeout(() => {
-						this.state = "opened"
+						this.state = State.OPENED
 					}, 500);	
 				}
 			});
@@ -589,6 +612,7 @@ class Keyboard extends Dialog {
 	}
 
 	close(instant = null) {
+		this.prevKeyFocus = null;
 		if (this.initLay !== undefined && this.init !== undefined) {
 			KeyboardManager.getKeyboardManager().setUserLayouts(this.initLay);
 			KeyboardManager.getKeyboardManager().apply(this.init);
@@ -598,7 +622,7 @@ class Keyboard extends Dialog {
 		let posY = [this.settings.get_int("snap-spacing-px"), ((monitor.height * .5) - ((this.height * .5))), monitor.height - this.height - this.settings.get_int("snap-spacing-px")][Math.floor((this.settings.get_int("default-snap") / 3))];
 		let mX = [-this.box.width, 0, this.box.width][(this.settings.get_int("default-snap") % 3)];
 		let mY = [-this.box.height, 0, this.box.height][Math.floor((this.settings.get_int("default-snap") / 3))]
-		this.state = "closing"
+		this.state = State.CLOSING
 		this.box.ease({
 			opacity: 0,
 			duration: instant == null || !instant ? 100 : 0,
@@ -611,7 +635,7 @@ class Keyboard extends Dialog {
 					this.stateTimeout = null;
 				}
 				this.stateTimeout = setTimeout(() => {
-					this.state = "closed"
+					this.state = State.CLOSED
 				}, 500);
 			},
 		});
@@ -1280,13 +1304,13 @@ class Keyboard extends Dialog {
 
 		function traverse(obj) {
 			for (let key in obj) {
-				if (obj.hasOwnProperty(key)) {
-					if (key === "code") {
-						instances.push(obj[key]);
-					} else if (typeof obj[key] === 'object' && obj[key] !== null) {
-						traverse(obj[key]);
-					}
-				}
+			        if (obj.hasOwnProperty(key)) {
+				        if (key === "code") {
+				                instances.push(obj[key]);
+				        } else if (typeof obj[key] === 'object' && obj[key] !== null) {
+				                traverse(obj[key]);
+				        }
+			        }
 			}
 		}
 

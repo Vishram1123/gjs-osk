@@ -334,7 +334,7 @@ function fillPreferencesWindow(window) {
 	context.add_class("title-1");
 
 	let another_label = new Gtk.Label({
-		label: _("Version ") + Me.metadata.version
+		label: _("Autorelease ") + `{{VERSION}}`
 	});
 
 	let links_pref_group = new Adw.PreferencesGroup();

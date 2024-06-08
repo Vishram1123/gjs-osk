@@ -26,6 +26,10 @@ jobs:
     - name: Get Hash
       run: |
         echo "hash=$(git rev-parse --short ${{ github.event.head_commit.id }})" >> "$GITHUB_ENV"
+      
+    - name: Replace autorelease version name
+      run: |
+        sed -i gjsosk@vishram1123.com/prefs.js -e 's|{{VERSION}}|${{ env.hash }}|g'
     
     - name: Create Release
       id: create_release
@@ -69,6 +73,11 @@ jobs:
     - name: Compile schemas
       run: | 
         cd gjsosk@vishram1123.com/schemas && glib-compile-schemas .
+    
+    - name: Replace autorelease version name
+      run: |
+        sed -i gjsosk@vishram1123.com/prefs.js -e 's|{{VERSION}}|${{ env.hash }}|g'
+
     - name: Compress directory (pre-45)
       run: |
         cd gjsosk@vishram1123.com && zip -r ../gjsosk@vishram1123_pre-45.zip ./*
