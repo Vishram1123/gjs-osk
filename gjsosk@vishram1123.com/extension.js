@@ -132,6 +132,12 @@ class GjsOskExtension {
 	enable() {
 		this.settings = ExtensionUtils.getSettings("org.gnome.shell.extensions.gjsosk");
 		this.darkSchemeSettings = ExtensionUtils.getSettings("org.gnome.desktop.interface");
+		this.gnomeKeyboardSettings = ExtensionUtils.getSettings('org.gnome.desktop.a11y.applications');
+		this.isGnomeKeyboardEnabled = this.gnomeKeyboardSettings.get_boolean('screen-keyboard-enabled');
+		this.gnomeKeyboardSettings.set_boolean('screen-keyboard-enabled', false)
+		this.isGnomeKeyboardEnabledHandler = this.gnomeKeyboardSettings.connect('changed', () => {
+			this.gnomeKeyboardSettings.set_boolean('screen-keyboard-enabled', false)
+		});
 		this.settings.scheme = ""
 		if (this.darkSchemeSettings.get_string("color-scheme") == "prefer-dark") 
 			this.settings.scheme = "-dark"
@@ -171,10 +177,7 @@ class GjsOskExtension {
 		}
 
 		this._toggle = KeyboardMenuToggle != null ? new KeyboardMenuToggle(this.settings) : null;
-
-		if (this.settings.get_int("enable-tap-gesture") > 0) {
-			this.open_interval();
-		}
+		this.open_interval();
 		this.openFromCommandHandler = this.openBit.connect("changed", () => {
 			this.openBit.set_boolean("opened", false)
 			this._toggleKeyboard();
@@ -223,15 +226,15 @@ class GjsOskExtension {
 				clearInterval(this.openInterval);
 				this.openInterval = null;
 			}
-			if (this.settings.get_int("enable-tap-gesture") > 0) {
-				this.open_interval();
-			}
+			this.open_interval();
 		}
 		this.settingsHandlers = [this.settings.connect("changed", settingsChanged),
 								this.darkSchemeSettings.connect("changed", (_, key) => {if (key == "color-scheme") settingsChanged()})];
 	}
 
 	disable() {
+		this.gnomeKeyboardSettings.disconnect(this.isGnomeKeyboardEnabledHandler)
+		this.gnomeKeyboardSettings.set_boolean('screen-keyboard-enabled', this.isGnomeKeyboardEnabled);
 
 		if (this._indicator !== null) {
 			this._indicator.destroy();
