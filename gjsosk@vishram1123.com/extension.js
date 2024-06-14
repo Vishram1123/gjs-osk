@@ -360,7 +360,7 @@ class Keyboard extends Dialog {
 			} else {
 				this.bottomDragAction = null;
 			}
-			
+
 			clearInterval(this.startupInterval);
 			this._oldMaybeHandleEvent = Main.keyboard.maybeHandleEvent
 			Main.keyboard.maybeHandleEvent = (e) => {
