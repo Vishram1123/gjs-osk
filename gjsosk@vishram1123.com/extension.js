@@ -129,6 +129,12 @@ export default class GjsOskExtension extends Extension {
 	enable() {
 		this.settings = this.getSettings();
 		this.darkSchemeSettings = this.getSettings("org.gnome.desktop.interface");
+		this.gnomeKeyboardSettings = this.getSettings('org.gnome.desktop.a11y.applications');
+		this.isGnomeKeyboardEnabled = this.gnomeKeyboardSettings.get_boolean('screen-keyboard-enabled');
+		this.gnomeKeyboardSettings.set_boolean('screen-keyboard-enabled', false)
+		this.isGnomeKeyboardEnabledHandler = this.gnomeKeyboardSettings.connect('changed', () => {
+			this.gnomeKeyboardSettings.set_boolean('screen-keyboard-enabled', false)
+		});
 		this.settings.scheme = ""
 		if (this.darkSchemeSettings.get_string("color-scheme") == "prefer-dark") 
 			this.settings.scheme = "-dark"
@@ -171,10 +177,7 @@ export default class GjsOskExtension extends Extension {
 		this._quick_settings_indicator = new QuickSettings.SystemIndicator();
 		this._quick_settings_indicator.quickSettingsItems.push(this._toggle);
 		Main.panel.statusArea.quickSettings.addExternalIndicator(this._quick_settings_indicator);
-
-		if (this.settings.get_int("enable-tap-gesture") > 0) {
-			this.open_interval();
-		}
+		this.open_interval();
 		this.openFromCommandHandler = this.openBit.connect("changed", () => {
 			this.openBit.set_boolean("opened", false)
 			this._toggleKeyboard();
@@ -221,15 +224,16 @@ export default class GjsOskExtension extends Extension {
 				clearInterval(this.openInterval);
 				this.openInterval = null;
 			}
-			if (this.settings.get_int("enable-tap-gesture") > 0) {
-				this.open_interval();
-			}
+			this.open_interval();
 		}
 		this.settingsHandlers = [this.settings.connect("changed", settingsChanged),
-								this.darkSchemeSettings.connect("changed", (_, key) => {if (key == "color-scheme") settingsChanged()})];
+		this.darkSchemeSettings.connect("changed", (_, key) => {if (key == "color-scheme") settingsChanged()})];
 	}
 
 	disable() {
+		this.gnomeKeyboardSettings.disconnect(this.isGnomeKeyboardEnabledHandler)
+		this.gnomeKeyboardSettings.set_boolean('screen-keyboard-enabled', this.isGnomeKeyboardEnabled);
+		
 		this._quick_settings_indicator.quickSettingsItems.forEach(item => item.destroy());
 		this._quick_settings_indicator.destroy();
 		this._quick_settings_indicator = null;
