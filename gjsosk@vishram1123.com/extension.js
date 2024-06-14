@@ -4,6 +4,7 @@ const {
 	Gio,
 	Clutter,
 	GLib,
+	Shell
 } = imports.gi;
 
 const Gettext = imports.gettext;
@@ -22,6 +23,7 @@ const KeyboardManager = imports.misc.keyboardManager;
 const QuickSettings = major >= 43 ? imports.ui.quickSettings : null
 const PopupMenu = imports.ui.popupMenu;
 const QuickSettingsMenu = major >= 43 ? imports.ui.main.panel.statusArea.quickSettings : null;
+const EdgeDragAction = imports.ui.edgeDragAction
 
 const State = {
     OPENED: 0,
