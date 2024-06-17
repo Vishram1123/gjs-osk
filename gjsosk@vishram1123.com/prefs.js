@@ -25,7 +25,6 @@ export default class GjsOskPreferences extends ExtensionPreferences {
 
 		const apply = Gtk.Button.new_with_label(_("Apply Changes"));
 		apply.connect("clicked", () => {
-			settings.set_int("lang", langDrop.selected);
 			settings.set_boolean("enable-drag", dragToggle.active);
 			settings.set_int("enable-tap-gesture", dragOpt.selected);
 			settings.set_boolean("indicator-enabled", indEnabled.active);
@@ -56,19 +55,6 @@ export default class GjsOskPreferences extends ExtensionPreferences {
 		});
 		page1.add(group1);
 
-		const row0 = new Adw.ActionRow({
-			title: _('Layout')
-		});
-		group1.add(row0);
-
-		let langList = ["QWERTY", "AZERTY", "DVORAK", "QWERTZ"];
-		let langDrop = Gtk.DropDown.new_from_strings(langList);
-		langDrop.valign = Gtk.Align.CENTER;
-		langDrop.selected = settings.get_int("lang");
-
-		row0.add_suffix(langDrop);
-		row0.activatable_widget = langDrop;
-
 		const row1 = new Adw.ActionRow({
 			title: _('Enable Dragging')
 		});
@@ -96,7 +82,7 @@ export default class GjsOskPreferences extends ExtensionPreferences {
 		row1t3.activatable_widget = indEnabled;
 
 		const row1t4 = new Adw.ActionRow({
-			title:_("Split keyboard")
+			title: _("Split keyboard")
 		})
 		group1.add(row1t4)
 
@@ -212,7 +198,7 @@ export default class GjsOskPreferences extends ExtensionPreferences {
 		page1.add(group2);
 
 		const row5 = new Adw.ExpanderRow({
-			title:_("Color")
+			title: _("Color")
 		})
 		group2.add(row5);
 
@@ -221,7 +207,7 @@ export default class GjsOskPreferences extends ExtensionPreferences {
 			title: _('Light Mode')
 		});
 		row5.add_row(lightCol)
-		
+
 		let rgba = new Gdk.RGBA();
 		rgba.parse("rgba(" + settings.get_double("background-r") + ", " + settings.get_double("background-g") + ", " + settings.get_double("background-b") + ", 1)");
 		let colorButton = new Gtk.ColorButton({
@@ -236,7 +222,7 @@ export default class GjsOskPreferences extends ExtensionPreferences {
 			title: _('Dark Mode')
 		});
 		row5.add_row(darkCol)
-		
+
 		let rgba_d = new Gdk.RGBA();
 		rgba_d.parse("rgba(" + settings.get_double("background-r-dark") + ", " + settings.get_double("background-g-dark") + ", " + settings.get_double("background-b-dark") + ", 1)");
 		let colorButton_d = new Gtk.ColorButton({
@@ -366,7 +352,6 @@ export default class GjsOskPreferences extends ExtensionPreferences {
 
 		window.add(page2);
 		window.connect("close-request", () => {
-			settings.set_int("lang", langDrop.selected);
 			settings.set_boolean("enable-drag", dragToggle.active);
 			settings.set_int("enable-tap-gesture", dragOpt.selected);
 			settings.set_boolean("indicator-enabled", indEnabled.active);

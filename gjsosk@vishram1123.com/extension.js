@@ -18,10 +18,10 @@ import { Dialog } from 'resource:///org/gnome/shell/ui/dialog.js';
 import { Extension, gettext as _ } from 'resource:///org/gnome/shell/extensions/extension.js';
 
 const State = {
-    OPENED: 0,
-    CLOSED: 1,
-    OPENING: 2,
-    CLOSING: 3,
+	OPENED: 0,
+	CLOSED: 1,
+	OPENING: 2,
+	CLOSING: 3,
 };
 
 class KeyboardMenuToggle extends QuickSettings.QuickMenuToggle {
@@ -129,6 +129,7 @@ export default class GjsOskExtension extends Extension {
 	enable() {
 		this.settings = this.getSettings();
 		this.darkSchemeSettings = this.getSettings("org.gnome.desktop.interface");
+		this.inputLanguageSettings = this.getSettings('org.gnome.desktop.input-sources')
 		this.gnomeKeyboardSettings = this.getSettings('org.gnome.desktop.a11y.applications');
 		this.isGnomeKeyboardEnabled = this.gnomeKeyboardSettings.get_boolean('screen-keyboard-enabled');
 		this.gnomeKeyboardSettings.set_boolean('screen-keyboard-enabled', false)
@@ -136,14 +137,15 @@ export default class GjsOskExtension extends Extension {
 			this.gnomeKeyboardSettings.set_boolean('screen-keyboard-enabled', false)
 		});
 		this.settings.scheme = ""
-		if (this.darkSchemeSettings.get_string("color-scheme") == "prefer-dark") 
+		if (this.darkSchemeSettings.get_string("color-scheme") == "prefer-dark")
 			this.settings.scheme = "-dark"
 		this.openBit = this.settings.get_child("indicator");
-		let [ok, contents] = GLib.file_get_contents(this.path + '/keycodes.json');
-		if (ok) {
-			keycodes = JSON.parse(contents)[['qwerty', 'azerty', 'dvorak', "qwertz"][this.settings.get_int("lang")]];
-		}
+
 		let refresh = () => {
+			let [ok, contents] = GLib.file_get_contents(this.path + '/keycodes.json');
+			if (ok) {
+				keycodes = JSON.parse(contents)[KeyboardManager.getKeyboardManager().currentLayout.id];
+			}
 			if (this.Keyboard)
 				this.Keyboard.destroy();
 			this.Keyboard = new Keyboard(this.settings)
@@ -183,15 +185,11 @@ export default class GjsOskExtension extends Extension {
 			this._toggleKeyboard();
 		})
 		let settingsChanged = () => {
-			if (this.darkSchemeSettings.get_string("color-scheme") == "prefer-dark") 
+			if (this.darkSchemeSettings.get_string("color-scheme") == "prefer-dark")
 				this.settings.scheme = "-dark"
 			else
 				this.settings.scheme = ""
 			this.Keyboard.openedFromButton = false;
-			let [ok, contents] = GLib.file_get_contents(this.path + '/keycodes.json');
-			if (ok) {
-				keycodes = JSON.parse(contents)[["qwerty", "azerty", "dvorak", "qwertz"][this.settings.get_int("lang")]];
-			}
 			refresh()
 			this._toggle._refresh();
 			if (this.settings.get_boolean("indicator-enabled")) {
@@ -226,14 +224,17 @@ export default class GjsOskExtension extends Extension {
 			}
 			this.open_interval();
 		}
-		this.settingsHandlers = [this.settings.connect("changed", settingsChanged),
-		this.darkSchemeSettings.connect("changed", (_, key) => {if (key == "color-scheme") settingsChanged()})];
+		this.settingsHandlers = [
+			this.settings.connect("changed", settingsChanged),
+			this.darkSchemeSettings.connect("changed", (_, key) => { if (key == "color-scheme") settingsChanged() }),
+			this.inputLanguageSettings.connect("changed", settingsChanged)
+		];
 	}
 
 	disable() {
 		this.gnomeKeyboardSettings.disconnect(this.isGnomeKeyboardEnabledHandler)
 		this.gnomeKeyboardSettings.set_boolean('screen-keyboard-enabled', this.isGnomeKeyboardEnabled);
-		
+
 		this._quick_settings_indicator.quickSettingsItems.forEach(item => item.destroy());
 		this._quick_settings_indicator.destroy();
 		this._quick_settings_indicator = null;
@@ -245,6 +246,7 @@ export default class GjsOskExtension extends Extension {
 		this.Keyboard.destroy();
 		this.settings.disconnect(this.settingsHandlers[0]);
 		this.darkSchemeSettings.disconnect(this.settingsHandlers[1])
+		this.inputLanguageSettings.disconnect(this.settingsHandlers[2])
 		this.settings = null;
 		this.openBit.disconnect(this.openFromCommandHandler);
 		this.openBit = null;
@@ -278,119 +280,102 @@ class Keyboard extends Dialog {
 
 	_init(settings) {
 		this.inputDevice = Clutter.get_default_backend().get_default_seat().create_virtual_device(Clutter.InputDeviceType.KEYBOARD_DEVICE);
-		this.startupInterval = setInterval(() => {
-			this.init = KeyboardManager.getKeyboardManager()._current.id;
-			this.initLay = Object.keys(KeyboardManager.getKeyboardManager()._layoutInfos);
-			if (this.initLay == undefined || this.init == undefined || this.inputDevice == undefined) {
-				return;
-			}
-			this.settings = settings;
-			let monitor = Main.layoutManager.primaryMonitor;
-			super._init(Main.layoutManager.modalDialogGroup, 'db-keyboard-content');
-			this.box = new St.BoxLayout({
-				vertical: true
+		this.settings = settings;
+		let monitor = Main.layoutManager.primaryMonitor;
+		super._init(Main.layoutManager.modalDialogGroup, 'db-keyboard-content');
+		this.box = new St.BoxLayout({
+			vertical: true
+		});
+		this.widthPercent = (monitor.width > monitor.height) ? settings.get_int("landscape-width-percent") / 100 : settings.get_int("portrait-width-percent") / 100;
+		this.heightPercent = (monitor.width > monitor.height) ? settings.get_int("landscape-height-percent") / 100 : settings.get_int("portrait-height-percent") / 100;
+		this.buildUI();
+		this.draggable = false;
+		this.add_child(this.box);
+		this.close();
+		this.box.set_name("osk-gjs")
+		this.mod = [];
+		this.modBtns = [];
+		this.capsL = false;
+		this.shift = false;
+		this.alt = false;
+		this.box.add_style_class_name("boxLay");
+		this.box.set_style("background-color: rgb(" + settings.get_double("background-r" + this.settings.scheme) + "," + settings.get_double("background-g" + this.settings.scheme) + "," + settings.get_double("background-b" + this.settings.scheme) + ");")
+		this.opened = false;
+		this.state = State.CLOSED;
+		this.delta = [];
+		this.checkMonitor();
+		this._dragging = false;
+		let side = null;
+		switch (this.settings.get_int("default-snap")) {
+			case 0:
+			case 1:
+			case 2:
+				side = St.Side.TOP;
+				break;
+			case 3:
+				side = St.Side.LEFT;
+				break;
+			case 5:
+				side = St.Side.RIGHT;
+				break;
+			case 6:
+			case 7:
+			case 8:
+				side = St.Side.BOTTOM;
+				break;
+		}
+		this.oldBottomDragAction = global.stage.get_action('osk');
+		if (this.oldBottomDragAction !== null && this.oldBottomDragAction instanceof Clutter.Action)
+			global.stage.remove_action(this.oldBottomDragAction);
+		if (side != null) {
+			const mode = Shell.ActionMode.ALL & ~Shell.ActionMode.LOCK_SCREEN;
+			const bottomDragAction = new EdgeDragAction.EdgeDragAction(side, mode);
+			bottomDragAction.connect('activated', () => {
+				this.open(true);
+				this.openedFromButton = true;
+				this.closedFromButton = false;
+				this.gestureInProgress = false;
 			});
-			this.widthPercent = (monitor.width > monitor.height) ? settings.get_int("landscape-width-percent") / 100 : settings.get_int("portrait-width-percent") / 100;
-			this.heightPercent = (monitor.width > monitor.height) ? settings.get_int("landscape-height-percent") / 100 : settings.get_int("portrait-height-percent") / 100;
-			this.buildUI();
-			this.draggable = false;
-			this.add_child(this.box);
-			this.close();
-			this.box.set_name("osk-gjs")
-			this.mod = [];
-			this.modBtns = [];
-			this.capsL = false;
-			this.shift = false;
-			this.alt = false;
-			this.box.add_style_class_name("boxLay");
-			this.box.set_style("background-color: rgb(" + settings.get_double("background-r" + this.settings.scheme) + "," + settings.get_double("background-g" + this.settings.scheme) + "," + settings.get_double("background-b" + this.settings.scheme) + ");")
-			this.opened = false;
-			this.state = State.CLOSED;
-			this.delta = [];
-			this.checkMonitor();
-			this._dragging = false;
-			let side = null;
-			switch (this.settings.get_int("default-snap")) {
-				case 0:
-				case 1:
-				case 2:
-					side = St.Side.TOP;
-					break;
-				case 3:
-					side = St.Side.LEFT;
-					break;
-				case 5:
-					side = St.Side.RIGHT;
-					break;
-				case 6:
-				case 7:
-				case 8:
-					side = St.Side.BOTTOM;
-					break;
-			}
-			this.oldBottomDragAction = global.stage.get_action('osk');
-			if (this.oldBottomDragAction !== null)
-				global.stage.remove_action(this.oldBottomDragAction);
-			if (side != null) {
-				const mode = Shell.ActionMode.ALL & ~Shell.ActionMode.LOCK_SCREEN;
-				const bottomDragAction = new EdgeDragAction.EdgeDragAction(side, mode);
-				bottomDragAction.connect('activated', () => {
-					this.open(true);
-					this.openedFromButton = true;
-					this.closedFromButton = false;
-					this.gestureInProgress = false;
-				});
-				bottomDragAction.connect('progress', (_action, progress) => {
-					if (!this.gestureInProgress)
-						this.open(false)
-					this.setOpenState(Math.min(Math.max(0, (progress / (side % 2 == 0 ? this.box.height : this.box.width)) * 100), 100))
-					this.gestureInProgress = true;
-				});
-				bottomDragAction.connect('gesture-cancel', () => {
-					if (this.gestureInProgress) {
-						this.close()
-						this.openedFromButton = false;
-						this.closedFromButton = true;
-					}
-					this.gestureInProgress = false;
-					return Clutter.EVENT_PROPAGATE;
-				});
-				global.stage.add_action_full('osk', Clutter.EventPhase.CAPTURE, bottomDragAction);
-				this.bottomDragAction = bottomDragAction;
-			} else {
-				this.bottomDragAction = null;
-			}
-
-			clearInterval(this.startupInterval);
-			this._oldMaybeHandleEvent = Main.keyboard.maybeHandleEvent
-			Main.keyboard.maybeHandleEvent = (e) => {
-				let lastInputMethod = [e.type() == 11, e.type() == 11, e.type() == 7 || e.type() == 11][this.settings.get_int("enable-tap-gesture")]
-				let ac = global.stage.get_event_actor(e)
-				if (this.contains(ac)) {
-					ac.event(e, true);
-					ac.event(e, false);
-					return true;
-				} else if (ac instanceof Clutter.Text && lastInputMethod && !this.opened) {
-					this.open();
+			bottomDragAction.connect('progress', (_action, progress) => {
+				if (!this.gestureInProgress)
+					this.open(false)
+				this.setOpenState(Math.min(Math.max(0, (progress / (side % 2 == 0 ? this.box.height : this.box.width)) * 100), 100))
+				this.gestureInProgress = true;
+			});
+			bottomDragAction.connect('gesture-cancel', () => {
+				if (this.gestureInProgress) {
+					this.close()
+					this.openedFromButton = false;
+					this.closedFromButton = true;
 				}
-				return false
+				this.gestureInProgress = false;
+				return Clutter.EVENT_PROPAGATE;
+			});
+			global.stage.add_action_full('osk', Clutter.EventPhase.CAPTURE, bottomDragAction);
+			this.bottomDragAction = bottomDragAction;
+		} else {
+			this.bottomDragAction = null;
+		}
+		this._oldMaybeHandleEvent = Main.keyboard.maybeHandleEvent
+		Main.keyboard.maybeHandleEvent = (e) => {
+			let lastInputMethod = [e.type() == 11, e.type() == 11, e.type() == 7 || e.type() == 11][this.settings.get_int("enable-tap-gesture")]
+			let ac = global.stage.get_event_actor(e)
+			if (this.contains(ac)) {
+				ac.event(e, true);
+				ac.event(e, false);
+				return true;
+			} else if (ac instanceof Clutter.Text && lastInputMethod && !this.opened) {
+				this.open();
 			}
-		}, 200);
+			return false
+		}
 	}
 
 	destroy() {
 		Main.keyboard.maybeHandleEvent = this._oldMaybeHandleEvent
 		global.stage.remove_action_by_name('osk')
-		if (this.oldBottomDragAction !== null)
+		if (this.oldBottomDragAction !== null && this.oldBottomDragAction instanceof Clutter.Action)
 			global.stage.add_action_full('osk', Clutter.EventPhase.CAPTURE, this.oldBottomDragAction)
-		if (this.startupInterval !== null) {
-			clearInterval(this.startupInterval);
-			this.startupInterval = null;
-		}
-		if (this.startupTimeout !== null) {
-			clearInterval(this.startupTimeout);
-			this.startupTimeout = null;
-		}
 		if (this.monitorChecker !== null) {
 			clearInterval(this.monitorChecker);
 			this.monitorChecker = null;
@@ -565,19 +550,6 @@ class Keyboard extends Dialog {
 		if (noPrep == null || !noPrep) {
 			this.prevKeyFocus = global.stage.key_focus
 			this.inputDevice = Clutter.get_default_backend().get_default_seat().create_virtual_device(Clutter.InputDeviceType.KEYBOARD_DEVICE);
-			this.init = KeyboardManager.getKeyboardManager()._current.id;
-			this.initLay = Object.keys(KeyboardManager.getKeyboardManager()._layoutInfos);
-			if (this.initLay == undefined || this.init == undefined) {
-				this.open();
-				return;
-			}
-			let newLay = this.initLay;
-			if (!newLay.includes(["us", "fr+azerty", "us+dvorak", "de+dsb_qwertz"][this.settings.get_int("lang")])) {
-				newLay.push(["us", "fr+azerty", "us+dvorak", "de+dsb_qwertz"][this.settings.get_int("lang")]);
-				KeyboardManager.getKeyboardManager().setUserLayouts(newLay);
-			}
-			KeyboardManager.getKeyboardManager().apply(["us", "fr+azerty", "us+dvorak", "de+dsb_qwertz"][this.settings.get_int("lang")]);
-			KeyboardManager.getKeyboardManager().reapply();
 			this.state = State.OPENING
 			this.show();
 		}
@@ -601,7 +573,7 @@ class Keyboard extends Dialog {
 					}
 					this.stateTimeout = setTimeout(() => {
 						this.state = State.OPENED
-					}, 500);	
+					}, 500);
 				}
 			});
 			this.ease({
@@ -616,10 +588,6 @@ class Keyboard extends Dialog {
 
 	close(instant = null) {
 		this.prevKeyFocus = null;
-		if (this.initLay !== undefined && this.init !== undefined) {
-			KeyboardManager.getKeyboardManager().setUserLayouts(this.initLay);
-			KeyboardManager.getKeyboardManager().apply(this.init);
-		}
 		let monitor = Main.layoutManager.primaryMonitor;
 		let posX = [this.settings.get_int("snap-spacing-px"), ((monitor.width * .5) - ((this.width * .5))), monitor.width - this.width - this.settings.get_int("snap-spacing-px")][(this.settings.get_int("default-snap") % 3)];
 		let posY = [this.settings.get_int("snap-spacing-px"), ((monitor.height * .5) - ((this.height * .5))), monitor.height - this.height - this.settings.get_int("snap-spacing-px")][Math.floor((this.settings.get_int("default-snap") / 3))];
@@ -664,9 +632,10 @@ class Keyboard extends Dialog {
 		});
 		for (var num in keycodes.row1) {
 			const i = keycodes.row1[num]
-			if (i.lowerName == "") {
-				i.lowerName = i._lowerName;
-				i.upperName = i._upperName;
+			if (i.layers.default == null) {
+				for (var key of Object.keys(i.layers)) {
+					i.layers[key] = i.layers["_" + key]
+				}
 			}
 			var w = topRowWidth;
 			let params = {
@@ -674,7 +643,7 @@ class Keyboard extends Dialog {
 				width: w
 			}
 			let styleClass = ""
-			switch (i.lowerName) {
+			switch (i.layers.default) {
 				case "delete":
 				case "backspace":
 				case "tab":
@@ -689,14 +658,14 @@ class Keyboard extends Dialog {
 				case "up":
 				case "down":
 				case "right":
-					styleClass = i.lowerName;
-					i._lowerName = i.lowerName;
-					i._upperName = i.upperName;
-					i.lowerName = "";
-					i.upperName = "";
+					styleClass = i.layers.default;
+					for (var key of Object.keys(i.layers)) {
+						i.layers["_" + key] = i.layers[key]
+						i.layers[key] = null
+					}
 					break;
 				default:
-					params.label = i.lowerName;
+					params.label = i.layers.default;
 					break;
 			}
 			row1.add_child(new St.Button(params));
@@ -716,9 +685,10 @@ class Keyboard extends Dialog {
 		});
 		for (var num in keycodes.row2) {
 			const i = keycodes.row2[num]
-			if (i.lowerName == "") {
-				i.lowerName = i._lowerName;
-				i.upperName = i._upperName;
+			if (i.layers.default == null) {
+				for (var key of Object.keys(i.layers)) {
+					i.layers[key] = i.layers["_" + key]
+				}
 			}
 			var w;
 			if (num == 0) {
@@ -733,7 +703,7 @@ class Keyboard extends Dialog {
 				width: w
 			}
 			let styleClass = ""
-			switch (i.lowerName) {
+			switch (i.layers.default) {
 				case "delete":
 				case "backspace":
 				case "tab":
@@ -748,14 +718,14 @@ class Keyboard extends Dialog {
 				case "up":
 				case "down":
 				case "right":
-					styleClass = i.lowerName;
-					i._lowerName = i.lowerName;
-					i._upperName = i.upperName;
-					i.lowerName = "";
-					i.upperName = "";
+					styleClass = i.layers.default;
+					for (var key of Object.keys(i.layers)) {
+						i.layers["_" + key] = i.layers[key]
+						i.layers[key] = null
+					}
 					break;
 				default:
-					params.label = i.lowerName;
+					params.label = i.layers.default;
 					break;
 			}
 			row2.add_child(new St.Button(params));
@@ -775,9 +745,10 @@ class Keyboard extends Dialog {
 		});
 		for (var num in keycodes.row3) {
 			const i = keycodes.row3[num]
-			if (i.lowerName == "") {
-				i.lowerName = i._lowerName;
-				i.upperName = i._upperName;
+			if (i.layers.default == null) {
+				for (var key of Object.keys(i.layers)) {
+					i.layers[key] = i.layers["_" + key]
+				}
 			}
 			var w;
 			if (num == 0) {
@@ -792,7 +763,7 @@ class Keyboard extends Dialog {
 				width: w
 			}
 			let styleClass = ""
-			switch (i.lowerName) {
+			switch (i.layers.default) {
 				case "delete":
 				case "backspace":
 				case "tab":
@@ -807,14 +778,14 @@ class Keyboard extends Dialog {
 				case "up":
 				case "down":
 				case "right":
-					styleClass = i.lowerName;
-					i._lowerName = i.lowerName;
-					i._upperName = i.upperName;
-					i.lowerName = "";
-					i.upperName = "";
+					styleClass = i.layers.default;
+					for (var key of Object.keys(i.layers)) {
+						i.layers["_" + key] = i.layers[key]
+						i.layers[key] = null
+					}
 					break;
 				default:
-					params.label = i.lowerName;
+					params.label = i.layers.default;
 					break;
 			}
 			row3.add_child(new St.Button(params));
@@ -834,9 +805,10 @@ class Keyboard extends Dialog {
 		});
 		for (var num in keycodes.row4) {
 			const i = keycodes.row4[num]
-			if (i.lowerName == "") {
-				i.lowerName = i._lowerName;
-				i.upperName = i._upperName;
+			if (i.layers.default == null) {
+				for (var key of Object.keys(i.layers)) {
+					i.layers[key] = i.layers["_" + key]
+				}
 			}
 			var w;
 			if (num == 0 || num == keycodes.row4.length - 1) {
@@ -849,7 +821,7 @@ class Keyboard extends Dialog {
 				width: w
 			}
 			let styleClass = ""
-			switch (i.lowerName) {
+			switch (i.layers.default) {
 				case "delete":
 				case "backspace":
 				case "tab":
@@ -864,14 +836,14 @@ class Keyboard extends Dialog {
 				case "up":
 				case "down":
 				case "right":
-					styleClass = i.lowerName;
-					i._lowerName = i.lowerName;
-					i._upperName = i.upperName;
-					i.lowerName = "";
-					i.upperName = "";
+					styleClass = i.layers.default;
+					for (var key of Object.keys(i.layers)) {
+						i.layers["_" + key] = i.layers[key]
+						i.layers[key] = null
+					}
 					break;
 				default:
-					params.label = i.lowerName;
+					params.label = i.layers.default;
 					break;
 			}
 			row4.add_child(new St.Button(params));
@@ -891,9 +863,10 @@ class Keyboard extends Dialog {
 		});
 		for (var num in keycodes.row5) {
 			const i = keycodes.row5[num]
-			if (i.lowerName == "") {
-				i.lowerName = i._lowerName;
-				i.upperName = i._upperName;
+			if (i.layers.default == null) {
+				for (var key of Object.keys(i.layers)) {
+					i.layers[key] = i.layers["_" + key]
+				}
 			}
 			var w;
 			if (num == 0 || num == keycodes.row5.length - 1) {
@@ -906,7 +879,7 @@ class Keyboard extends Dialog {
 				width: w
 			}
 			let styleClass = ""
-			switch (i.lowerName) {
+			switch (i.layers.default) {
 				case "delete":
 				case "backspace":
 				case "tab":
@@ -921,14 +894,14 @@ class Keyboard extends Dialog {
 				case "up":
 				case "down":
 				case "right":
-					styleClass = i.lowerName;
-					i._lowerName = i.lowerName;
-					i._upperName = i.upperName;
-					i.lowerName = "";
-					i.upperName = "";
+					styleClass = i.layers.default;
+					for (var key of Object.keys(i.layers)) {
+						i.layers["_" + key] = i.layers[key]
+						i.layers[key] = null
+					}
 					break;
 				default:
-					params.label = i.lowerName;
+					params.label = i.layers.default;
 					break;
 			}
 			row5.add_child(new St.Button(params));
@@ -948,19 +921,20 @@ class Keyboard extends Dialog {
 		});
 		for (var num in keycodes.row6) {
 			const i = keycodes.row6[num]
-			if (i.lowerName == "") {
-				i.lowerName = i._lowerName;
-				i.upperName = i._upperName;
-			}
 			var w;
 			if (num == 3) {
+				if (i.layers.default == null) {
+					for (var key of Object.keys(i.layers)) {
+						i.layers[key] = i.layers["_" + key]
+					}
+				}
 				w = ((row1.width - ((keycodes.row6.length + 1) * ((topRowWidth) + 5))));
 				let params = {
 					height: topRowHeight + 20,
 					width: w
 				}
 				let styleClass = ""
-				switch (i.lowerName) {
+				switch (i.layers.default) {
 					case "delete":
 					case "backspace":
 					case "tab":
@@ -975,14 +949,14 @@ class Keyboard extends Dialog {
 					case "up":
 					case "down":
 					case "right":
-						styleClass = i.lowerName;
-						i._lowerName = i.lowerName;
-						i._upperName = i.upperName;
-						i.lowerName = "";
-						i.upperName = "";
+						styleClass = i.layers.default;
+						for (var key of Object.keys(i.layers)) {
+							i.layers["_" + key] = i.layers[key]
+							i.layers[key] = null
+						}
 						break;
 					default:
-						params.label = i.lowerName;
+						params.label = i.layers.default;
 						break;
 				}
 				row6.add_child(new St.Button(params));
@@ -1063,14 +1037,22 @@ class Keyboard extends Dialog {
 				btn2.char = (keycodes.row6[keycodes.row6.length - 1])[1]
 				btn3.char = (keycodes.row6[keycodes.row6.length - 1])[2]
 				btn4.char = (keycodes.row6[keycodes.row6.length - 1])[3]
-				btn1.char.lowerName = ""
-				btn1.char.upperName = ""
-				btn2.char.lowerName = ""
-				btn2.char.upperName = ""
-				btn3.char.lowerName = ""
-				btn3.char.upperName = ""
-				btn4.char.lowerName = ""
-				btn4.char.upperName = ""
+				for (var key of Object.keys(btn1.char.layers)) {
+					btn1.char.layers["_" + key] = btn1.char.layers[key]
+					btn1.char.layers[key] = null
+				}
+				for (var key of Object.keys(btn2.char.layers)) {
+					btn2.char.layers["_" + key] = btn1.char.layers[key]
+					btn2.char.layers[key] = null
+				}
+				for (var key of Object.keys(btn3.char.layers)) {
+					btn3.char.layers["_" + key] = btn1.char.layers[key]
+					btn3.char.layers[key] = null
+				}
+				for (var key of Object.keys(btn4.char.layers)) {
+					btn4.char.layers["_" + key] = btn1.char.layers[key]
+					btn4.char.layers[key] = null
+				}
 				btn1.width = Math.round((((topRowWidth) + 5)) * (2 / 3));
 				btn1.height = topRowHeight + 20;
 				btn2.width = Math.round((((topRowWidth) + 5)) * (2 / 3));
@@ -1093,13 +1075,18 @@ class Keyboard extends Dialog {
 				gbox.add_style_class_name('keyActionBtns');
 				row6.add_child(gbox);
 			} else {
+				if (i.layers.default == null) {
+					for (var key of Object.keys(i.layers)) {
+						i.layers[key] = i.layers["_" + key]
+					}
+				}
 				w = (topRowWidth) + 5;
 				let params = {
 					height: topRowHeight + 20,
 					width: w
 				}
 				let styleClass = ""
-				switch (i.lowerName) {
+				switch (i.layers.default) {
 					case "delete":
 					case "backspace":
 					case "tab":
@@ -1114,14 +1101,14 @@ class Keyboard extends Dialog {
 					case "up":
 					case "down":
 					case "right":
-						styleClass = i.lowerName;
-						i._lowerName = i.lowerName;
-						i._upperName = i.upperName;
-						i.lowerName = "";
-						i.upperName = "";
+						styleClass = i.layers.default;
+						for (var key of Object.keys(i.layers)) {
+							i.layers["_" + key] = i.layers[key]
+							i.layers[key] = null
+						}
 						break;
 					default:
-						params.label = i.lowerName;
+						params.label = i.layers.default;
 						break;
 				}
 				row6.add_child(new St.Button(params));
@@ -1146,7 +1133,7 @@ class Keyboard extends Dialog {
 		this.box.add_child(row6);
 		if (this.settings.get_boolean("split-kbd")) {
 			for (var i of [row1, row2, row3, row4, row5]) {
-				i.insert_child_at_index(new St.Widget({width: (monitor.width - this.box.width - 40 - 2 * this.settings.get_int("snap-spacing-px"))}), Math.floor(i.get_children().length / 2))
+				i.insert_child_at_index(new St.Widget({ width: (monitor.width - this.box.width - 40 - 2 * this.settings.get_int("snap-spacing-px")) }), Math.floor(i.get_children().length / 2))
 			}
 			row6.get_children()[3].width += (monitor.width - this.box.width - 40 - 2 * this.settings.get_int("snap-spacing-px"))
 		}
@@ -1307,13 +1294,13 @@ class Keyboard extends Dialog {
 
 		function traverse(obj) {
 			for (let key in obj) {
-			        if (obj.hasOwnProperty(key)) {
-				        if (key === "code") {
-				                instances.push(obj[key]);
-				        } else if (typeof obj[key] === 'object' && obj[key] !== null) {
-				                traverse(obj[key]);
-				        }
-			        }
+				if (obj.hasOwnProperty(key)) {
+					if (key === "code") {
+						instances.push(obj[key]);
+					} else if (typeof obj[key] === 'object' && obj[key] !== null) {
+						traverse(obj[key]);
+					}
+				}
 			}
 		}
 
@@ -1369,9 +1356,9 @@ class Keyboard extends Dialog {
 	}
 
 	decideMod(i, mBtn) {
-		if (i.code == 29 || i.code == 97 || i.code == 125) {
+		if (i.code == 29 || i.code == 56 || i.code == 97 || i.code == 125) {
 			this.setNormMod(mBtn);
-		} else if (i.code == 56 || i.code == 100) {
+		} else if (i.code == 100) {
 			this.setAlt(mBtn);
 		} else if (i.code == 42 || i.code == 54) {
 			this.setShift(mBtn);
@@ -1394,32 +1381,30 @@ class Keyboard extends Dialog {
 			button.add_style_class_name("selected");
 			this.capsL = true;
 			this.keys.forEach(key => {
-				if (this.shift && key.char != undefined) {
-					if (key.char.letter == "primary") {
-						key.label = key.label.toLowerCase();
-					} else if (key.char.letter == "pseudo") {
-						key.label = key.char.upperName;
-					} else if (key.char.letter == undefined) {
-						key.label = key.char.upperName;
-					}
-				} else if (key.char != undefined && key.char.letter != undefined) {
-					key.label = key.label.toUpperCase();
+				if (key.char != undefined) {
+					if (this.shift && this.alt)
+						key.label = key.char.layers.altshiftcapslock
+					else if (this.shift)
+						key.label = key.char.layers.shiftcapslock
+					else if (this.alt)
+						key.label = key.char.layers.altcapslock
+					else
+						key.label = key.char.layers.capslock
 				}
 			});
 		} else {
 			button.remove_style_class_name("selected");
 			this.capsL = false;
 			this.keys.forEach(key => {
-				if (this.shift && key.char != undefined) {
-					if (key.char.letter == "primary") {
-						key.label = key.label.toUpperCase();
-					} else if (key.char.letter == "pseudo") {
-						key.label = key.char.upperName;
-					} else if (key.char.letter == undefined) {
-						key.label = key.char.upperName;
-					}
-				} else if (key.char != undefined && key.char.letter != undefined) {
-					key.label = key.label.toLowerCase();
+				if (key.char != undefined) {
+					if (this.shift && this.alt)
+						key.label = key.char.layers.altshift
+					else if (this.shift)
+						key.label = key.char.layers.shift
+					else if (this.alt)
+						key.label = key.char.layers.alt
+					else
+						key.label = key.char.layers.default
 				}
 			});
 		}
@@ -1430,22 +1415,31 @@ class Keyboard extends Dialog {
 		if (!this.alt) {
 			this.alt = true;
 			this.keys.forEach(key => {
-				if (!this.shift && key.char != undefined) {
-					if (key.char.altName != "") {
-						key.label = key.char.altName;
+				if (key.char != undefined) {
+					if (this.shift && this.capsL) {
+						key.label = key.char.layers.altshiftcapslock
+					} else if (this.shift) {
+						key.label = key.char.layers.altshift
+					} else if (this.capsL) {
+						key.label = key.char.layers.altcapslock
+					} else {
+						key.label = key.char.layers.alt
 					}
 				}
 			});
+
 		} else {
 			this.alt = false;
 			this.keys.forEach(key => {
-				if (!this.shift && key.char != undefined) {
-					if (key.char.altName != "" && this.capsL && (key.char.letter == "primary" || key.char.letter == "pseudo")) {
-						key.label = key.char.lowerName.toUpperCase();
-					} else if (key.char.altName != "" && this.capsL) {
-						key.label = key.char.lowerName;
-					} else if (key.char.altName != "" && !this.capsL) {
-						key.label = key.char.lowerName;
+				if (key.char != undefined) {
+					if (this.shift && this.capsL) {
+						key.label = key.char.layers.shiftcapslock
+					} else if (this.shift) {
+						key.label = key.char.layers.shift
+					} else if (this.capsL) {
+						key.label = key.char.layers.capslock
+					} else {
+						key.label = key.char.layers.default
 					}
 				}
 			});
@@ -1458,33 +1452,29 @@ class Keyboard extends Dialog {
 		if (!this.shift) {
 			this.shift = true;
 			this.keys.forEach(key => {
-				if (this.capsL && key.char != undefined) {
-					if (key.char.letter == "primary") {
-						key.label = key.char.lowerName.toLowerCase();
-					} else if (key.char.letter == "pseudo" || key.char.letter == undefined) {
-						key.label = key.char.upperName;
-					}
-				} else if (key.char != undefined) {
-					key.label = key.char.upperName;
+				if (key.char != undefined) {
+					if (this.alt && this.capsL)
+						key.label = key.char.layers.altshiftcapslock
+					else if (this.alt)
+						key.label = key.char.layers.altshift
+					else if (this.capsL)
+						key.label = key.char.layers.shiftcapslock
+					else
+						key.label = key.char.layers.shift
 				}
 			});
 		} else {
 			this.shift = false;
 			this.keys.forEach(key => {
-				if (this.capsL && key.char != undefined) {
-					if (this.alt && key.char.altName != "") {
-						key.label = key.char.altName;
-					} else if (key.char.letter != undefined) {
-						key.label = key.char.lowerName.toUpperCase();
-					} else if (key.char.letter == undefined) {
-						key.label = key.char.lowerName;
-					}
-				} else if (key.char != undefined) {
-					if (this.alt && key.char.altName != "") {
-						key.label = key.char.altName;
-					} else {
-						key.label = key.char.lowerName;
-					}
+				if (key.char != undefined) {
+					if (this.alt && this.capsL)
+						key.label = key.char.layers.altcapslock
+					else if (this.alt)
+						key.label = key.char.layers.alt
+					else if (this.capsL)
+						key.label = key.char.layers.capslock
+					else
+						key.label = key.char.layers.default
 				}
 			});
 			this.sendKey([button.char.code]);
@@ -1506,39 +1496,12 @@ class Keyboard extends Dialog {
 	}
 
 	resetAllMod() {
-		if (this.shift) {
-			this.shift = false;
-			this.keys.forEach(key => {
-				if (this.capsL && key.char != undefined) {
-					if (this.alt && key.char.altName != "") {
-						key.label = key.char.altName;
-					} else if (key.char.letter != undefined) {
-						key.label = key.char.lowerName.toUpperCase();
-					} else if (key.char.letter == undefined) {
-						key.label = key.char.lowerName;
-					}
-				} else if (key.char != undefined) {
-					if (this.alt && key.char.altName != "") {
-						key.label = key.char.altName;
-					} else {
-						key.label = key.char.lowerName;
-					}
-				}
-			});
-		}
-		if (this.alt) {
-			this.alt = false;
-			this.keys.forEach(key => {
-				if (!this.shift && key.char != undefined) {
-					if (key.char.altName != "" && this.capsL && (key.char.letter == "primary" || key.char.letter == "pseudo")) {
-						key.label = key.char.lowerName.toUpperCase();
-					} else if (key.char.altName != "" && this.capsL) {
-						key.label = key.char.lowerName;
-					} else if (key.char.altName != "" && !this.capsL) {
-						key.label = key.char.lowerName;
-					}
-				}
-			});
-		}
+		this.shift = false;
+		this.alt = false;
+		this.keys.forEach(key => {
+			if (key.char != undefined) {
+				key.label = key.char.layers[this.capsL ? "capslock" : "default"]
+			}
+		});
 	}
-};
+}
