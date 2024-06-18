@@ -1427,7 +1427,6 @@ class Keyboard extends Dialog {
 					}
 				}
 			});
-
 		} else {
 			this.alt = false;
 			this.keys.forEach(key => {

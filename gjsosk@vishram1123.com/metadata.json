@@ -5,7 +5,8 @@
   "name": "GJS OSK",
   "settings-schema": "org.gnome.shell.extensions.gjsosk",
   "shell-version": [
-    "45", "46"
+    "45",
+    "46"
   ],
   "url": "https://github.com/Vishram1123/gjs-osk",
   "uuid": "gjsosk@vishram1123.com",
