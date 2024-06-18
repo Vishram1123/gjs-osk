@@ -2,7 +2,6 @@
 
 const {
 	Adw,
-	Gio,
 	Gtk,
 	Gdk
 } = imports.gi;
@@ -33,7 +32,6 @@ function fillPreferencesWindow(window) {
 
 	const apply = Gtk.Button.new_with_label(_("Apply Changes"));
 	apply.connect("clicked", () => {
-		settings.set_int("lang", langDrop.selected);
 		settings.set_boolean("enable-drag", dragToggle.active);
 		settings.set_int("enable-tap-gesture", dragOpt.selected);
 		settings.set_boolean("indicator-enabled", indEnabled.active);
@@ -63,19 +61,6 @@ function fillPreferencesWindow(window) {
 		title: _("Behavior")
 	});
 	page1.add(group1);
-
-	const row0 = new Adw.ActionRow({
-		title: _('Layout')
-	});
-	group1.add(row0);
-
-	let langList = ["QWERTY", "AZERTY", "Dvorak", "QWERTZ"];
-	let langDrop = Gtk.DropDown.new_from_strings(langList);
-	langDrop.valign = Gtk.Align.CENTER;
-	langDrop.selected = settings.get_int("lang");
-
-	row0.add_suffix(langDrop);
-	row0.activatable_widget = langDrop;
 
 	const row1 = new Adw.ActionRow({
 		title: _('Enable Dragging')
@@ -229,7 +214,7 @@ function fillPreferencesWindow(window) {
 		title: _('Light Mode')
 	});
 	row5.add_row(lightCol)
-	
+
 	let rgba = new Gdk.RGBA();
 	rgba.parse("rgba(" + settings.get_double("background-r") + ", " + settings.get_double("background-g") + ", " + settings.get_double("background-b") + ", 1)");
 	let colorButton = new Gtk.ColorButton({
@@ -244,7 +229,7 @@ function fillPreferencesWindow(window) {
 		title: _('Dark Mode')
 	});
 	row5.add_row(darkCol)
-	
+
 	let rgba_d = new Gdk.RGBA();
 	rgba_d.parse("rgba(" + settings.get_double("background-r-dark") + ", " + settings.get_double("background-g-dark") + ", " + settings.get_double("background-b-dark") + ", 1)");
 	let colorButton_d = new Gtk.ColorButton({
@@ -374,7 +359,6 @@ function fillPreferencesWindow(window) {
 
 	window.add(page2);
 	window.connect("close-request", () => {
-		settings.set_int("lang", langDrop.selected);
 		settings.set_boolean("enable-drag", dragToggle.active);
 		settings.set_int("enable-tap-gesture", dragOpt.selected);
 		settings.set_boolean("indicator-enabled", indEnabled.active);
