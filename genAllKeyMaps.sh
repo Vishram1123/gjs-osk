@@ -1,11 +1,13 @@
-echo "{" > gjsosk@vishram1123.com/keycodes.json
+dir="gjsosk@vishram1123.com/keycodes"
+rm -rf $dir
+mkdir $dir
 for i in $(localectl list-x11-keymap-layouts); do
 	echo $i
-	python genKeyMap.py "$i" >> gjsosk@vishram1123.com/keycodes.json
+	python genKeyMap.py "$i" > "$dir/$i.json"
 	for j in $(localectl list-x11-keymap-variants $i 2> /dev/null); do
 		echo "$i+$j"
-		python genKeyMap.py "$i+$j" >> gjsosk@vishram1123.com/keycodes.json
+		python genKeyMap.py "$i+$j" > "$dir/$i+$j.json"
 	done; 
 done;
-tac "gjsosk@vishram1123.com/keycodes.json" | awk -v c="," '!p && sub(c, "") {p=1} 1' | tac > temp.txt && mv temp.txt "gjsosk@vishram1123.com/keycodes.json"
-echo "}" >> gjsosk@vishram1123.com/keycodes.json
+tar -Jcvf gjsosk@vishram1123.com/keycodes.tar.xz -C $dir/ .
+rm -rf $dir
