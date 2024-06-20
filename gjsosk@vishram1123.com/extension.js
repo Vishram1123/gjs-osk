@@ -142,9 +142,11 @@ export default class GjsOskExtension extends Extension {
 		this.openBit = this.settings.get_child("indicator");
 
 		let refresh = () => {
-			let [ok, contents] = GLib.file_get_contents(this.path + '/keycodes.json');
-			if (ok) {
-				keycodes = JSON.parse(contents)[KeyboardManager.getKeyboardManager().currentLayout.id];
+			let [status, out, err, code] = GLib.spawn_command_line_sync("tar -Jxf " + this.path + "/keycodes.tar.xz ./" + KeyboardManager.getKeyboardManager().currentLayout.id + ".json -O")
+			if (err != "" || code != 0) {
+				throw new Error(err);
+			} else {
+				keycodes = JSON.parse(out);
 			}
 			if (this.Keyboard)
 				this.Keyboard.destroy();
@@ -1348,18 +1350,7 @@ class Keyboard extends Dialog {
 				}
 			}, 100);
 		} catch (err) {
-			let source = new imports.ui.messageTray.SystemNotificationSource();
-			source.connect('destroy', () => {
-				source = null;
-			})
-			Main.messageTray.add(source);
-			let notification = new imports.ui.messageTray.Notification(source, "GJS-OSK: An unknown error occured", "Please report this bug to the Issues page:\n\n" + err + "\n\nKeys Pressed: " + keys)
-			notification.setTransient(false);
-			notification.setResident(false);
-			source.showNotification(notification);
-			notification.connect("activated", () => {
-				sendCommand("xdg-open https://github.com/Vishram1123/gjs-osk/issues");
-			});
+			throw new Error("GJS-OSK: An unknown error occured. Please report this bug to the Issues page (https://github.com/Vishram1123/gjs-osk/issues):\n\n" + err + "\n\nKeys Pressed: " + keys);
 		}
 	}
 

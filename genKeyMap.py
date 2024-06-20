@@ -316,5 +316,5 @@ for row in range(len(keysToTest)):
                     }
                 })
                 
-print("    ".join(('\n'+str("\"" + "+".join(model) + "\": " + json.dumps(formattedJson, indent = 4) + ",").lstrip()).splitlines(True)))
+print(json.dumps(formattedJson, indent = 4))
 
