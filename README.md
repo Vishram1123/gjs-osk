@@ -28,7 +28,7 @@ A (marginally) better on screen keyboard for GNOME 42-44 (go to the [main branch
 - To change properties about the keyboard, open up the "Extensions" application, and click on "Settings" under this extension to get a list of changeable properties
   - Close the settings dialog to save any modified settings
 - To type special characters, open GNOME settings, and turn on "Compose Key" under the Keyboard submenu. Choose a modifier (preferably right alt), and use the [key combinations listed here](https://en.wikipedia.org/wiki/Compose_key#Common_compose_combinations) to type special characters
-- To change the keyboard layout, change the layout in GJS OSK's settings
+- To change the keyboard layout, change the layout in Gnome's Control Center
 - To add typing prediction, add "Typing Booster" as an input source (in GNOME's settings), and keep it chosen as the primary input source [(extended guide here)](https://mike-fabian.github.io/ibus-typing-booster/docs/user/).
   - Note that this will cause predictive text to be present even without the OSK open, and the input language for Typing Booster's predictions will have to be set in Typing Booster's settings 
 - To open the keyboard from the command line (or with a shortcut), run the command `dconf write /org/gnome/shell/extensions/gjsosk/indicator/opened true` which will open the keyboard 
@@ -38,12 +38,7 @@ A (marginally) better on screen keyboard for GNOME 42-44 (go to the [main branch
 ## Help
 - If you find any bugs, or if you have any suggestions, please open an issue or submit a pull request. Thanks!
 ### Keyboard Layouts
-- If you wish to add a keyboard layout, edit the "keycodes.json" file as follows: 
-  - If a letter behaves the same if caps lock or shift is turned on, add a `"letter": "primary"` key-value pair to the object pertaining to the character
-  - If a letter simply turns uppercase on caps lock, but is a completely different character on shift, add a `"letter": "pseudo"` key-value pair to the object pertaining to the character
-  - If a letter is not affected by caps lock, don't add a `"letter"` key to the object
-  - If a letter changes to another on alt, change `"altName": ""` such that its value represents the output of the character if it is pressed along with alt
-  - Keys have to follow a general QWERTY shape (though more or less keys can be on a single line), as this is how the keyboard is coded
-- Once "keycodes.json" is modified, add the layout name to the array `langList` in prefs.js, and on the arrays in line 40 and 59 in extension.js
+- As of recently, all keyboard layouts and variants (available through localectl) have been added to GJS-OSK. Please report on the state of keyboard layouts as correct/incorrect in issue [#48](https://github.com/Vishram1123/gjs-osk/issues/48), and I will try to fix them promptly.
+  - To generate a single keyboard layout, install `xkbcommon` through `pip` and run `genKeyMap.py` with `layout+variant` as the argument (`pip install xkbcommon` then `python genKeyMap.py de+dvorak` for example)
 
 **Help in this area is greatly appreciated!**
