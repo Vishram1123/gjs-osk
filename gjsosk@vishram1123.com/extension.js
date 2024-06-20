@@ -394,6 +394,7 @@ class Keyboard extends Dialog {
 			clearTimeout(this.keyTimeout);
 			this.keyTimeout = null;
 		}
+		this.keymap.disconnect(this.capslockConnect);
 		super.destroy();
 	}
 
@@ -855,6 +856,13 @@ class Keyboard extends Dialog {
 			i.isMod = false
 			if ([42, 54, 29, 125, 56, 100, 97, 58].some(j => { return i.code == j })) {
 				i.isMod = true;
+			}
+			if (i.code == 58) {
+				const capsLockKey = num;
+				this.keymap = Clutter.get_default_backend().get_default_seat().get_keymap()
+				this.capslockConnect = this.keymap.connect("state-changed", (a, e) => {
+					this.setCapsLock(row4.get_children()[capsLockKey], this.keymap.get_caps_lock_state()) 
+				})
 			}
 			row4.get_children()[num].char = i;
 		}
@@ -1365,7 +1373,7 @@ class Keyboard extends Dialog {
 		} else if (i.code == 42 || i.code == 54) {
 			this.setShift(mBtn);
 		} else if (i.code == 58) {
-			this.setCapsLock(mBtn);
+			this.sendKey([mBtn.char.code]);
 		} else {
 			this.mod.push(i.code);
 			this.sendKey(this.mod);
@@ -1378,8 +1386,8 @@ class Keyboard extends Dialog {
 		}
 	}
 
-	setCapsLock(button) {
-		if (!this.capsL) {
+	setCapsLock(button, state) {
+		if (state) {
 			button.add_style_class_name("selected");
 			this.capsL = true;
 			this.keys.forEach(key => {
@@ -1410,7 +1418,6 @@ class Keyboard extends Dialog {
 				}
 			});
 		}
-		this.sendKey([button.char.code]);
 	}
 
 	setAlt(button) {
