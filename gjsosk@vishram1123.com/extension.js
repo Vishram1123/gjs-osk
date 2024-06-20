@@ -142,21 +142,9 @@ export default class GjsOskExtension extends Extension {
 		this.openBit = this.settings.get_child("indicator");
 
 		let refresh = () => {
-			try {
-				let [status, out, err, code] = GLib.spawn_command_line_sync("python " + this.path + "/genKeyMap.py " + KeyboardManager.getKeyboardManager().currentLayout.id)
-				if (err != '') {
-					throw new Error(err, { cause: "`python " + this.path + "/genKeyMap.py " + KeyboardManager.getKeyboardManager().currentLayout.id + "`" });
-				} else {
-					keycodes = JSON.parse(out)
-				}
-			} catch (e) {
-				let message;
-				if (e.message.includes("xkbcommon")) {
-					message = "GJS-OSK: XKBCommon Not Found. Please install xkbcommon with the command (as root): `pip install xkbcommon`"
-				} else {
-					message = e.cause + " resulted in " + e.message
-				}
-				throw new Error (message)
+			let [ok, contents] = GLib.file_get_contents(this.path + '/keycodes.json');
+			if (ok) {
+				keycodes = JSON.parse(contents)[KeyboardManager.getKeyboardManager().currentLayout.id];
 			}
 			if (this.Keyboard)
 				this.Keyboard.destroy();
@@ -1360,7 +1348,18 @@ class Keyboard extends Dialog {
 				}
 			}, 100);
 		} catch (err) {
-			throw new Error("GJS-OSK: An unknown error occured. Please report this bug to the Issues page:\n\n" + err + "\n\nKeys Pressed: " + keys)
+			let source = new imports.ui.messageTray.SystemNotificationSource();
+			source.connect('destroy', () => {
+				source = null;
+			})
+			Main.messageTray.add(source);
+			let notification = new imports.ui.messageTray.Notification(source, "GJS-OSK: An unknown error occured", "Please report this bug to the Issues page:\n\n" + err + "\n\nKeys Pressed: " + keys)
+			notification.setTransient(false);
+			notification.setResident(false);
+			source.showNotification(notification);
+			notification.connect("activated", () => {
+				sendCommand("xdg-open https://github.com/Vishram1123/gjs-osk/issues");
+			});
 		}
 	}
 
