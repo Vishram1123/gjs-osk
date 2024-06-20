@@ -145,7 +145,7 @@ export default class GjsOskExtension extends Extension {
 			try {
 				let [status, out, err, code] = GLib.spawn_command_line_sync("python " + this.path + "/genKeyMap.py " + KeyboardManager.getKeyboardManager().currentLayout.id)
 				if (err != '') {
-					throw new Error(err, { cause: "`python3 " + this.path + "/genKeyMap.py " + KeyboardManager.getKeyboardManager().currentLayout.id + "`" });
+					throw new Error(err, { cause: "`python " + this.path + "/genKeyMap.py " + KeyboardManager.getKeyboardManager().currentLayout.id + "`" });
 				} else {
 					keycodes = JSON.parse(out)
 				}
