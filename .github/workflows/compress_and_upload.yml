@@ -19,10 +19,6 @@ jobs:
       with:
         ref: 'main'
 
-    - name: Generate Keymaps
-      run: |
-        chmod 755 ./genAllKeyMaps.sh && ./genAllKeyMaps.sh
-
     - name: Get Hash
       run: |
         echo "hash=$(git rev-parse --short ${{ github.event.head_commit.id }})" >> "$GITHUB_ENV"
@@ -69,10 +65,6 @@ jobs:
       uses: actions/checkout@v2
       with:
         ref: 'pre-45'
-
-    - name: Generate Keymaps
-      run: |
-        chmod 755 ./genAllKeyMaps.sh && ./genAllKeyMaps.sh
         
     - name: Compile schemas
       run: | 
