@@ -42,21 +42,66 @@ def convertKeySymToString(sym):
         if (sym == getattr(Gdk, ("KEY_F%d" % (i)))):
             return ("F%d" % (i))
 
-    match sym:
-        case Gdk.KEY_dead_grave:
-            label = "ˋ"
-            
-        case Gdk.KEY_dead_abovecomma:
-            label = "̓"
-        
-        case Gdk.KEY_dead_abovereversedcomma:
-            label = "̔"
-        
+    match sym:        
+        case Gdk.KEY_dead_A:
+            label = "A"
+
+        case Gdk.KEY_dead_E:
+            label = "E"
+
+        case Gdk.KEY_dead_I:
+            label = "I"
+
+        case Gdk.KEY_dead_O:
+            label = "O"
+
+        case Gdk.KEY_dead_U:
+            label = "U"
+
+        case Gdk.KEY_dead_a:
+            label = "a"
+
+        case Gdk.KEY_dead_e:
+            label = "e"
+
+        case Gdk.KEY_dead_i:
+            label = "i"
+
+        case Gdk.KEY_dead_o:
+            label = "o"
+
+        case Gdk.KEY_dead_u:
+            label = "u"
+
+        case Gdk.KEY_dead_hook:
+            label = "̉"
+
+        case Gdk.KEY_dead_horn:
+            label = "̛"
+
+        case Gdk.KEY_dead_iota:
+            label = "ι"
+
         case Gdk.KEY_dead_acute:
             label = "ˊ"
-        
-        case Gdk.KEY_dead_circumflex:
-            label = "ˆ"
+
+        case Gdk.KEY_dead_breve:
+            label = "˘"
+
+        case Gdk.KEY_dead_caron:
+            label = "ˇ"
+
+        case Gdk.KEY_dead_dasia:
+            label = "῾"
+
+        case Gdk.KEY_dead_grave:
+            label = "ˋ"
+
+        case Gdk.KEY_dead_greek:
+            label = "⊞"
+
+        case Gdk.KEY_dead_psili:
+            label = "᾿"
         
         case Gdk.KEY_dead_tilde:
             label = "~"
@@ -64,41 +109,95 @@ def convertKeySymToString(sym):
         case Gdk.KEY_dead_macron:
             label = "ˉ"
         
-        case Gdk.KEY_dead_breve:
-            label = "˘"
+        case Gdk.KEY_dead_ogonek:
+            label = "˛"
+        
+        case Gdk.KEY_dead_stroke:
+            label = "̵"
+        
+        case Gdk.KEY_dead_cedilla:
+            label = "¸"
+
+        case Gdk.KEY_dead_lowline:
+            label = "_"
         
         case Gdk.KEY_dead_abovedot:
             label = "˙"
         
-        case Gdk.KEY_dead_diaeresis:
-            label = "¨"
-        
-        case Gdk.KEY_dead_abovering:
-            label = "˚"
-        
-        case Gdk.KEY_dead_doubleacute:
-            label = "˝"
-        
-        case Gdk.KEY_dead_caron:
-            label = "ˇ"
-        
-        case Gdk.KEY_dead_cedilla:
-            label = "¸"
-        
-        case Gdk.KEY_dead_ogonek:
-            label = "˛"
-        
         case Gdk.KEY_dead_belowdot:
             label = " ̣"
 
-        case Gdk.KEY_dead_hook:
-            label = "̉"
-
-        case Gdk.KEY_dead_horn:
-            label = "̛"
+        case Gdk.KEY_dead_currency:
+            label = "¤"
         
-        case Gdk.KEY_dead_stroke:
-            label = "̵"
+        case Gdk.KEY_dead_abovering:
+            label = "˚"
+
+        case Gdk.KEY_dead_belowring:
+            label = "̥"
+        
+        case Gdk.KEY_dead_diaeresis:
+            label = "¨"
+
+        case Gdk.KEY_dead_abovecomma:
+            label = "̓"
+
+        case Gdk.KEY_dead_belowbreve:
+            label = "̮"
+
+        case Gdk.KEY_dead_belowcomma:
+            label = "̦"
+
+        case Gdk.KEY_dead_belowtilde:
+            label = "̰"
+        
+        case Gdk.KEY_dead_circumflex:
+            label = "ˆ"
+
+        case Gdk.KEY_dead_belowmacron:
+            label = "̱"
+        
+        case Gdk.KEY_dead_doubleacute:
+            label = "˝"
+
+        case Gdk.KEY_dead_doublegrave:
+            label = "̏"
+
+        case Gdk.KEY_dead_perispomeni:
+            label = "῀"
+
+        case Gdk.KEY_dead_small_schwa:
+            label = "ᵊ"
+
+        case Gdk.KEY_dead_voiced_sound:
+            label = "゛"
+
+        case Gdk.KEY_dead_capital_schwa:
+            label = "Ə"
+
+        case Gdk.KEY_dead_invertedbreve:
+            label = "̑"
+
+        case Gdk.KEY_dead_belowdiaeresis:
+            label = "̤"
+
+        case Gdk.KEY_dead_belowcircumflex:
+            label = "̭"
+
+        case Gdk.KEY_dead_semivoiced_sound:
+            label = "゜"
+
+        case Gdk.KEY_dead_aboveverticalline:
+            label = "̍"
+
+        case Gdk.KEY_dead_belowverticalline:
+            label = "̩"
+
+        case Gdk.KEY_dead_abovereversedcomma:
+            label = "̔"
+
+        case Gdk.KEY_dead_longsolidusoverlay:
+            label = "̸"
 
         case Gdk.KEY_horizconnector:
             label = ""
