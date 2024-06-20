@@ -1,5 +1,2 @@
 # schemas compiled dynamically for 44 and below, and not compiled for 45+
 *.compiled
-
-# keycodes generated dynamically
-gjsosk@vishram1123.com/keycodes.json
