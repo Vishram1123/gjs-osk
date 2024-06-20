@@ -392,6 +392,7 @@ class Keyboard extends Dialog {
 			clearTimeout(this.keyTimeout);
 			this.keyTimeout = null;
 		}
+		this.keymap.disconnect(this.capslockConnect);
 		super.destroy();
 	}
 
