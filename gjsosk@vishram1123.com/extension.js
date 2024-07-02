@@ -147,14 +147,19 @@ class GjsOskExtension {
 		this.openBit = this.settings.get_child("indicator");
 
 		let refresh = () => {
-			let [status, out, err, code] = GLib.spawn_command_line_sync("tar -Jxf " + Me.path + "/keycodes.tar.xz ./" + KeyboardManager.getKeyboardManager().currentLayout.id + ".json -O")
-			if (err != "" || code != 0) {
-				throw new Error(err);
-			} else {
-				keycodes = JSON.parse(out);
+			if (GLib.open(Me.path + "/keycodes", null, null) == -1) {
+				GLib.spawn_command_line_sync("mkdir " + Me.path + "/keycodes")
+				let [status, out, err, code] = GLib.spawn_command_line_sync("tar -Jxf " + Me.path + "/keycodes.tar.xz -C " + Me.path + "/keycodes")
+				if (err != "" || code != 0) {
+					throw new Error(err);
+				}
 			}
 			if (this.Keyboard)
 				this.Keyboard.destroy();
+			let [ok, contents] = GLib.file_get_contents(Me.path + '/keycodes/' + KeyboardManager.getKeyboardManager().currentLayout.id + '.json');
+			if (ok) {	
+				keycodes = JSON.parse(contents);
+			}
 			this.Keyboard = new Keyboard(this.settings)
 			this.Keyboard.refresh = refresh
 		}
