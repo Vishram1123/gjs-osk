@@ -142,8 +142,8 @@ export default class GjsOskExtension extends Extension {
 		this.openBit = this.settings.get_child("indicator");
 
 		let refresh = () => {
-			if (GLib.spawn_command_line_sync("ls " + this.path + "/keycodes")[3] != 0) {
-				GLib.spawn_command_line_sync("mkdir " + this.path + "/keycodes")
+			if (!Gio.File.new_for_path(this.path + "/keycodes").query_exists(null)) {
+				Gio.File.new_for_path(this.path + "/keycodes").make_directory(null);
 				let [status, out, err, code] = GLib.spawn_command_line_sync("tar -Jxf " + this.path + "/keycodes.tar.xz -C " + this.path + "/keycodes")
 				if (err != "" || code != 0) {
 					throw new Error(err);
