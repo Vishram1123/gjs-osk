@@ -28,7 +28,7 @@ keysToTest = [
     ["TAB", "AD01", "AD02", "AD03", "AD04", "AD05", "AD06", "AD07", "AD08", "AD09", "AD10", "AD11", "AD12", "BKSL"], 
     ["CAPS", "AC01", "AC02", "AC03", "AC04", "AC05", "AC06", "AC07", "AC08", "AC09", "AC10", "AC11", "RTRN"],  
     ["LFSH", "LSGT", "AB01", "AB02", "AB03", "AB04", "AB05", "AB06", "AB07", "AB08", "AB09", "AB10", "RTSH"],
-    ["LCTL", "LWIN", "LALT", "SPCE", "RALT", "RCTL", ["UP", "DOWN", "LEFT", "RGHT"]]
+    ["LCTL", "LWIN", "LALT", "SPCE", "RALT", "RCTL", ["LEFT", "UP", "DOWN", "RGHT"]]
 ]
 
 def getKeyOutput(keyval, modifier = 0, capslock = False):
