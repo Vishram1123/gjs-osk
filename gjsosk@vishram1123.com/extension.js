@@ -36,10 +36,11 @@ const KeyboardMenuToggle = QuickSettings != null ? GObject.registerClass(
 	class KeyboardMenuToggle extends QuickSettings.QuickMenuToggle {
 		_init(settings) {
 			super._init({
-				title: _('Screen Keyboard'),
 				iconName: 'input-keyboard-symbolic',
 				toggleMode: true,
 			});
+
+			super.label = _('Screen Keyboard')
 			this.menu.setHeader('input-keyboard-symbolic', _('Screen Keyboard'),
 				_('Opening Mode'));
 			this.settings = settings;
