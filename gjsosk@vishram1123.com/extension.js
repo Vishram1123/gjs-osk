@@ -62,7 +62,7 @@ const KeyboardMenuToggle = QuickSettings != null ? GObject.registerClass(
 			const settingsItem = this.menu.addAction(_('More Settings'),
 				() => ExtensionUtils.openPrefs());
 			settingsItem.visible = Main.sessionMode.allowSettings;
-			this.menu._settingsActions[Extension.uuid] = settingsItem;
+			this.menu._settingsActions[Me.metadata.uuid] = settingsItem;
 
 			QuickSettingsMenu._addItems([this]);
 
