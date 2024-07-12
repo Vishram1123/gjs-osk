@@ -825,7 +825,6 @@ class Keyboard extends Dialog {
 					this.closedFromButton = true;
 				}
 			})
-			console.log(rowSize)
 			gridRight.attach(closeBtn, (rowSize - 8), 0, 8, 5)
 			this.keys.push(closeBtn)
 			
@@ -908,7 +907,6 @@ class Keyboard extends Dialog {
 					this.closedFromButton = true;
 				}
 			})
-			console.log(rowSize)
 			grid.attach(closeBtn, (rowSize - 8), 0, 8, 5)
 			this.keys.push(closeBtn)
 			
