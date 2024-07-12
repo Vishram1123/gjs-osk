@@ -17,9 +17,10 @@
      background-color: rgba(0, 0, 0, 0.05);
      color: black;
 }
-
-.keysHolder>* {
+.key, .moveHandle {
      border: 0;
+     padding: 0;
+     margin: 0;
      background-clip: padding-box;
      box-sizing: border-box;
 }
@@ -77,12 +78,12 @@
      background-image: url(ui/icons/hicolor/scalable/actions/move-dark.svg);
 }
 
-.delete_btn.regular, .delete_btn.selected.inverted {
-     background-image: url(ui/icons/hicolor/scalable/actions/delete.svg);
+.settings_btn.regular {
+     background-image: url(ui/icons/hicolor/scalable/actions/settings.svg);
 }
 
-.delete_btn.inverted, .delete_btn.selected.regular {
-     background-image: url(ui/icons/hicolor/scalable/actions/delete-dark.svg);
+.settings_btn.inverted {
+     background-image: url(ui/icons/hicolor/scalable/actions/settings-dark.svg);
 }
 
 .backspace_btn.regular, .backspace_btn.selected.inverted {

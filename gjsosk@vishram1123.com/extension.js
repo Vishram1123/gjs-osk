@@ -70,6 +70,7 @@ class KeyboardMenuToggle extends QuickSettings.QuickMenuToggle {
 
 
 let keycodes;
+let layouts;
 
 export default class GjsOskExtension extends Extension {
 	_openKeyboard() {
@@ -141,6 +142,13 @@ export default class GjsOskExtension extends Extension {
 			this.settings.scheme = "-dark"
 		this.openBit = this.settings.get_child("indicator");
 
+		this.openPrefs = () => { this.openPreferences().catch(e => {console.log(e)}); }
+
+		let [okL, contentsL] = GLib.file_get_contents(this.path + '/physicalLayouts.json');
+		if (okL) {
+			layouts = JSON.parse(contentsL);
+		}
+
 		let refresh = () => {
 			if (!Gio.File.new_for_path(this.path + "/keycodes").query_exists(null)) {
 				Gio.File.new_for_path(this.path + "/keycodes").make_directory(null);
@@ -152,10 +160,10 @@ export default class GjsOskExtension extends Extension {
 			if (this.Keyboard)
 				this.Keyboard.destroy();
 			let [ok, contents] = GLib.file_get_contents(this.path + '/keycodes/' + KeyboardManager.getKeyboardManager().currentLayout.id + '.json');
-			if (ok) {	
+			if (ok) {
 				keycodes = JSON.parse(contents);
 			}
-			this.Keyboard = new Keyboard(this.settings)
+			this.Keyboard = new Keyboard(this.settings, this);
 			this.Keyboard.refresh = refresh
 		}
 		refresh()
@@ -285,13 +293,18 @@ class Keyboard extends Dialog {
 		GObject.registerClass(this);
 	}
 
-	_init(settings) {
+	_init(settings, extensionObject) {
+		this.settingsOpenFunction = extensionObject.openPrefs
 		this.inputDevice = Clutter.get_default_backend().get_default_seat().create_virtual_device(Clutter.InputDeviceType.KEYBOARD_DEVICE);
 		this.settings = settings;
 		let monitor = Main.layoutManager.primaryMonitor;
 		super._init(Main.layoutManager.modalDialogGroup, 'db-keyboard-content');
-		this.box = new St.BoxLayout({
-			vertical: true
+		this.box = new St.Widget({
+			layout_manager: new Clutter.GridLayout({
+				orientation: Clutter.Orientation.HORIZONTAL,
+				row_spacing: settings.get_int("border-spacing-px") * 2,
+				column_spacing: settings.get_int("border-spacing-px") * 2,
+			})
 		});
 		this.widthPercent = (monitor.width > monitor.height) ? settings.get_int("landscape-width-percent") / 100 : settings.get_int("portrait-width-percent") / 100;
 		this.heightPercent = (monitor.width > monitor.height) ? settings.get_int("landscape-height-percent") / 100 : settings.get_int("portrait-height-percent") / 100;
@@ -305,8 +318,6 @@ class Keyboard extends Dialog {
 		this.capsL = false;
 		this.shift = false;
 		this.alt = false;
-		this.box.add_style_class_name("boxLay");
-		this.box.set_style("background-color: rgb(" + settings.get_double("background-r" + this.settings.scheme) + "," + settings.get_double("background-g" + this.settings.scheme) + "," + settings.get_double("background-b" + this.settings.scheme) + ");")
 		this.opened = false;
 		this.state = State.CLOSED;
 		this.delta = [];
@@ -403,11 +414,6 @@ class Keyboard extends Dialog {
 		super.destroy();
 	}
 
-	vfunc_button_press_event() {
-		this.delta = [Clutter.get_current_event().get_coords()[0] - this.translation_x, Clutter.get_current_event().get_coords()[1] - this.translation_y];
-		return this.startDragging(Clutter.get_current_event(), this.delta)
-	}
-
 	startDragging(event, delta) {
 		if (this.draggable) {
 			if (this._dragging)
@@ -432,13 +438,6 @@ class Keyboard extends Dialog {
 		} else {
 			return Clutter.EVENT_PROPAGATE;
 		}
-	}
-
-	vfunc_button_release_event() {
-		if (this._dragging && !this._grabbedSequence) {
-			return this.endDragging();
-		}
-		return Clutter.EVENT_PROPAGATE;
 	}
 
 	endDragging() {
@@ -467,18 +466,11 @@ class Keyboard extends Dialog {
 				this.emit('drag-end');
 				this._dragging = false;
 			}
+			this.draggable = false;
 			return Clutter.EVENT_STOP;
 		} else {
 			return Clutter.EVENT_STOP;
 		}
-	}
-
-	vfunc_motion_event() {
-		let event = Clutter.get_current_event();
-		if (this._dragging && !this._grabbedSequence) {
-			this.motionEvent(event);
-		}
-		return Clutter.EVENT_PROPAGATE;
 	}
 
 	motionEvent(event) {
@@ -489,25 +481,6 @@ class Keyboard extends Dialog {
 		} else {
 			return Clutter.EVENT_STOP
 		}
-	}
-
-	vfunc_touch_event() {
-		let event = Clutter.get_current_event();
-		let sequence = event.get_event_sequence();
-
-		if (!this._dragging && event.type() == Clutter.EventType.TOUCH_BEGIN) {
-			this.delta = [event.get_coords()[0] - this.translation_x, event.get_coords()[1] - this.translation_y];
-			this.startDragging(event, this.delta);
-			return Clutter.EVENT_STOP;
-		} else if (this._grabbedSequence && sequence.get_slot() === this._grabbedSequence.get_slot()) {
-			if (event.type() == Clutter.EventType.TOUCH_UPDATE) {
-				return this.motionEvent(event);
-			} else if (event.type() == Clutter.EventType.TOUCH_END) {
-				return this.endDragging();
-			}
-		}
-
-		return Clutter.EVENT_PROPAGATE;
 	}
 
 	snapMovement(xPos, yPos) {
@@ -631,537 +604,336 @@ class Keyboard extends Dialog {
 	buildUI() {
 		this.box.set_opacity(0);
 		this.keys = [];
+		let layoutName = Object.keys(layouts)[this.settings.get_int("layout")];
 		let monitor = Main.layoutManager.primaryMonitor
-		var topRowWidth = Math.round((monitor.width - 40 - this.settings.get_int("snap-spacing-px") * 2) * this.widthPercent / 15)
-		var topRowHeight = Math.round((monitor.height - 140 - this.settings.get_int("snap-spacing-px") * 2) * this.heightPercent / 6)
+		this.box.width = Math.round((monitor.width - this.settings.get_int("snap-spacing-px") * 2) * (layoutName.includes("Split") ? 1 : this.widthPercent))
+		this.box.height = Math.round((monitor.height - this.settings.get_int("snap-spacing-px") * 2) * this.heightPercent)
 
-		let row1 = new St.BoxLayout({
-			pack_start: true
-		});
-		for (var num in keycodes.row1) {
-			const i = keycodes.row1[num]
-			if (i.layers.default == null) {
-				for (var key of Object.keys(i.layers)) {
-					i.layers[key] = i.layers["_" + key]
-				}
-			}
-			var w = topRowWidth;
-			let params = {
-				height: topRowHeight,
-				width: w
-			}
-			let styleClass = ""
-			switch (i.layers.default) {
-				case "delete":
-				case "backspace":
-				case "tab":
-				case "capslock":
-				case "shift":
-				case "enter":
-				case "ctrl":
-				case "super":
-				case "alt":
-				case "space":
-				case "left":
-				case "up":
-				case "down":
-				case "right":
-					styleClass = i.layers.default;
-					for (var key of Object.keys(i.layers)) {
-						i.layers["_" + key] = i.layers[key]
-						i.layers[key] = null
-					}
-					break;
-				default:
-					params.label = i.layers.default;
-					break;
-			}
-			row1.add_child(new St.Button(params));
-			if (styleClass != "") {
-				row1.get_children()[num].add_style_class_name(styleClass + "_btn");
-			}
-			i.isMod = false
-			if ([42, 54, 29, 125, 56, 100, 97, 58].some(j => { return i.code == j })) {
-				i.isMod = true;
-			}
-			row1.get_children()[num].char = i;
+		const grid = this.box.layout_manager
+		grid.set_row_homogeneous(true)
+		grid.set_column_homogeneous(!layoutName.includes("Split"))
+
+		let gridLeft;
+		let gridRight;
+		let currentGrid = grid;
+		let left;
+		let right;
+
+		if (layoutName.includes("Split")) {
+			left = new St.Widget({
+				layout_manager: new Clutter.GridLayout({
+					orientation: Clutter.Orientation.HORIZONTAL,
+					row_spacing: this.settings.get_int("border-spacing-px") * 2,
+					column_spacing: this.settings.get_int("border-spacing-px") * 2,
+					row_homogeneous: true,
+					column_homogeneous: true
+				}),
+				width: Math.round((monitor.width - this.settings.get_int("snap-spacing-px") * 2) * this.widthPercent) / 2
+			})
+			gridLeft = left.layout_manager;
+			let middle = new St.Widget({
+				width: this.box.width * (1 - this.widthPercent) - 10 + this.settings.get_int("border-spacing-px")
+			});
+			right = new St.Widget({
+				layout_manager: new Clutter.GridLayout({
+					orientation: Clutter.Orientation.HORIZONTAL,
+					row_spacing: this.settings.get_int("border-spacing-px") * 2,
+					column_spacing: this.settings.get_int("border-spacing-px") * 2,
+					row_homogeneous: true,
+					column_homogeneous: true
+				}),
+				width: Math.round((monitor.width - this.settings.get_int("snap-spacing-px") * 2) * this.widthPercent) / 2
+			})
+			gridRight = right.layout_manager;
+			this.box.add_child(left)
+			this.box.add_child(middle)
+			this.box.add_child(right)
 		}
-		this.keys.push.apply(this.keys, row1.get_children());
-		row1.add_style_class_name("keysHolder");
-		let row2 = new St.BoxLayout({
-			pack_start: true
-		});
-		for (var num in keycodes.row2) {
-			const i = keycodes.row2[num]
-			if (i.layers.default == null) {
-				for (var key of Object.keys(i.layers)) {
-					i.layers[key] = i.layers["_" + key]
-				}
-			}
-			var w;
-			if (num == 0) {
-				w = ((row1.width - ((keycodes.row2.length - 2) * ((topRowWidth) + 5))) / 2) * 0.5;
-			} else if (num == keycodes.row2.length - 1) {
-				w = ((row1.width - ((keycodes.row2.length - 2) * ((topRowWidth) + 5))) / 2) * 1.5;
-			} else {
-				w = (topRowWidth) + 5;
-			}
-			let params = {
-				height: topRowHeight + 20,
-				width: w
-			}
-			let styleClass = ""
-			switch (i.layers.default) {
-				case "delete":
-				case "backspace":
-				case "tab":
-				case "capslock":
-				case "shift":
-				case "enter":
-				case "ctrl":
-				case "super":
-				case "alt":
-				case "space":
-				case "left":
-				case "up":
-				case "down":
-				case "right":
-					styleClass = i.layers.default;
-					for (var key of Object.keys(i.layers)) {
-						i.layers["_" + key] = i.layers[key]
-						i.layers[key] = null
-					}
-					break;
-				default:
-					params.label = i.layers.default;
-					break;
-			}
-			row2.add_child(new St.Button(params));
-			if (styleClass != "") {
-				row2.get_children()[num].add_style_class_name(styleClass + "_btn");
-			}
-			i.isMod = false
-			if ([42, 54, 29, 125, 56, 100, 97, 58].some(j => { return i.code == j })) {
-				i.isMod = true;
-			}
-			row2.get_children()[num].char = i;
+
+		this.shiftButtons = [];
+
+		let currentLayout = layouts[layoutName];
+		let width = 0;
+		for (const c of currentLayout[0]) {
+			width += (Object.hasOwn(c, "width") ? c.width : 1)
 		}
-		this.keys.push.apply(this.keys, row2.get_children());
-		row2.add_style_class_name("keysHolder");
-		let row3 = new St.BoxLayout({
-			pack_start: true
-		});
-		for (var num in keycodes.row3) {
-			const i = keycodes.row3[num]
-			if (i.layers.default == null) {
-				for (var key of Object.keys(i.layers)) {
-					i.layers[key] = i.layers["_" + key]
-				}
-			}
-			var w;
-			if (num == 0) {
-				w = ((row1.width - ((keycodes.row3.length - 2) * ((topRowWidth) + 5))) / 2) * 1.1;
-			} else if (num == keycodes.row3.length - 1) {
-				w = ((row1.width - ((keycodes.row3.length - 2) * ((topRowWidth) + 5))) / 2) * 0.9;
-			} else {
-				w = (topRowWidth) + 5;
-			}
-			let params = {
-				height: topRowHeight + 20,
-				width: w
-			}
-			let styleClass = ""
-			switch (i.layers.default) {
-				case "delete":
-				case "backspace":
-				case "tab":
-				case "capslock":
-				case "shift":
-				case "enter":
-				case "ctrl":
-				case "super":
-				case "alt":
-				case "space":
-				case "left":
-				case "up":
-				case "down":
-				case "right":
-					styleClass = i.layers.default;
-					for (var key of Object.keys(i.layers)) {
-						i.layers["_" + key] = i.layers[key]
-						i.layers[key] = null
-					}
-					break;
-				default:
-					params.label = i.layers.default;
-					break;
-			}
-			row3.add_child(new St.Button(params));
-			if (styleClass != "") {
-				row3.get_children()[num].add_style_class_name(styleClass + "_btn");
-			}
-			i.isMod = false
-			if ([42, 54, 29, 125, 56, 100, 97, 58].some(j => { return i.code == j })) {
-				i.isMod = true;
-			}
-			row3.get_children()[num].char = i;
-		}
-		this.keys.push.apply(this.keys, row3.get_children());
-		row3.add_style_class_name("keysHolder");
-		let row4 = new St.BoxLayout({
-			pack_start: true
-		});
-		for (var num in keycodes.row4) {
-			const i = keycodes.row4[num]
-			if (i.layers.default == null) {
-				for (var key of Object.keys(i.layers)) {
-					i.layers[key] = i.layers["_" + key]
-				}
-			}
-			var w;
-			if (num == 0 || num == keycodes.row4.length - 1) {
-				w = ((row1.width - ((keycodes.row4.length - 2) * ((topRowWidth) + 5))) / 2);
-			} else {
-				w = (topRowWidth) + 5;
-			}
-			let params = {
-				height: topRowHeight + 20,
-				width: w
-			}
-			let styleClass = ""
-			switch (i.layers.default) {
-				case "delete":
-				case "backspace":
-				case "tab":
-				case "capslock":
-				case "shift":
-				case "enter":
-				case "ctrl":
-				case "super":
-				case "alt":
-				case "space":
-				case "left":
-				case "up":
-				case "down":
-				case "right":
-					styleClass = i.layers.default;
-					for (var key of Object.keys(i.layers)) {
-						i.layers["_" + key] = i.layers[key]
-						i.layers[key] = null
-					}
-					break;
-				default:
-					params.label = i.layers.default;
-					break;
-			}
-			row4.add_child(new St.Button(params));
-			if (styleClass != "") {
-				row4.get_children()[num].add_style_class_name(styleClass + "_btn");
-			}
-			i.isMod = false
-			if ([42, 54, 29, 125, 56, 100, 97, 58].some(j => { return i.code == j })) {
-				i.isMod = true;
-			}
-			if (i.code == 58) {
-				const capsLockKey = num;
-				this.keymap = Clutter.get_default_backend().get_default_seat().get_keymap()
-				this.capslockConnect = this.keymap.connect("state-changed", (a, e) => {
-					this.setCapsLock(row4.get_children()[capsLockKey], this.keymap.get_caps_lock_state()) 
-				})
-			}
-			row4.get_children()[num].char = i;
-		}
-		this.keys.push.apply(this.keys, row4.get_children());
-		row4.add_style_class_name("keysHolder");
-		let row5 = new St.BoxLayout({
-			pack_start: true
-		});
-		for (var num in keycodes.row5) {
-			const i = keycodes.row5[num]
-			if (i.layers.default == null) {
-				for (var key of Object.keys(i.layers)) {
-					i.layers[key] = i.layers["_" + key]
-				}
-			}
-			var w;
-			if (num == 0 || num == keycodes.row5.length - 1) {
-				w = ((row1.width - ((keycodes.row5.length - 2) * ((topRowWidth) + 5))) / 2);
-			} else {
-				w = (topRowWidth) + 5;
-			}
-			let params = {
-				height: topRowHeight + 20,
-				width: w
-			}
-			let styleClass = ""
-			switch (i.layers.default) {
-				case "delete":
-				case "backspace":
-				case "tab":
-				case "capslock":
-				case "shift":
-				case "enter":
-				case "ctrl":
-				case "super":
-				case "alt":
-				case "space":
-				case "left":
-				case "up":
-				case "down":
-				case "right":
-					styleClass = i.layers.default;
-					for (var key of Object.keys(i.layers)) {
-						i.layers["_" + key] = i.layers[key]
-						i.layers[key] = null
-					}
-					break;
-				default:
-					params.label = i.layers.default;
-					break;
-			}
-			row5.add_child(new St.Button(params));
-			if (styleClass != "") {
-				row5.get_children()[num].add_style_class_name(styleClass + "_btn");
-			}
-			i.isMod = false
-			if ([42, 54, 29, 125, 56, 100, 97, 58].some(j => { return i.code == j })) {
-				i.isMod = true;
-			}
-			row5.get_children()[num].char = i;
-		}
-		this.keys.push.apply(this.keys, row5.get_children());
-		row5.add_style_class_name("keysHolder");
-		let row6 = new St.BoxLayout({
-			pack_start: true
-		});
-		for (var num in keycodes.row6) {
-			const i = keycodes.row6[num]
-			var w;
-			if (num == 3) {
+		let rowSize;
+		let halfSize;
+		let r = 0;
+		let c;
+		const doAddKey = (keydef) => {
+			const i = Object.hasOwn(keydef, "key") ? keycodes[keydef.key] : Object.hasOwn(keydef, "split") ? "split" : "empty space";
+			if (i != null && typeof i !== 'string') {
 				if (i.layers.default == null) {
 					for (var key of Object.keys(i.layers)) {
 						i.layers[key] = i.layers["_" + key]
 					}
 				}
-				w = ((row1.width - ((keycodes.row6.length + 1) * ((topRowWidth) + 5))));
 				let params = {
-					height: topRowHeight + 20,
-					width: w
+					x_expand: true,
+					y_expand: true
 				}
-				let styleClass = ""
-				switch (i.layers.default) {
-					case "delete":
-					case "backspace":
-					case "tab":
-					case "capslock":
-					case "shift":
-					case "enter":
-					case "ctrl":
-					case "super":
-					case "alt":
-					case "space":
-					case "left":
-					case "up":
-					case "down":
-					case "right":
-						styleClass = i.layers.default;
-						for (var key of Object.keys(i.layers)) {
-							i.layers["_" + key] = i.layers[key]
-							i.layers[key] = null
-						}
-						break;
-					default:
-						params.label = i.layers.default;
-						break;
+				
+				let iconKeys = ["left", "up", "right", "down", "space"]
+				if (this.settings.get_boolean("show-icons")) {
+					iconKeys = ["left", "up", "right", "down", "backspace", "tab", "capslock", "shift", "enter", "ctrl", "super", "alt", "space"]
 				}
-				row6.add_child(new St.Button(params));
-				if (styleClass != "") {
-					row6.get_children()[num].add_style_class_name(styleClass + "_btn");
-				}
-				i.isMod = false
-				if ([42, 54, 29, 125, 56, 100, 97, 58].some(j => { return i.code == j })) {
-					i.isMod = true;
-				}
-				row6.get_children()[num].char = i;
-				this.keys.push(row6.get_children()[num]);
-			} else if (num == keycodes.row6.length - 1) {
-				var gbox = new St.BoxLayout({
-					pack_start: true
-				});
-				var btn1 = new St.Button();
-				btn1.add_style_class_name("left_btn");
-				gbox.add_child(btn1);
-				var vbox = new St.BoxLayout({
-					vertical: true
-				});
-				var btn2 = new St.Button();
-				btn2.add_style_class_name("up_btn");
-				var btn3 = new St.Button();
-				btn3.add_style_class_name("down_btn");
-				vbox.add_child(btn2);
-				vbox.add_child(btn3);
-				gbox.add_child(vbox);
-				var btn4 = new St.Button();
-				btn4.add_style_class_name("right_btn");
-				gbox.add_child(btn4);
-				var btn5 = new St.Button();
-				btn5.add_style_class_name("move_btn")
-				var btn6 = new St.Button();
-				btn6.add_style_class_name("close_btn")
-				if (this.settings.get_boolean("enable-drag")) {
-					gbox.add_child(btn5);
-				}
-				gbox.add_child(btn6);
-				btn5.connect("clicked", () => {
-					if (this.settings.get_boolean("enable-drag")) {
-						this.draggable = !this.draggable;
-						this.keys.forEach(keyholder => {
-							if (!keyholder.has_style_class_name("move_btn")) {
-								keyholder.set_opacity(this.draggable ? 255 : 0);
-								keyholder.ease({
-									opacity: this.draggable ? 0 : 255,
-									duration: 100,
-									mode: Clutter.AnimationMode.EASE_OUT_QUAD,
-									onComplete: () => {
-										keyholder.set_z_position(this.draggable ? -10000000000000000000000000000 : 0);
-										if (this.draggable) {
-											this.box.add_style_pseudo_class("dragging");
-										} else {
-											this.box.remove_style_pseudo_class("dragging");
-										}
-									}
-								});
-							}
-						});
-						btn5.ease({
-							width: btn5.width * (this.draggable ? 2 : 0.5),
-							duration: 100,
-							mode: Clutter.AnimationMode.EASE_OUT_QUAD,
-							onComplete: () => { }
-						})
-						btn6.ease({
-							width: this.draggable ? 0 : btn5.width / 2,
-							duration: 100,
-							mode: Clutter.AnimationMode.EASE_OUT_QUAD,
-							onComplete: () => { }
-						})
-					}
-				})
-				btn6.connect("clicked", () => { this.close(); this.closedFromButton = true; });
-				btn1.char = (keycodes.row6[keycodes.row6.length - 1])[0]
-				btn2.char = (keycodes.row6[keycodes.row6.length - 1])[1]
-				btn3.char = (keycodes.row6[keycodes.row6.length - 1])[2]
-				btn4.char = (keycodes.row6[keycodes.row6.length - 1])[3]
-				for (var key of Object.keys(btn1.char.layers)) {
-					btn1.char.layers["_" + key] = btn1.char.layers[key]
-					btn1.char.layers[key] = null
-				}
-				for (var key of Object.keys(btn2.char.layers)) {
-					btn2.char.layers["_" + key] = btn1.char.layers[key]
-					btn2.char.layers[key] = null
-				}
-				for (var key of Object.keys(btn3.char.layers)) {
-					btn3.char.layers["_" + key] = btn1.char.layers[key]
-					btn3.char.layers[key] = null
-				}
-				for (var key of Object.keys(btn4.char.layers)) {
-					btn4.char.layers["_" + key] = btn1.char.layers[key]
-					btn4.char.layers[key] = null
-				}
-				btn1.width = Math.round((((topRowWidth) + 5)) * (2 / 3));
-				btn1.height = topRowHeight + 20;
-				btn2.width = Math.round((((topRowWidth) + 5)) * (2 / 3));
-				btn3.width = Math.round((((topRowWidth) + 5)) * (2 / 3));
-				btn4.width = Math.round((((topRowWidth) + 5)) * (2 / 3));
-				btn4.height = topRowHeight + 20;
-				btn2.height = (topRowHeight + 20) / 2;
-				btn3.height = (topRowHeight + 20) / 2;
-				btn5.width = Math.round((topRowWidth / 2) + 2);
-				btn6.width = this.settings.get_boolean("enable-drag") ? Math.round((topRowWidth / 2) + 2) : Math.round((topRowWidth) + 4);
-				btn5.height = topRowHeight + 20;
-				btn6.height = topRowHeight + 20;
-				btn1.add_style_class_name('dr-b');
-				btn2.add_style_class_name('dr-b');
-				btn3.add_style_class_name('dr-b');
-				btn4.add_style_class_name('dr-b');
-				btn5.add_style_class_name('dr-b');
-				btn6.add_style_class_name('dr-b');
-				this.keys.push.apply(this.keys, [btn1, btn2, btn3, btn4, btn5, btn6]);
-				gbox.add_style_class_name('keyActionBtns');
-				row6.add_child(gbox);
-			} else {
-				if (i.layers.default == null) {
+				if (iconKeys.some(j => { return i.layers.default.toLowerCase() == j })) {
+					params.style_class = i.layers.default.toLowerCase() + "_btn"
 					for (var key of Object.keys(i.layers)) {
-						i.layers[key] = i.layers["_" + key]
+						i.layers["_" + key] = i.layers[key]
+						i.layers[key] = null
 					}
-				}
-				w = (topRowWidth) + 5;
-				let params = {
-					height: topRowHeight + 20,
-					width: w
-				}
-				let styleClass = ""
-				switch (i.layers.default) {
-					case "delete":
-					case "backspace":
-					case "tab":
-					case "capslock":
-					case "shift":
-					case "enter":
-					case "ctrl":
-					case "super":
-					case "alt":
-					case "space":
-					case "left":
-					case "up":
-					case "down":
-					case "right":
-						styleClass = i.layers.default;
-						for (var key of Object.keys(i.layers)) {
-							i.layers["_" + key] = i.layers[key]
-							i.layers[key] = null
-						}
-						break;
-					default:
-						params.label = i.layers.default;
-						break;
-				}
-				row6.add_child(new St.Button(params));
-				if (styleClass != "") {
-					row6.get_children()[num].add_style_class_name(styleClass + "_btn");
+				} else {
+					params.label = i.layers.default
 				}
 				i.isMod = false
-				if ([42, 54, 29, 125, 56, 100, 97, 58].some(j => { return i.code == j })) {
+				if ([42, 54, 29, 125, 56, 100, 97, 58, 69].some(j => { return i.code == j })) {
 					i.isMod = true;
 				}
-				row6.get_children()[num].char = i;
-				this.keys.push(row6.get_children()[num]);
+				const keyBtn = new St.Button(params)
+				keyBtn.add_style_class_name('key')
+				keyBtn.char = i
+				if (i.code == 58) {
+					this.keymap = Clutter.get_default_backend().get_default_seat().get_keymap()
+					this.capslockConnect = this.keymap.connect("state-changed", (a, e) => {
+						this.setCapsLock(keyBtn, this.keymap.get_caps_lock_state())
+					})
+				} else if (i.code == 69) {
+					this.keymap = Clutter.get_default_backend().get_default_seat().get_keymap()
+					this.numLockConnect = this.keymap.connect("state-changed", (a, e) => {
+						this.setNumLock(keyBtn, this.keymap.get_num_lock_state())
+					})
+				} else if (i.code == 42 || i.code == 54) {
+					this.shiftButtons.push(keyBtn)
+				}
+				currentGrid.attach(keyBtn, c, 6 + r, (Object.hasOwn(keydef, "width") ? keydef.width : 1) * 8, r == 0 ? 6 : (Object.hasOwn(keydef, "height") ? keydef.height : 1) * 8)
+				keyBtn.visible = true
+				c += (Object.hasOwn(keydef, "width") ? keydef.width : 1) * 8
+				this.keys.push(keyBtn)
+			} else if (i == "empty space") {
+				c += (Object.hasOwn(keydef, "width") ? keydef.width : 1) * 8
+			} else if (i == "split") {
+				currentGrid = gridRight
+				const size = c
+				if (!halfSize) halfSize = size
 			}
 		}
-		row6.add_style_class_name("keysHolder");
+		
+		for (const kRow of currentLayout) {
+			c = 0;
+			if (layoutName.includes("Split")) {
+				currentGrid = gridLeft;
+			}
+			for (const keydef of kRow) {
+				if (keydef instanceof Array) {
+					keydef.forEach(i => {doAddKey(i); r += 4; c -= 8});
+					c += 8;
+					r -= 8;
+				} else {
+					doAddKey(keydef)
+				}
+			}
+			const size = c;
+			if (!rowSize) rowSize = size;
+			r += r == 0 ? 6 : 8
+		}
 
-		this.box.add_child(row1);
-		this.box.add_child(row2);
-		this.box.add_child(row3);
-		this.box.add_child(row4);
-		this.box.add_child(row5);
-		this.box.add_child(row6);
-		if (this.settings.get_boolean("split-kbd")) {
-			for (var i of [row1, row2, row3, row4, row5]) {
-				i.insert_child_at_index(new St.Widget({ width: (monitor.width - this.box.width - 40 - 2 * this.settings.get_int("snap-spacing-px")) }), Math.floor(i.get_children().length / 2))
-			}
-			row6.get_children()[3].width += (monitor.width - this.box.width - 40 - 2 * this.settings.get_int("snap-spacing-px"))
+		let mPEv = () => {
+			this.draggable = this.settings.get_boolean("enable-drag");
+			this.delta = [Clutter.get_current_event().get_coords()[0] - this.translation_x, Clutter.get_current_event().get_coords()[1] - this.translation_y];
+			return this.startDragging(Clutter.get_current_event(), this.delta)
 		}
-		var rgb = "rgb(" + this.settings.get_double("background-r" + this.settings.scheme) + "," + this.settings.get_double("background-g" + this.settings.scheme) + "," + this.settings.get_double("background-b" + this.settings.scheme) + ")"
-		this.box.set_style("background-image: linear-gradient(to right," + rgb + ", transparent, " + rgb + ");")
-		if (this.lightOrDark(this.settings.get_double("background-r" + this.settings.scheme), this.settings.get_double("background-g" + this.settings.scheme), this.settings.get_double("background-b" + this.settings.scheme))) {
-			this.box.add_style_class_name("inverted");
+
+		let mREv = () => {
+			if (this._dragging && !this._grabbedSequence) {
+				return this.endDragging();
+			}
+			return Clutter.EVENT_PROPAGATE;
+		}
+		
+		let mMEv = () => {
+			let event = Clutter.get_current_event();
+			if (this._dragging && !this._grabbedSequence) {
+				this.motionEvent(event);
+			}
+			return Clutter.EVENT_PROPAGATE;
+		}
+
+		let mTEv = () => {
+			let event = Clutter.get_current_event();
+			let sequence = event.get_event_sequence();
+
+			if (!this._dragging && event.type() == Clutter.EventType.TOUCH_BEGIN) {
+				this.draggable = this.settings.get_boolean("enable-drag");
+				this.delta = [event.get_coords()[0] - this.translation_x, event.get_coords()[1] - this.translation_y];
+				this.startDragging(event, this.delta);
+				return Clutter.EVENT_STOP;
+			} else if (this._grabbedSequence && sequence.get_slot() === this._grabbedSequence.get_slot()) {
+				if (event.type() == Clutter.EventType.TOUCH_UPDATE) {
+					return this.motionEvent(event);
+				} else if (event.type() == Clutter.EventType.TOUCH_END) {
+					return this.endDragging();
+				}
+			}
+
+			return Clutter.EVENT_PROPAGATE;
+		}
+
+		if (left != null) {
+			left.add_style_class_name("boxLay");
+			left.set_style("background-color: rgba(" + this.settings.get_double("background-r" + this.settings.scheme) + "," + this.settings.get_double("background-g" + this.settings.scheme) + "," + this.settings.get_double("background-b" + this.settings.scheme) + ", " + this.settings.get_double("background-a" + this.settings.scheme) + ");")
+			right.add_style_class_name("boxLay");
+			right.set_style("background-color: rgba(" + this.settings.get_double("background-r" + this.settings.scheme) + "," + this.settings.get_double("background-g" + this.settings.scheme) + "," + this.settings.get_double("background-b" + this.settings.scheme) + ", " + this.settings.get_double("background-a" + this.settings.scheme) + ");")
+			if (this.lightOrDark(this.settings.get_double("background-r" + this.settings.scheme), this.settings.get_double("background-g" + this.settings.scheme), this.settings.get_double("background-b" + this.settings.scheme))) {
+				left.add_style_class_name("inverted");
+				right.add_style_class_name("inverted");
+			} else {
+				left.add_style_class_name("regular");
+				right.add_style_class_name("regular");
+			}
+			const settingsBtn = new St.Button({
+				x_expand: true,
+				y_expand: true
+			})
+			settingsBtn.add_style_class_name("settings_btn")
+			settingsBtn.add_style_class_name("key")
+			settingsBtn.connect("button-press-event", () => {
+				this.settingsOpenFunction();
+			})
+			settingsBtn.connect("touch-event", () => {
+				if (Clutter.get_current_event().type() == Clutter.EventType.TOUCH_BEGIN) {
+					this.settingsOpenFunction()
+				}
+			})
+			gridLeft.attach(settingsBtn, 0, 0, 8, 5)
+			this.keys.push(settingsBtn)
+
+			const closeBtn = new St.Button({
+				x_expand: true,
+				y_expand: true
+			})
+			closeBtn.add_style_class_name("close_btn")
+			closeBtn.add_style_class_name("key")
+			closeBtn.connect("button-press-event", () => {
+				this.close();
+				this.closedFromButton = true;
+			})
+			closeBtn.connect("touch-event", () => {
+				if (Clutter.get_current_event().type() == Clutter.EventType.TOUCH_BEGIN) {
+					this.close();
+					this.closedFromButton = true;
+				}
+			})
+			console.log(rowSize)
+			gridRight.attach(closeBtn, (rowSize - 8), 0, 8, 5)
+			this.keys.push(closeBtn)
+			
+			let moveHandleLeft = new St.Button({
+				x_expand: true,
+				y_expand: true
+			})
+			moveHandleLeft.add_style_class_name("moveHandle")
+			moveHandleLeft.set_style("font-size: " + this.settings.get_int("font-size-px") + "px; border-radius: " + (this.settings.get_boolean("round-key-corners") ? "5px;" : "0;") + "background-size: " + this.settings.get_int("font-size-px") + "px;");
+			if (this.lightOrDark(this.settings.get_double("background-r" + this.settings.scheme), this.settings.get_double("background-g" + this.settings.scheme), this.settings.get_double("background-b" + this.settings.scheme))) {
+				moveHandleLeft.add_style_class_name("inverted");
+			} else {
+				moveHandleLeft.add_style_class_name("regular");
+			}
+
+			moveHandleLeft.connect("button_press_event", mPEv)
+			moveHandleLeft.connect("button_release_event", mREv)
+			moveHandleLeft.connect("motion_event", mMEv)
+			moveHandleLeft.connect("touch_event", mTEv)
+			gridLeft.attach(moveHandleLeft, 8, 0, (halfSize - 8), 5)
+
+			let moveHandleRight = new St.Button({
+				x_expand: true,
+				y_expand: true
+			})
+			moveHandleRight.add_style_class_name("moveHandle")
+			moveHandleRight.set_style("font-size: " + this.settings.get_int("font-size-px") + "px; border-radius: " + (this.settings.get_boolean("round-key-corners") ? "5px;" : "0;") + "background-size: " + this.settings.get_int("font-size-px") + "px;");
+			if (this.lightOrDark(this.settings.get_double("background-r" + this.settings.scheme), this.settings.get_double("background-g" + this.settings.scheme), this.settings.get_double("background-b" + this.settings.scheme))) {
+				moveHandleRight.add_style_class_name("inverted");
+			} else {
+				moveHandleRight.add_style_class_name("regular");
+			}
+
+			moveHandleRight.connect("button_press_event", mPEv)
+			moveHandleRight.connect("button_release_event", mREv)
+			moveHandleRight.connect("motion_event", mMEv)
+			moveHandleRight.connect("touch_event", mTEv)
+			gridRight.attach(moveHandleRight, (rowSize - halfSize), 0, (rowSize - halfSize - 4), 5)
+			gridLeft.attach(new St.Widget({x_expand: true, y_expand: true}), 0, 5, halfSize, 1)
+			gridRight.attach(new St.Widget({x_expand: true, y_expand: true}), (rowSize - halfSize), 5, (rowSize - halfSize + 4), 1)
 		} else {
-			this.box.add_style_class_name("regular");
+			this.box.add_style_class_name("boxLay");
+			this.box.set_style("background-color: rgba(" + this.settings.get_double("background-r" + this.settings.scheme) + "," + this.settings.get_double("background-g" + this.settings.scheme) + "," + this.settings.get_double("background-b" + this.settings.scheme) + ", " + this.settings.get_double("background-a" + this.settings.scheme) + ");")
+			if (this.lightOrDark(this.settings.get_double("background-r" + this.settings.scheme), this.settings.get_double("background-g" + this.settings.scheme), this.settings.get_double("background-b" + this.settings.scheme))) {
+				this.box.add_style_class_name("inverted");
+			} else {
+				this.box.add_style_class_name("regular");
+			}
+
+			const settingsBtn = new St.Button({
+				x_expand: true,
+				y_expand: true
+			})
+			settingsBtn.add_style_class_name("settings_btn")
+			settingsBtn.add_style_class_name("key")
+			settingsBtn.connect("button-press-event", () => {
+				this.settingsOpenFunction();
+			})
+			settingsBtn.connect("touch-event", () => {
+				if (Clutter.get_current_event().type() == Clutter.EventType.TOUCH_BEGIN) {
+					this.settingsOpenFunction()
+				}
+			})
+			grid.attach(settingsBtn, 0, 0, 8, 5)
+			this.keys.push(settingsBtn)
+
+			const closeBtn = new St.Button({
+				x_expand: true,
+				y_expand: true
+			})
+			closeBtn.add_style_class_name("close_btn")
+			closeBtn.add_style_class_name("key")
+			closeBtn.connect("button-press-event", () => {
+				this.close();
+				this.closedFromButton = true;
+			})
+			closeBtn.connect("touch-event", () => {
+				if (Clutter.get_current_event().type() == Clutter.EventType.TOUCH_BEGIN) {
+					this.close();
+					this.closedFromButton = true;
+				}
+			})
+			console.log(rowSize)
+			grid.attach(closeBtn, (rowSize - 8), 0, 8, 5)
+			this.keys.push(closeBtn)
+			
+			let moveHandle= new St.Button({
+				x_expand: true,
+				y_expand: true
+			})
+			moveHandle.add_style_class_name("moveHandle")
+			moveHandle.set_style("font-size: " + this.settings.get_int("font-size-px") + "px; border-radius: " + (this.settings.get_boolean("round-key-corners") ? "5px;" : "0;") + "background-size: " + this.settings.get_int("font-size-px") + "px;");
+			if (this.lightOrDark(this.settings.get_double("background-r" + this.settings.scheme), this.settings.get_double("background-g" + this.settings.scheme), this.settings.get_double("background-b" + this.settings.scheme))) {
+				moveHandle.add_style_class_name("inverted");
+			} else {
+				moveHandle.add_style_class_name("regular");
+			}
+
+			moveHandle.connect("button_press_event", mPEv)
+			moveHandle.connect("button_release_event", mREv)
+			moveHandle.connect("motion_event", mMEv)
+			moveHandle.connect("touch_event", mTEv)
+			grid.attach(moveHandle, 8, 0, (rowSize - 16), 5)
+			grid.attach(new St.Widget({x_expand: true, y_expand: true}), 0, 5, rowSize, 1)
 		}
+		
 		this.keys.forEach(item => {
-			item.set_scale((item.width - this.settings.get_int("border-spacing-px") * 2) / item.width, (item.height - this.settings.get_int("border-spacing-px") * 2) / item.height);
-			item.set_style("font-size: " + this.settings.get_int("font-size-px") + "px; border-radius: " + (this.settings.get_boolean("round-key-corners") ? "5px;" : "0;") + "background-size: " + this.settings.get_int("font-size-px") + "px;");
+			item.set_style("font-size: " + this.settings.get_int("font-size-px") + "px; border-radius: " + (this.settings.get_boolean("round-key-corners") ? "5px;" : "0;") + "background-size: " + this.settings.get_int("font-size-px") + "px; font-weight: " + (this.settings.get_boolean("font-bold") ? "bold" : "normal") + ";");
 			if (this.lightOrDark(this.settings.get_double("background-r" + this.settings.scheme), this.settings.get_double("background-g" + this.settings.scheme), this.settings.get_double("background-b" + this.settings.scheme))) {
 				item.add_style_class_name("inverted");
 			} else {
@@ -1250,11 +1022,11 @@ class Keyboard extends Dialog {
 			let releaseEv = () => {
 				item.remove_style_pseudo_class("pressed")
 				item.ease({
-					scale_x: (item.width - this.settings.get_int("border-spacing-px") * 2) / item.width,
-					scale_y: (item.height - this.settings.get_int("border-spacing-px") * 2) / item.height,
+					scale_x: 1,
+					scale_y: 1,
 					duration: 100,
 					mode: Clutter.AnimationMode.EASE_OUT_QUAD,
-					onComplete: () => { item.set_scale((item.width - this.settings.get_int("border-spacing-px") * 2) / item.width, (item.height - this.settings.get_int("border-spacing-px") * 2) / item.height); }
+					onComplete: () => { item.set_scale(1, 1); }
 				})
 				if (item.button_pressed !== null) {
 					clearTimeout(item.button_pressed)
@@ -1366,7 +1138,7 @@ class Keyboard extends Dialog {
 			this.setAlt(mBtn);
 		} else if (i.code == 42 || i.code == 54) {
 			this.setShift(mBtn);
-		} else if (i.code == 58) {
+		} else if (i.code == 58 || i.code == 69) {
 			this.sendKey([mBtn.char.code]);
 		} else {
 			this.mod.push(i.code);
@@ -1375,123 +1147,75 @@ class Keyboard extends Dialog {
 			this.modBtns.forEach(button => {
 				button.remove_style_class_name("selected");
 			});
+			this.shiftButtons.forEach(i => { i.remove_style_class_name("selected") })
 			this.resetAllMod();
 			this.modBtns = [];
 		}
 	}
-
 	setCapsLock(button, state) {
 		if (state) {
 			button.add_style_class_name("selected");
 			this.capsL = true;
-			this.keys.forEach(key => {
-				if (key.char != undefined) {
-					if (this.shift && this.alt)
-						key.label = key.char.layers.altshiftcapslock
-					else if (this.shift)
-						key.label = key.char.layers.shiftcapslock
-					else if (this.alt)
-						key.label = key.char.layers.altcapslock
-					else
-						key.label = key.char.layers.capslock
-				}
-			});
 		} else {
 			button.remove_style_class_name("selected");
 			this.capsL = false;
-			this.keys.forEach(key => {
-				if (key.char != undefined) {
-					if (this.shift && this.alt)
-						key.label = key.char.layers.altshift
-					else if (this.shift)
-						key.label = key.char.layers.shift
-					else if (this.alt)
-						key.label = key.char.layers.alt
-					else
-						key.label = key.char.layers.default
-				}
-			});
 		}
+		this.updateKeyLabels();
+	}
+
+	setNumLock(button, state) {
+		if (state) {
+			button.add_style_class_name("selected");
+			this.numsL = true;
+		} else {
+			button.remove_style_class_name("selected");
+			this.numsL = false;
+		}
+		this.updateKeyLabels();
 	}
 
 	setAlt(button) {
+		this.alt = !this.alt;
+		this.updateKeyLabels();
 		if (!this.alt) {
-			this.alt = true;
-			this.keys.forEach(key => {
-				if (key.char != undefined) {
-					if (this.shift && this.capsL) {
-						key.label = key.char.layers.altshiftcapslock
-					} else if (this.shift) {
-						key.label = key.char.layers.altshift
-					} else if (this.capsL) {
-						key.label = key.char.layers.altcapslock
-					} else {
-						key.label = key.char.layers.alt
-					}
-				}
-			});
-		} else {
-			this.alt = false;
-			this.keys.forEach(key => {
-				if (key.char != undefined) {
-					if (this.shift && this.capsL) {
-						key.label = key.char.layers.shiftcapslock
-					} else if (this.shift) {
-						key.label = key.char.layers.shift
-					} else if (this.capsL) {
-						key.label = key.char.layers.capslock
-					} else {
-						key.label = key.char.layers.default
-					}
-				}
-			});
 			this.sendKey([button.char.code]);
 		}
 		this.setNormMod(button);
 	}
 
 	setShift(button) {
+		this.shift = !this.shift;
+		this.updateKeyLabels();
 		if (!this.shift) {
-			this.shift = true;
-			this.keys.forEach(key => {
-				if (key.char != undefined) {
-					if (this.alt && this.capsL)
-						key.label = key.char.layers.altshiftcapslock
-					else if (this.alt)
-						key.label = key.char.layers.altshift
-					else if (this.capsL)
-						key.label = key.char.layers.shiftcapslock
-					else
-						key.label = key.char.layers.shift
-				}
-			});
-		} else {
-			this.shift = false;
-			this.keys.forEach(key => {
-				if (key.char != undefined) {
-					if (this.alt && this.capsL)
-						key.label = key.char.layers.altcapslock
-					else if (this.alt)
-						key.label = key.char.layers.alt
-					else if (this.capsL)
-						key.label = key.char.layers.capslock
-					else
-						key.label = key.char.layers.default
-				}
-			});
 			this.sendKey([button.char.code]);
+			this.shiftButtons.forEach(i => { i.remove_style_class_name("selected") })
+		} else {
+			this.shiftButtons.forEach(i => { i.add_style_class_name("selected") })
 		}
 		this.setNormMod(button);
 	}
 
+	updateKeyLabels() {
+		this.keys.forEach(key => {
+			if (key.char != undefined) {
+				let layer = (this.alt ? 'alt' : '') + (this.shift ? 'shift' : '') + (this.numsL ? 'num' : '') + (this.capsL ? 'caps' : '') + (this.numsL || this.capsL ? 'lock' : '')
+				if (layer == '') layer = 'default'
+				key.label = key.char.layers[layer];
+			}
+		});
+	}
+
+
 	setNormMod(button) {
 		if (this.mod.includes(button.char.code)) {
 			this.mod.splice(this.mod.indexOf(button.char.code), this.mod.indexOf(button.char.code) + 1);
-			button.remove_style_class_name("selected");
+			if (!(button.char.code == 42) && !(button.char.code == 54))
+				button.remove_style_class_name("selected");
 			this.modBtns.splice(this.modBtns.indexOf(button), this.modBtns.indexOf(button) + 1);
 			this.sendKey([button.char.code]);
 		} else {
-			button.add_style_class_name("selected");
+			if (!(button.char.code == 42) && !(button.char.code == 54))
+				button.add_style_class_name("selected");
 			this.mod.push(button.char.code);
 			this.modBtns.push(button);
 		}
@@ -1500,10 +1224,6 @@ class Keyboard extends Dialog {
 	resetAllMod() {
 		this.shift = false;
 		this.alt = false;
-		this.keys.forEach(key => {
-			if (key.char != undefined) {
-				key.label = key.char.layers[this.capsL ? "capslock" : "default"]
-			}
-		});
+		this.updateKeyLabels()
 	}
 }
