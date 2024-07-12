@@ -76,6 +76,7 @@ const KeyboardMenuToggle = QuickSettings != null ? GObject.registerClass(
 
 
 let keycodes;
+let layouts;
 
 class GjsOskExtension {
 	_openKeyboard() {
