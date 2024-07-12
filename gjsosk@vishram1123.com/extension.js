@@ -142,7 +142,7 @@ export default class GjsOskExtension extends Extension {
 			this.settings.scheme = "-dark"
 		this.openBit = this.settings.get_child("indicator");
 
-		this.openPrefs = () => { this.openPreferences().catch(e => {console.log(e)}); }
+		this.openPrefs = () => { this.openPreferences() }
 
 		let [okL, contentsL] = GLib.file_get_contents(this.path + '/physicalLayouts.json');
 		if (okL) {
@@ -1152,6 +1152,7 @@ class Keyboard extends Dialog {
 			this.modBtns = [];
 		}
 	}
+
 	setCapsLock(button, state) {
 		if (state) {
 			button.add_style_class_name("selected");

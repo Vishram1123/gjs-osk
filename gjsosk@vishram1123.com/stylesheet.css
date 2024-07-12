@@ -32,19 +32,8 @@
      box-sizing: border-box;
 }
 
-.boxLay.regular:dragging {
-     background-image: url(ui/icons/hicolor/scalable/actions/move.svg);
-     background-size: 100px;
-}
-
-.boxLay.inverted:dragging {
-     background-image: url(ui/icons/hicolor/scalable/actions/move-dark.svg);
-     background-size: 100px;
-}
-
 .close_btn,
-.move_btn,
-.delete_btn,
+.settings_btn,
 .backspace_btn,
 .tab_btn,
 .capslock_btn,
@@ -68,14 +57,6 @@
 
 .close_btn.inverted, .close_btn.selected.regular {
      background-image: url(ui/icons/hicolor/scalable/actions/close-dark.svg);
-}
-
-.move_btn.regular, .move_btn.selected.inverted {
-     background-image: url(ui/icons/hicolor/scalable/actions/move.svg);
-}
-
-.move_btn.inverted, .move_btn.selected.regular {
-     background-image: url(ui/icons/hicolor/scalable/actions/move-dark.svg);
 }
 
 .settings_btn.regular {
