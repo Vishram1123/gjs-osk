@@ -1,6 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <schemalist>
   <schema id="org.gnome.shell.extensions.gjsosk" path="/org/gnome/shell/extensions/gjsosk/">
+    <key name="layout" type="i">
+      <default>0</default>
+    </key>
     <key name="portrait-width-percent" type="i">
       <default>100</default>
     </key>
@@ -25,7 +28,10 @@
     <key name="background-b" type="d">
       <default>250</default>
     </key>
-        <key name="background-r-dark" type="d">
+    <key name="background-a" type="d">
+      <default>1</default>
+    </key>
+    <key name="background-r-dark" type="d">
       <default>50</default>
     </key>
     <key name="background-g-dark" type="d">
@@ -34,8 +40,14 @@
     <key name="background-b-dark" type="d">
       <default>50</default>
     </key>
+    <key name="background-a-dark" type="d">
+      <default>1</default>
+    </key>
     <key name="font-size-px" type="i">
       <default>14</default>
+    </key>
+    <key name="font-bold" type="b">
+      <default>false</default>
     </key>
     <key name="border-spacing-px" type="i">
       <default>2</default>
@@ -58,8 +70,8 @@
     <key name="play-sound" type="b">
 		<default>true</default>
     </key>
-    <key name="split-kbd" type="b">
-		<default>false</default>
+    <key name="show-icons" type="b">
+		  <default>true</default>
     </key>
     <child name="indicator" schema="org.gnome.shell.extensions.gjsosk.indicator"/>
 	

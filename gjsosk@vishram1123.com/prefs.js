@@ -17,6 +17,32 @@ function init() {
 }
 
 function fillPreferencesWindow(window) {
+	const applySettings = () => {
+		settings.set_int("layout", layoutDrop.selected);
+		settings.set_boolean("enable-drag", dragEnableDT.active);
+		settings.set_int("enable-tap-gesture", dragOpt.selected);
+		settings.set_boolean("indicator-enabled", indEnabled.active);
+		settings.set_int("portrait-width-percent", numChanger_pW.value);
+		settings.set_int("portrait-height-percent", numChanger_pH.value);
+		settings.set_int("landscape-width-percent", numChanger_lW.value);
+		settings.set_int("landscape-height-percent", numChanger_lH.value);
+		settings.set_double("background-r", Math.round(colorButton.get_rgba().red * 255));
+		settings.set_double("background-g", Math.round(colorButton.get_rgba().green * 255));
+		settings.set_double("background-b", Math.round(colorButton.get_rgba().blue * 255));
+		settings.set_double("background-a", colorButton.get_rgba().alpha);
+		settings.set_double("background-r-dark", Math.round(colorButton_d.get_rgba().red * 255));
+		settings.set_double("background-g-dark", Math.round(colorButton_d.get_rgba().green * 255));
+		settings.set_double("background-b-dark", Math.round(colorButton_d.get_rgba().blue * 255));
+		settings.set_double("background-a-dark", colorButton_d.get_rgba().alpha);
+		settings.set_int("font-size-px", numChanger_font.value);
+		settings.set_boolean("font-bold", fontBoldEnabled.active)
+		settings.set_int("border-spacing-px", numChanger_bord.value);
+		settings.set_int("snap-spacing-px", numChanger_snap.value)
+		settings.set_boolean("round-key-corners", roundKeyCDT.active);
+		settings.set_boolean("play-sound", soundPlayDT.active);
+		settings.set_boolean("show-icons", showIconDT.active)
+		settings.set_int("default-snap", snapDrop.selected);
+	}
 
 	let iconTheme = Gtk.IconTheme.get_for_display(Gdk.Display.get_default());
 	iconTheme.add_search_path(UIFolderPath + `/icons`);
@@ -27,84 +53,61 @@ function fillPreferencesWindow(window) {
 		icon_name: "general-symbolic"
 	});
 
-	const group0 = new Adw.PreferencesGroup();
-	page1.add(group0)
+	const applyGroup = new Adw.PreferencesGroup();
+	page1.add(applyGroup)
 
 	const apply = Gtk.Button.new_with_label(_("Apply Changes"));
-	apply.connect("clicked", () => {
-		settings.set_boolean("enable-drag", dragToggle.active);
-		settings.set_int("enable-tap-gesture", dragOpt.selected);
-		settings.set_boolean("indicator-enabled", indEnabled.active);
-		settings.set_boolean("split-kbd", splitEnabled.active);
-		settings.set_int("portrait-width-percent", numChanger_pW.value);
-		settings.set_int("portrait-height-percent", numChanger_pH.value);
-		settings.set_int("landscape-width-percent", numChanger_lW.value);
-		settings.set_int("landscape-height-percent", numChanger_lH.value);
-		let [r, g, b] = colorButton.get_rgba().to_string().replace("rgb(", "").replace(")", "").split(",")
-		settings.set_double("background-r", r);
-		settings.set_double("background-g", g);
-		settings.set_double("background-b", b);
-		let [rd, gd, bd] = colorButton_d.get_rgba().to_string().replace("rgb(", "").replace(")", "").split(",")
-		settings.set_double("background-r-dark", rd);
-		settings.set_double("background-g-dark", gd);
-		settings.set_double("background-b-dark", bd);
-		settings.set_int("font-size-px", numChanger_font.value);
-		settings.set_int("border-spacing-px", numChanger_bord.value);
-		settings.set_int("snap-spacing-px", numChanger_snap.value)
-		settings.set_boolean("round-key-corners", dragToggle2.active);
-		settings.set_boolean("play-sound", dragToggle3.active);
-		settings.set_int("default-snap", dropDown.selected);
-	});
-	group0.add(apply)
+	apply.connect("clicked", applySettings);
+	applyGroup.add(apply)
 
-	const group1 = new Adw.PreferencesGroup({
+	const behaviorGroup = new Adw.PreferencesGroup({
 		title: _("Behavior")
 	});
-	page1.add(group1);
+	page1.add(behaviorGroup);
 
-	const row1 = new Adw.ActionRow({
+	const layoutRow = new Adw.ActionRow({
+		title: _('Layout')
+	});
+	behaviorGroup.add(layoutRow);
+
+	let layoutList = ["Full Sized International", "Full Sized US", "Tenkeyless International", "Tenkeyless US", "Compact International", "Compact US", "Split International", "Split US"];
+	let layoutDrop = Gtk.DropDown.new_from_strings(layoutList);
+	layoutDrop.valign = Gtk.Align.CENTER;
+	layoutDrop.selected = settings.get_int("layout");
+
+	layoutRow.add_suffix(layoutDrop);
+	layoutRow.activatable_widget = layoutDrop;
+
+	const enableDragRow = new Adw.ActionRow({
 		title: _('Enable Dragging')
 	});
-	group1.add(row1);
+	behaviorGroup.add(enableDragRow);
 
-	const dragToggle = new Gtk.Switch({
+	const dragEnableDT = new Gtk.Switch({
 		active: settings.get_boolean('enable-drag'),
 		valign: Gtk.Align.CENTER,
 	});
 
-	row1.add_suffix(dragToggle);
-	row1.activatable_widget = dragToggle;
+	enableDragRow.add_suffix(dragEnableDT);
+	enableDragRow.activatable_widget = dragEnableDT;
 
-	const row1t3 = new Adw.ActionRow({
+	const indEnabledRow = new Adw.ActionRow({
 		title: _('Enable Panel Indicator')
 	});
-	group1.add(row1t3);
+	behaviorGroup.add(indEnabledRow);
 
 	const indEnabled = new Gtk.Switch({
 		active: settings.get_boolean("indicator-enabled"),
 		valign: Gtk.Align.CENTER,
 	});
 
-	row1t3.add_suffix(indEnabled);
-	row1t3.activatable_widget = indEnabled;
-
-	const row1t4 = new Adw.ActionRow({
-		title:_("Split keyboard")
-	})
-	group1.add(row1t4)
-
-	const splitEnabled = new Gtk.Switch({
-		active: settings.get_boolean("split-kbd"),
-		valign: Gtk.Align.CENTER
-	})
-
-	row1t4.add_suffix(splitEnabled)
-	row1t4.activatable_widget = splitEnabled
+	indEnabledRow.add_suffix(indEnabled);
+	indEnabledRow.activatable_widget = indEnabled;
 
 	const row1t5 = new Adw.ActionRow({
 		title: _('Open upon clicking in a text field')
 	});
-	group1.add(row1t5);
+	behaviorGroup.add(row1t5);
 
 
 	let dragOptList = [_("Never"), _("Only on Touch"), _("Always")];
@@ -115,10 +118,10 @@ function fillPreferencesWindow(window) {
 	row1t5.add_suffix(dragOpt);
 	row1t5.activatable_widget = dragOpt;
 
-	const row2 = new Adw.ExpanderRow({
+	const portraitSizing = new Adw.ExpanderRow({
 		title: _('Portrait Sizing')
 	});
-	group1.add(row2);
+	behaviorGroup.add(portraitSizing);
 
 	let pW = new Adw.ActionRow({
 		title: _('Width (%)')
@@ -139,13 +142,13 @@ function fillPreferencesWindow(window) {
 	pH.add_suffix(numChanger_pH);
 	pH.activatable_widget = numChanger_pH;
 
-	row2.add_row(pW);
-	row2.add_row(pH);
+	portraitSizing.add_row(pW);
+	portraitSizing.add_row(pH);
 
-	const row3 = new Adw.ExpanderRow({
+	const landscapeSizing = new Adw.ExpanderRow({
 		title: _('Landscape Sizing')
 	});
-	group1.add(row3);
+	behaviorGroup.add(landscapeSizing);
 
 	let lW = new Adw.ActionRow({
 		title: _('Width (%)')
@@ -166,60 +169,60 @@ function fillPreferencesWindow(window) {
 	lH.add_suffix(numChanger_lH);
 	lH.activatable_widget = numChanger_lH;
 
-	row3.add_row(lW);
-	row3.add_row(lH);
+	landscapeSizing.add_row(lW);
+	landscapeSizing.add_row(lH);
 
-	const row4 = new Adw.ActionRow({
+	const defaultPosition = new Adw.ActionRow({
 		title: _('Default Position')
 	});
-	group1.add(row4);
+	behaviorGroup.add(defaultPosition);
 
 	let posList = [
 		_("Top Left"), _("Top Center"), _("Top Right"),
 		_("Center Left"), _("Center"), _("Center Right"),
 		_("Bottom Left"), _("Bottom Center"), _("Bottom Right")
 	];
-	let dropDown = Gtk.DropDown.new_from_strings(posList);
-	dropDown.valign = Gtk.Align.CENTER;
-	dropDown.selected = settings.get_int("default-snap");
+	let snapDrop = Gtk.DropDown.new_from_strings(posList);
+	snapDrop.valign = Gtk.Align.CENTER;
+	snapDrop.selected = settings.get_int("default-snap");
 
-	row4.add_suffix(dropDown);
-	row4.activatable_widget = dropDown;
+	defaultPosition.add_suffix(snapDrop);
+	defaultPosition.activatable_widget = snapDrop;
 
-	const row9 = new Adw.ActionRow({
+	const soundPlayRow = new Adw.ActionRow({
 		title: _('Play sound')
 	});
-	group1.add(row9);
+	behaviorGroup.add(soundPlayRow);
 
-	const dragToggle3 = new Gtk.Switch({
+	const soundPlayDT = new Gtk.Switch({
 		active: settings.get_boolean('play-sound'),
 		valign: Gtk.Align.CENTER,
 	});
 
-	row9.add_suffix(dragToggle3);
-	row9.activatable_widget = dragToggle3;
+	soundPlayRow.add_suffix(soundPlayDT);
+	soundPlayRow.activatable_widget = soundPlayDT;
 
-	const group2 = new Adw.PreferencesGroup({
+	const appearanceGroup = new Adw.PreferencesGroup({
 		title: _("Appearance")
 	});
-	page1.add(group2);
+	page1.add(appearanceGroup);
 
-	const row5 = new Adw.ExpanderRow({
-		title:_("Color")
+	const colorRow = new Adw.ExpanderRow({
+		title: _("Color")
 	})
-	group2.add(row5);
+	appearanceGroup.add(colorRow);
 
 
 	const lightCol = new Adw.ActionRow({
 		title: _('Light Mode')
 	});
-	row5.add_row(lightCol)
+	colorRow.add_row(lightCol)
 
 	let rgba = new Gdk.RGBA();
-	rgba.parse("rgba(" + settings.get_double("background-r") + ", " + settings.get_double("background-g") + ", " + settings.get_double("background-b") + ", 1)");
+	rgba.parse("rgba(" + settings.get_double("background-r") + ", " + settings.get_double("background-g") + ", " + settings.get_double("background-b") + ", " + settings.get_double("background-a") + ")");
 	let colorButton = new Gtk.ColorButton({
 		rgba: rgba,
-		use_alpha: false,
+		use_alpha: true,
 		valign: Gtk.Align.CENTER
 	});
 	lightCol.add_suffix(colorButton);
@@ -228,63 +231,90 @@ function fillPreferencesWindow(window) {
 	const darkCol = new Adw.ActionRow({
 		title: _('Dark Mode')
 	});
-	row5.add_row(darkCol)
+	colorRow.add_row(darkCol)
 
 	let rgba_d = new Gdk.RGBA();
-	rgba_d.parse("rgba(" + settings.get_double("background-r-dark") + ", " + settings.get_double("background-g-dark") + ", " + settings.get_double("background-b-dark") + ", 1)");
+	rgba_d.parse("rgba(" + settings.get_double("background-r-dark") + ", " + settings.get_double("background-g-dark") + ", " + settings.get_double("background-b-dark") + ", " + settings.get_double("background-a-dark") + ")");
 	let colorButton_d = new Gtk.ColorButton({
 		rgba: rgba_d,
-		use_alpha: false,
+		use_alpha: true,
 		valign: Gtk.Align.CENTER
 	});
 	darkCol.add_suffix(colorButton_d);
 	darkCol.activatable_widget = colorButton_d;
 
-	let row6 = new Adw.ActionRow({
+	let fontSize = new Adw.ActionRow({
 		title: _('Font Size (px)')
 	});
-	group2.add(row6);
+	appearanceGroup.add(fontSize);
 
 	let numChanger_font = Gtk.SpinButton.new_with_range(0, 100, 1);
 	numChanger_font.value = settings.get_int('font-size-px');
 	numChanger_font.valign = Gtk.Align.CENTER;
-	row6.add_suffix(numChanger_font);
-	row6.activatable_widget = numChanger_font;
+	
+	fontSize.add_suffix(numChanger_font);
+	fontSize.activatable_widget = numChanger_font;
 
-	let row7 = new Adw.ActionRow({
+	const fontBoldRow = new Adw.ActionRow({
+		title: _("Bold Font")
+	})
+	appearanceGroup.add(fontBoldRow)
+
+	const fontBoldEnabled = new Gtk.Switch({
+		active: settings.get_boolean("font-bold"),
+		valign: Gtk.Align.CENTER
+	})
+
+	fontBoldRow.add_suffix(fontBoldEnabled)
+	fontBoldRow.activatable_widget = fontBoldEnabled
+
+	let borderSpacing = new Adw.ActionRow({
 		title: _('Border Spacing (px)')
 	});
-	group2.add(row7);
+	appearanceGroup.add(borderSpacing);
 
 	let numChanger_bord = Gtk.SpinButton.new_with_range(0, 10, 1);
 	numChanger_bord.value = settings.get_int('border-spacing-px');
 	numChanger_bord.valign = Gtk.Align.CENTER;
-	row7.add_suffix(numChanger_bord);
-	row7.activatable_widget = numChanger_bord;
+	borderSpacing.add_suffix(numChanger_bord);
+	borderSpacing.activatable_widget = numChanger_bord;
 
-	let row1t2 = new Adw.ActionRow({
+	let snapSpacing = new Adw.ActionRow({
 		title: _('Drag snap spacing (px)')
 	});
-	group2.add(row1t2);
+	appearanceGroup.add(snapSpacing);
 
 	let numChanger_snap = Gtk.SpinButton.new_with_range(0, 50, 5);
 	numChanger_snap.value = settings.get_int('snap-spacing-px');
 	numChanger_snap.valign = Gtk.Align.CENTER;
-	row1t2.add_suffix(numChanger_snap);
-	row1t2.activatable_widget = numChanger_snap;
+	snapSpacing.add_suffix(numChanger_snap);
+	snapSpacing.activatable_widget = numChanger_snap;
 
-	const row8 = new Adw.ActionRow({
+	const roundCorners = new Adw.ActionRow({
 		title: _('Round Corners')
 	});
-	group2.add(row8);
+	appearanceGroup.add(roundCorners);
 
-	const dragToggle2 = new Gtk.Switch({
+	const roundKeyCDT = new Gtk.Switch({
 		active: settings.get_boolean('round-key-corners'),
 		valign: Gtk.Align.CENTER,
 	});
 
-	row8.add_suffix(dragToggle2);
-	row8.activatable_widget = dragToggle2;
+	roundCorners.add_suffix(roundKeyCDT);
+	roundCorners.activatable_widget = roundKeyCDT;
+
+	const showIcon = new Adw.ActionRow({
+		title: _('Show Special Key Icons')
+	});
+	appearanceGroup.add(showIcon);
+
+	const showIconDT = new Gtk.Switch({
+		active: settings.get_boolean('show-icons'),
+		valign: Gtk.Align.CENTER,
+	});
+
+	showIcon.add_suffix(showIconDT);
+	showIcon.activatable_widget = showIconDT;
 
 	window.add(page1);
 
@@ -358,29 +388,5 @@ function fillPreferencesWindow(window) {
 	page2.add(links_pref_group);
 
 	window.add(page2);
-	window.connect("close-request", () => {
-		settings.set_boolean("enable-drag", dragToggle.active);
-		settings.set_int("enable-tap-gesture", dragOpt.selected);
-		settings.set_boolean("indicator-enabled", indEnabled.active);
-		settings.set_boolean("split-kbd", splitEnabled.active);
-		settings.set_int("portrait-width-percent", numChanger_pW.value);
-		settings.set_int("portrait-height-percent", numChanger_pH.value);
-		settings.set_int("landscape-width-percent", numChanger_lW.value);
-		settings.set_int("landscape-height-percent", numChanger_lH.value);
-		let [r, g, b] = colorButton.get_rgba().to_string().replace("rgb(", "").replace(")", "").split(",")
-		settings.set_double("background-r", r);
-		settings.set_double("background-g", g);
-		settings.set_double("background-b", b);
-		let [rd, gd, bd] = colorButton_d.get_rgba().to_string().replace("rgb(", "").replace(")", "").split(",")
-		settings.set_double("background-r-dark", rd);
-		settings.set_double("background-g-dark", gd);
-		settings.set_double("background-b-dark", bd);
-		settings.set_int("font-size-px", numChanger_font.value);
-		settings.set_int("border-spacing-px", numChanger_bord.value);
-		settings.set_int("snap-spacing-px", numChanger_snap.value)
-		settings.set_boolean("round-key-corners", dragToggle2.active);
-		settings.set_boolean("play-sound", dragToggle3.active);
-		settings.set_int("default-snap", dropDown.selected);
-	});
+	window.connect("close-request", applySettings);
 }
-

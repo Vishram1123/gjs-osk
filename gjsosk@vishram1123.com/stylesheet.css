@@ -17,9 +17,10 @@
      background-color: rgba(0, 0, 0, 0.05);
      color: black;
 }
-
-.keysHolder>* {
+.key, .moveHandle {
      border: 0;
+     padding: 0;
+     margin: 0;
      background-clip: padding-box;
      box-sizing: border-box;
 }
@@ -31,19 +32,8 @@
      box-sizing: border-box;
 }
 
-.boxLay.regular:dragging {
-     background-image: url(ui/icons/hicolor/scalable/actions/move.svg);
-     background-size: 100px;
-}
-
-.boxLay.inverted:dragging {
-     background-image: url(ui/icons/hicolor/scalable/actions/move-dark.svg);
-     background-size: 100px;
-}
-
 .close_btn,
-.move_btn,
-.delete_btn,
+.settings_btn,
 .backspace_btn,
 .tab_btn,
 .capslock_btn,
@@ -69,20 +59,12 @@
      background-image: url(ui/icons/hicolor/scalable/actions/close-dark.svg);
 }
 
-.move_btn.regular, .move_btn.selected.inverted {
-     background-image: url(ui/icons/hicolor/scalable/actions/move.svg);
+.settings_btn.regular {
+     background-image: url(ui/icons/hicolor/scalable/actions/settings.svg);
 }
 
-.move_btn.inverted, .move_btn.selected.regular {
-     background-image: url(ui/icons/hicolor/scalable/actions/move-dark.svg);
-}
-
-.delete_btn.regular, .delete_btn.selected.inverted {
-     background-image: url(ui/icons/hicolor/scalable/actions/delete.svg);
-}
-
-.delete_btn.inverted, .delete_btn.selected.regular {
-     background-image: url(ui/icons/hicolor/scalable/actions/delete-dark.svg);
+.settings_btn.inverted {
+     background-image: url(ui/icons/hicolor/scalable/actions/settings-dark.svg);
 }
 
 .backspace_btn.regular, .backspace_btn.selected.inverted {
