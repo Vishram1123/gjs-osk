@@ -658,14 +658,14 @@ class Keyboard extends Dialog {
 		let currentLayout = layouts[layoutName];
 		let width = 0;
 		for (const c of currentLayout[0]) {
-			width += (Object.hasOwnProperty(c, "width") ? c.width : 1)
+			width += (("width" in c) ? c.width : 1)
 		}
 		let rowSize;
 		let halfSize;
 		let r = 0;
 		let c;
 		const doAddKey = (keydef) => {
-			const i = Object.hasOwnProperty(keydef, "key") ? keycodes[keydef.key] : Object.hasOwnProperty(keydef, "split") ? "split" : "empty space";
+			const i = ("key" in keydef) ? keycodes[keydef.key] : ("split" in keydef) ? "split" : "empty space";
 			if (i != null && typeof i !== 'string') {
 				if (i.layers.default == null) {
 					for (var key of Object.keys(i.layers)) {
@@ -710,12 +710,12 @@ class Keyboard extends Dialog {
 				} else if (i.code == 42 || i.code == 54) {
 					this.shiftButtons.push(keyBtn)
 				}
-				currentGrid.attach(keyBtn, c, 6 + r, (Object.hasOwnProperty(keydef, "width") ? keydef.width : 1) * 8, r == 0 ? 6 : (Object.hasOwnProperty(keydef, "height") ? keydef.height : 1) * 8)
+				currentGrid.attach(keyBtn, c, 6 + r, (("width" in keydef) ? keydef.width : 1) * 8, r == 0 ? 6 : (("height" in keydef) ? keydef.height : 1) * 8)
 				keyBtn.visible = true
-				c += (Object.hasOwnProperty(keydef, "width") ? keydef.width : 1) * 8
+				c += (("width" in keydef) ? keydef.width : 1) * 8
 				this.keys.push(keyBtn)
 			} else if (i == "empty space") {
-				c += (Object.hasOwnProperty(keydef, "width") ? keydef.width : 1) * 8
+				c += (("width" in keydef) ? keydef.width : 1) * 8
 			} else if (i == "split") {
 				currentGrid = gridRight
 				const size = c
