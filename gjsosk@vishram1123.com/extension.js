@@ -411,6 +411,7 @@ class Keyboard extends Dialog {
 			this.keyTimeout = null;
 		}
 		this.keymap.disconnect(this.capslockConnect);
+		this.keymap.disconnect(this.numLockConnect);
 		super.destroy();
 	}
 
@@ -779,6 +780,7 @@ class Keyboard extends Dialog {
 		}
 
 		if (left != null) {
+			this.set_reactive(false)
 			left.add_style_class_name("boxLay");
 			left.set_style("background-color: rgba(" + this.settings.get_double("background-r" + this.settings.scheme) + "," + this.settings.get_double("background-g" + this.settings.scheme) + "," + this.settings.get_double("background-b" + this.settings.scheme) + ", " + this.settings.get_double("background-a" + this.settings.scheme) + ");")
 			right.add_style_class_name("boxLay");
