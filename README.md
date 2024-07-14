@@ -34,7 +34,6 @@ A (marginally) better on screen keyboard for GNOME 45+ (go to the [pre-45 branch
 - To open the keyboard from the command line (or with a shortcut), run the command `dconf write /org/gnome/shell/extensions/gjsosk/indicator/opened true` which will open the keyboard 
 ## Known Problems/Issues and Intended Features (Would appreciate solutions about how to fix):
 - 100% width or height doesn't take up the full monitor width or height (minus 25 px on either side). Instead, it is 1 or 2 px smaller, depending on the monitor size
-- Even though the keyboard displays over system modals, it isn't interactable
 ## Help
 - If you find any bugs, or if you have any suggestions, please open an issue or submit a pull request. Thanks!
 ### Keyboard Layouts
