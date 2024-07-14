@@ -378,7 +378,7 @@ class Keyboard extends Dialog {
 		Main.keyboard.maybeHandleEvent = (e) => {
 			let lastInputMethod = [e.type() == 11, e.type() == 11, e.type() == 7 || e.type() == 11][this.settings.get_int("enable-tap-gesture")]
 			let ac = global.stage.get_event_actor(e)
-			if (this.contains(ac)) {
+			if (this.contains(ac) || this._dragging) {
 				ac.event(e, true);
 				ac.event(e, false);
 				return true;
@@ -601,6 +601,45 @@ class Keyboard extends Dialog {
 		this.releaseAllKeys();
 	}
 
+	vfunc_button_press_event() {
+		this.delta = [Clutter.get_current_event().get_coords()[0] - this.translation_x, Clutter.get_current_event().get_coords()[1] - this.translation_y];
+		return this.startDragging(Clutter.get_current_event(), this.delta)
+	}
+
+	vfunc_button_release_event() {
+		if (this._dragging && !this._grabbedSequence) {
+			return this.endDragging();
+		}
+		return Clutter.EVENT_PROPAGATE;
+	}
+	
+	vfunc_motion_event() {
+		let event = Clutter.get_current_event();
+		if (this._dragging && !this._grabbedSequence) {
+			this.motionEvent(event);
+		}
+		return Clutter.EVENT_PROPAGATE;
+	}
+
+	vfunc_touch_event() {
+		let event = Clutter.get_current_event();
+		let sequence = event.get_event_sequence();
+
+		if (!this._dragging && event.type() == Clutter.EventType.TOUCH_BEGIN) {
+			this.delta = [event.get_coords()[0] - this.translation_x, event.get_coords()[1] - this.translation_y];
+			this.startDragging(event, this.delta);
+			return Clutter.EVENT_STOP;
+		} else if (this._grabbedSequence && sequence.get_slot() === this._grabbedSequence.get_slot()) {
+			if (event.type() == Clutter.EventType.TOUCH_UPDATE) {
+				return this.motionEvent(event);
+			} else if (event.type() == Clutter.EventType.TOUCH_END) {
+				return this.endDragging();
+			}
+		}
+
+		return Clutter.EVENT_PROPAGATE;
+	}
+
 	buildUI() {
 		this.box.set_opacity(0);
 		this.keys = [];
@@ -739,47 +778,6 @@ class Keyboard extends Dialog {
 			r += r == 0 ? 6 : 8
 		}
 
-		let mPEv = () => {
-			this.draggable = this.settings.get_boolean("enable-drag");
-			this.delta = [Clutter.get_current_event().get_coords()[0] - this.translation_x, Clutter.get_current_event().get_coords()[1] - this.translation_y];
-			return this.startDragging(Clutter.get_current_event(), this.delta)
-		}
-
-		let mREv = () => {
-			if (this._dragging && !this._grabbedSequence) {
-				return this.endDragging();
-			}
-			return Clutter.EVENT_PROPAGATE;
-		}
-		
-		let mMEv = () => {
-			let event = Clutter.get_current_event();
-			if (this._dragging && !this._grabbedSequence) {
-				this.motionEvent(event);
-			}
-			return Clutter.EVENT_PROPAGATE;
-		}
-
-		let mTEv = () => {
-			let event = Clutter.get_current_event();
-			let sequence = event.get_event_sequence();
-
-			if (!this._dragging && event.type() == Clutter.EventType.TOUCH_BEGIN) {
-				this.draggable = this.settings.get_boolean("enable-drag");
-				this.delta = [event.get_coords()[0] - this.translation_x, event.get_coords()[1] - this.translation_y];
-				this.startDragging(event, this.delta);
-				return Clutter.EVENT_STOP;
-			} else if (this._grabbedSequence && sequence.get_slot() === this._grabbedSequence.get_slot()) {
-				if (event.type() == Clutter.EventType.TOUCH_UPDATE) {
-					return this.motionEvent(event);
-				} else if (event.type() == Clutter.EventType.TOUCH_END) {
-					return this.endDragging();
-				}
-			}
-
-			return Clutter.EVENT_PROPAGATE;
-		}
-
 		if (left != null) {
 			left.add_style_class_name("boxLay");
 			left.set_style("background-color: rgba(" + this.settings.get_double("background-r" + this.settings.scheme) + "," + this.settings.get_double("background-g" + this.settings.scheme) + "," + this.settings.get_double("background-b" + this.settings.scheme) + ", " + this.settings.get_double("background-a" + this.settings.scheme) + ");")
@@ -840,10 +838,12 @@ class Keyboard extends Dialog {
 				moveHandleLeft.add_style_class_name("regular");
 			}
 
-			moveHandleLeft.connect("button_press_event", mPEv)
-			moveHandleLeft.connect("button_release_event", mREv)
-			moveHandleLeft.connect("motion_event", mMEv)
-			moveHandleLeft.connect("touch_event", mTEv)
+			moveHandleLeft.connect("event", (actor, event) => {
+				if (event.type() == Clutter.EventType.BUTTON_PRESS || event.type() == Clutter.EventType.TOUCH_BEGIN) {
+					this.draggable = this.settings.get_boolean("enable-drag");
+				}
+				this.event(event, false)
+			})
 			gridLeft.attach(moveHandleLeft, 8, 0, (halfSize - 8), 5)
 
 			let moveHandleRight = new St.Button({
@@ -858,10 +858,12 @@ class Keyboard extends Dialog {
 				moveHandleRight.add_style_class_name("regular");
 			}
 
-			moveHandleRight.connect("button_press_event", mPEv)
-			moveHandleRight.connect("button_release_event", mREv)
-			moveHandleRight.connect("motion_event", mMEv)
-			moveHandleRight.connect("touch_event", mTEv)
+			moveHandleRight.connect("event", (actor, event) => {
+				if (event.type() == Clutter.EventType.BUTTON_PRESS || event.type() == Clutter.EventType.TOUCH_BEGIN) {
+					this.draggable = this.settings.get_boolean("enable-drag");
+				}
+				this.event(event, false)
+			})
 			gridRight.attach(moveHandleRight, (rowSize - halfSize), 0, (rowSize - halfSize - 4), 5)
 			gridLeft.attach(new St.Widget({x_expand: true, y_expand: true}), 0, 5, halfSize, 1)
 			gridRight.attach(new St.Widget({x_expand: true, y_expand: true}), (rowSize - halfSize), 5, (rowSize - halfSize + 4), 1)
@@ -922,10 +924,12 @@ class Keyboard extends Dialog {
 				moveHandle.add_style_class_name("regular");
 			}
 
-			moveHandle.connect("button_press_event", mPEv)
-			moveHandle.connect("button_release_event", mREv)
-			moveHandle.connect("motion_event", mMEv)
-			moveHandle.connect("touch_event", mTEv)
+			moveHandle.connect("event", (actor, event) => {
+				if (event.type() == Clutter.EventType.BUTTON_PRESS || event.type() == Clutter.EventType.TOUCH_BEGIN) {
+					this.draggable = this.settings.get_boolean("enable-drag");
+				}
+				this.event(event, false)
+			})
 			grid.attach(moveHandle, 8, 0, (rowSize - 16), 5)
 			grid.attach(new St.Widget({x_expand: true, y_expand: true}), 0, 5, rowSize, 1)
 		}

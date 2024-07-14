@@ -8,7 +8,7 @@
       <default>100</default>
     </key>
     <key name="portrait-height-percent" type="i">
-      <default>20</default>
+      <default>30</default>
     </key>
     <key name="landscape-width-percent" type="i">
       <default>70</default>
