@@ -9,33 +9,6 @@ import { ExtensionPreferences, gettext as _ } from 'resource:///org/gnome/Shell/
 
 export default class GjsOskPreferences extends ExtensionPreferences {
 	fillPreferencesWindow(window) {
-		const applySettings = () => {
-			settings.set_int("layout", layoutDrop.selected);
-			settings.set_boolean("enable-drag", dragEnableDT.active);
-			settings.set_int("enable-tap-gesture", dragOpt.selected);
-			settings.set_boolean("indicator-enabled", indEnabled.active);
-			settings.set_int("portrait-width-percent", numChanger_pW.value);
-			settings.set_int("portrait-height-percent", numChanger_pH.value);
-			settings.set_int("landscape-width-percent", numChanger_lW.value);
-			settings.set_int("landscape-height-percent", numChanger_lH.value);
-			settings.set_double("background-r", Math.round(colorButton.get_rgba().red * 255));
-			settings.set_double("background-g", Math.round(colorButton.get_rgba().green * 255));
-			settings.set_double("background-b", Math.round(colorButton.get_rgba().blue * 255));
-			settings.set_double("background-a", colorButton.get_rgba().alpha);
-			settings.set_double("background-r-dark", Math.round(colorButton_d.get_rgba().red * 255));
-			settings.set_double("background-g-dark", Math.round(colorButton_d.get_rgba().green * 255));
-			settings.set_double("background-b-dark", Math.round(colorButton_d.get_rgba().blue * 255));
-			settings.set_double("background-a-dark", colorButton_d.get_rgba().alpha);
-			settings.set_int("font-size-px", numChanger_font.value);
-			settings.set_boolean("font-bold", fontBoldEnabled.active)
-			settings.set_int("border-spacing-px", numChanger_bord.value);
-			settings.set_int("snap-spacing-px", numChanger_snap.value)
-			settings.set_boolean("round-key-corners", roundKeyCDT.active);
-			settings.set_boolean("play-sound", soundPlayDT.active);
-			settings.set_boolean("show-icons", showIconDT.active)
-			settings.set_int("default-snap", snapDrop.selected);
-		}
-
 		const UIFolderPath = this.dir.get_child('ui').get_path();
 
 		let iconTheme = Gtk.IconTheme.get_for_display(Gdk.Display.get_default());
@@ -46,13 +19,6 @@ export default class GjsOskPreferences extends ExtensionPreferences {
 			title: _("General"),
 			icon_name: "general-symbolic"
 		});
-
-		const applyGroup = new Adw.PreferencesGroup();
-		page1.add(applyGroup)
-
-		const apply = Gtk.Button.new_with_label(_("Apply Changes"));
-		apply.connect("clicked", applySettings);
-		applyGroup.add(apply)
 
 		const behaviorGroup = new Adw.PreferencesGroup({
 			title: _("Behavior")
@@ -382,6 +348,61 @@ export default class GjsOskPreferences extends ExtensionPreferences {
 		page2.add(links_pref_group);
 
 		window.add(page2);
-		window.connect("close-request", applySettings);
+		
+		settings.bind("layout", layoutDrop, "selected", 0);
+		settings.bind("enable-drag", dragEnableDT, "active", 0);
+		settings.bind("enable-tap-gesture", dragOpt, "selected", 0);
+		settings.bind("indicator-enabled", indEnabled, "active", 0);
+		settings.bind("portrait-width-percent", numChanger_pW, "value", 0);
+		settings.bind("portrait-height-percent", numChanger_pH, "value", 0);
+		settings.bind("landscape-width-percent", numChanger_lW, "value", 0);
+		settings.bind("landscape-height-percent", numChanger_lH, "value", 0);
+		colorButton.connect("color-set", () => {
+			settings.set_double("background-r", Math.round(colorButton.get_rgba().red * 255));
+			settings.set_double("background-g", Math.round(colorButton.get_rgba().green * 255));
+			settings.set_double("background-b", Math.round(colorButton.get_rgba().blue * 255));
+			settings.set_double("background-a", colorButton.get_rgba().alpha);
+		})
+		colorButton_d.connect("color-set", () => {
+			settings.set_double("background-r-dark", Math.round(colorButton_d.get_rgba().red * 255));
+			settings.set_double("background-g-dark", Math.round(colorButton_d.get_rgba().green * 255));
+			settings.set_double("background-b-dark", Math.round(colorButton_d.get_rgba().blue * 255));
+			settings.set_double("background-a-dark", colorButton_d.get_rgba().alpha);
+		})
+		settings.bind("font-size-px", numChanger_font, "value", 0);
+		settings.bind("font-bold", fontBoldEnabled, "active", 0)
+		settings.bind("border-spacing-px", numChanger_bord, "value", 0);
+		settings.bind("snap-spacing-px", numChanger_snap, "value", 0)
+		settings.bind("round-key-corners", roundKeyCDT, "active", 0);
+		settings.bind("play-sound", soundPlayDT, "active", 0);
+		settings.bind("show-icons", showIconDT, "active", 0)
+		settings.bind("default-snap", snapDrop, "selected", 0);
+
+		window.connect("close-request", () => {
+			settings.set_int("layout", layoutDrop.selected);
+			settings.set_boolean("enable-drag", dragEnableDT.active);
+			settings.set_int("enable-tap-gesture", dragOpt.selected);
+			settings.set_boolean("indicator-enabled", indEnabled.active);
+			settings.set_int("portrait-width-percent", numChanger_pW.value);
+			settings.set_int("portrait-height-percent", numChanger_pH.value);
+			settings.set_int("landscape-width-percent", numChanger_lW.value);
+			settings.set_int("landscape-height-percent", numChanger_lH.value);
+			settings.set_double("background-r", Math.round(colorButton.get_rgba().red * 255));
+			settings.set_double("background-g", Math.round(colorButton.get_rgba().green * 255));
+			settings.set_double("background-b", Math.round(colorButton.get_rgba().blue * 255));
+			settings.set_double("background-a", colorButton.get_rgba().alpha);
+			settings.set_double("background-r-dark", Math.round(colorButton_d.get_rgba().red * 255));
+			settings.set_double("background-g-dark", Math.round(colorButton_d.get_rgba().green * 255));
+			settings.set_double("background-b-dark", Math.round(colorButton_d.get_rgba().blue * 255));
+			settings.set_double("background-a-dark", colorButton_d.get_rgba().alpha);
+			settings.set_int("font-size-px", numChanger_font.value);
+			settings.set_boolean("font-bold", fontBoldEnabled.active)
+			settings.set_int("border-spacing-px", numChanger_bord.value);
+			settings.set_int("snap-spacing-px", numChanger_snap.value)
+			settings.set_boolean("round-key-corners", roundKeyCDT.active);
+			settings.set_boolean("play-sound", soundPlayDT.active);
+			settings.set_boolean("show-icons", showIconDT.active)
+			settings.set_int("default-snap", snapDrop.selected);
+		})
 	}
 };

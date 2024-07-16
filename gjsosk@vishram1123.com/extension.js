@@ -73,25 +73,25 @@ let keycodes;
 let layouts;
 
 export default class GjsOskExtension extends Extension {
-	_openKeyboard() {
+	_openKeyboard(instant) {
 		if (this.Keyboard.state == State.CLOSED) {
-			this.Keyboard.open();
+			this.Keyboard.open(null, !instant ? null : true);
 		}
 	}
 
-	_closeKeyboard() {
+	_closeKeyboard(instant) {
 		if (this.Keyboard.state == State.OPENED) {
-			this.Keyboard.close();
+			this.Keyboard.close(!instant ? null : true);
 		}
 	}
 
-	_toggleKeyboard() {
+	_toggleKeyboard(instant = false) {
 		if (!this.Keyboard.opened) {
-			this._openKeyboard();
+			this._openKeyboard(instant);
 			this.Keyboard.openedFromButton = true;
 			this.Keyboard.closedFromButton = false
 		} else {
-			this._closeKeyboard();
+			this._closeKeyboard(instant);
 			this.Keyboard.openedFromButton = false;
 			this.Keyboard.closedFromButton = true;
 		}
@@ -200,6 +200,7 @@ export default class GjsOskExtension extends Extension {
 			this._toggleKeyboard();
 		})
 		let settingsChanged = () => {
+			let opened = this.Keyboard.opened
 			if (this.darkSchemeSettings.get_string("color-scheme") == "prefer-dark")
 				this.settings.scheme = "-dark"
 			else
@@ -238,6 +239,9 @@ export default class GjsOskExtension extends Extension {
 				this.openInterval = null;
 			}
 			this.open_interval();
+			if (opened) {
+				this._toggleKeyboard(true);
+			}
 		}
 		this.settingsHandlers = [
 			this.settings.connect("changed", settingsChanged),
@@ -531,7 +535,7 @@ class Keyboard extends Dialog {
 		this.box.set_opacity(op)
 	}
 
-	open(noPrep = null) {
+	open(noPrep = null, instant = null) {
 		if (noPrep == null || !noPrep) {
 			this.prevKeyFocus = global.stage.key_focus
 			this.inputDevice = Clutter.get_default_backend().get_default_seat().create_virtual_device(Clutter.InputDeviceType.KEYBOARD_DEVICE);
@@ -549,7 +553,7 @@ class Keyboard extends Dialog {
 			}
 			this.box.ease({
 				opacity: 255,
-				duration: 100,
+				duration: instant == null || !instant ? 100 : 0,
 				mode: Clutter.AnimationMode.EASE_OUT_QUAD,
 				onComplete: () => {
 					if (this.stateTimeout !== null) {
@@ -564,7 +568,7 @@ class Keyboard extends Dialog {
 			this.ease({
 				translation_x: posX,
 				translation_y: posY,
-				duration: 100,
+				duration: instant == null || !instant ? 100 : 0,
 				mode: Clutter.AnimationMode.EASE_OUT_QUAD
 			})
 			this.opened = true;
@@ -598,7 +602,7 @@ class Keyboard extends Dialog {
 		this.ease({
 			translation_x: posX + mX,
 			translation_y: posY + mY,
-			duration: 100,
+			duration: instant == null || !instant ? 100 : 0,
 			mode: Clutter.AnimationMode.EASE_OUT_QUAD
 		})
 		this.openedFromButton = false
@@ -801,13 +805,8 @@ class Keyboard extends Dialog {
 			})
 			settingsBtn.add_style_class_name("settings_btn")
 			settingsBtn.add_style_class_name("key")
-			settingsBtn.connect("button-press-event", () => {
+			settingsBtn.connect("clicked", () => {
 				this.settingsOpenFunction();
-			})
-			settingsBtn.connect("touch-event", () => {
-				if (Clutter.get_current_event().type() == Clutter.EventType.TOUCH_BEGIN) {
-					this.settingsOpenFunction()
-				}
 			})
 			gridLeft.attach(settingsBtn, 0, 0, 8, 5)
 			this.keys.push(settingsBtn)
@@ -818,15 +817,9 @@ class Keyboard extends Dialog {
 			})
 			closeBtn.add_style_class_name("close_btn")
 			closeBtn.add_style_class_name("key")
-			closeBtn.connect("button-press-event", () => {
+			closeBtn.connect("clicked", () => {
 				this.close();
 				this.closedFromButton = true;
-			})
-			closeBtn.connect("touch-event", () => {
-				if (Clutter.get_current_event().type() == Clutter.EventType.TOUCH_BEGIN) {
-					this.close();
-					this.closedFromButton = true;
-				}
 			})
 			gridRight.attach(closeBtn, (rowSize - 8), 0, 8, 5)
 			this.keys.push(closeBtn)
@@ -887,13 +880,8 @@ class Keyboard extends Dialog {
 			})
 			settingsBtn.add_style_class_name("settings_btn")
 			settingsBtn.add_style_class_name("key")
-			settingsBtn.connect("button-press-event", () => {
+			settingsBtn.connect("clicked", () => {
 				this.settingsOpenFunction();
-			})
-			settingsBtn.connect("touch-event", () => {
-				if (Clutter.get_current_event().type() == Clutter.EventType.TOUCH_BEGIN) {
-					this.settingsOpenFunction()
-				}
 			})
 			grid.attach(settingsBtn, 0, 0, 8, 5)
 			this.keys.push(settingsBtn)
@@ -904,15 +892,9 @@ class Keyboard extends Dialog {
 			})
 			closeBtn.add_style_class_name("close_btn")
 			closeBtn.add_style_class_name("key")
-			closeBtn.connect("button-press-event", () => {
+			closeBtn.connect("clicked", () => {
 				this.close();
 				this.closedFromButton = true;
-			})
-			closeBtn.connect("touch-event", () => {
-				if (Clutter.get_current_event().type() == Clutter.EventType.TOUCH_BEGIN) {
-					this.close();
-					this.closedFromButton = true;
-				}
 			})
 			grid.attach(closeBtn, (rowSize - 8), 0, 8, 5)
 			this.keys.push(closeBtn)
