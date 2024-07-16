@@ -263,6 +263,9 @@ export default class GjsOskExtension extends Extension {
 		this.darkSchemeSettings.disconnect(this.settingsHandlers[1])
 		this.inputLanguageSettings.disconnect(this.settingsHandlers[2])
 		this.settings = null;
+		this.darkSchemeSettings = null;
+		this.inputLanguageSettings = null;
+		this.gnomeKeyboardSettings = null;
 		this.openBit.disconnect(this.openFromCommandHandler);
 		this.openBit = null;
 		global.stage.disconnect(this.tapConnect)
