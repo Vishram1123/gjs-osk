@@ -3,10 +3,6 @@
   "gettext-domain": "gjsosk@vishram1123.com",
   "name": "GJS OSK",
   "settings-schema": "org.gnome.shell.extensions.gjsosk",
-  "session-modes" : [
-    "user",
-    "unlock-dialog"
-  ],
   "shell-version": [
     "45",
     "46"
