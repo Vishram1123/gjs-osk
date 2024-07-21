@@ -657,7 +657,6 @@ class Keyboard extends Dialog {
 		this.box.height = Math.round((monitor.height - this.settings.get_int("snap-spacing-px") * 2) * this.heightPercent)
 
 		const grid = this.box.layout_manager
-		grid.set_row_homogeneous(true)
 		grid.set_column_homogeneous(!layoutName.includes("Split"))
 
 		let gridLeft;
@@ -708,6 +707,9 @@ class Keyboard extends Dialog {
 		let halfSize;
 		let r = 0;
 		let c;
+		//     row2..6            row1              moveHandle
+		// (bH/magic_y)*5 + bH/(magic_y/0.75) + bH/(magic_y/0.625) = bH // where bH = (this.box.height - 68)
+		let magic_y = 6.375;
 		const doAddKey = (keydef) => {
 			const i = Object.hasOwn(keydef, "key") ? keycodes[keydef.key] : Object.hasOwn(keydef, "split") ? "split" : "empty space";
 			if (i != null && typeof i !== 'string') {
@@ -716,9 +718,9 @@ class Keyboard extends Dialog {
 						i.layers[key] = i.layers["_" + key]
 					}
 				}
-				let params = {
+				let keyParams = {
 					x_expand: true,
-					y_expand: true
+					height: (this.box.height - 68) / (magic_y / (r == 0 ? 0.75 : 1)) * (Object.hasOwn(keydef, "height") ? keydef.height : 1)
 				}
 				
 				let iconKeys = ["left", "up", "right", "down", "space"]
@@ -726,19 +728,19 @@ class Keyboard extends Dialog {
 					iconKeys = ["left", "up", "right", "down", "backspace", "tab", "capslock", "shift", "enter", "ctrl", "super", "alt", "space"]
 				}
 				if (iconKeys.some(j => { return i.layers.default.toLowerCase() == j })) {
-					params.style_class = i.layers.default.toLowerCase() + "_btn"
+					keyParams.style_class = i.layers.default.toLowerCase() + "_btn"
 					for (var key of Object.keys(i.layers)) {
 						i.layers["_" + key] = i.layers[key]
 						i.layers[key] = null
 					}
 				} else {
-					params.label = i.layers.default
+					keyParams.label = i.layers.default
 				}
 				i.isMod = false
 				if ([42, 54, 29, 125, 56, 100, 97, 58, 69].some(j => { return i.code == j })) {
 					i.isMod = true;
 				}
-				const keyBtn = new St.Button(params)
+				const keyBtn = new St.Button(keyParams)
 				keyBtn.add_style_class_name('key')
 				keyBtn.char = i
 				if (i.code == 58) {
@@ -786,6 +788,11 @@ class Keyboard extends Dialog {
 			r += r == 0 ? 6 : 8
 		}
 
+		let handleParams = {
+			x_expand: true,
+			height: (this.box.height - 68) / (magic_y / 0.625)
+		}
+
 		if (left != null) {
 			this.set_reactive(false)
 			left.add_style_class_name("boxLay");
@@ -799,10 +806,7 @@ class Keyboard extends Dialog {
 				left.add_style_class_name("regular");
 				right.add_style_class_name("regular");
 			}
-			const settingsBtn = new St.Button({
-				x_expand: true,
-				y_expand: true
-			})
+			const settingsBtn = new St.Button(handleParams)
 			settingsBtn.add_style_class_name("settings_btn")
 			settingsBtn.add_style_class_name("key")
 			settingsBtn.connect("clicked", () => {
@@ -811,10 +815,7 @@ class Keyboard extends Dialog {
 			gridLeft.attach(settingsBtn, 0, 0, 8, 5)
 			this.keys.push(settingsBtn)
 
-			const closeBtn = new St.Button({
-				x_expand: true,
-				y_expand: true
-			})
+			const closeBtn = new St.Button(handleParams)
 			closeBtn.add_style_class_name("close_btn")
 			closeBtn.add_style_class_name("key")
 			closeBtn.connect("clicked", () => {
@@ -824,10 +825,7 @@ class Keyboard extends Dialog {
 			gridRight.attach(closeBtn, (rowSize - 8), 0, 8, 5)
 			this.keys.push(closeBtn)
 			
-			let moveHandleLeft = new St.Button({
-				x_expand: true,
-				y_expand: true
-			})
+			let moveHandleLeft = new St.Button(handleParams)
 			moveHandleLeft.add_style_class_name("moveHandle")
 			moveHandleLeft.set_style("font-size: " + this.settings.get_int("font-size-px") + "px; border-radius: " + (this.settings.get_boolean("round-key-corners") ? "5px;" : "0;") + "background-size: " + this.settings.get_int("font-size-px") + "px;");
 			if (this.lightOrDark(this.settings.get_double("background-r" + this.settings.scheme), this.settings.get_double("background-g" + this.settings.scheme), this.settings.get_double("background-b" + this.settings.scheme))) {
@@ -844,10 +842,7 @@ class Keyboard extends Dialog {
 			})
 			gridLeft.attach(moveHandleLeft, 8, 0, (halfSize - 8), 5)
 
-			let moveHandleRight = new St.Button({
-				x_expand: true,
-				y_expand: true
-			})
+			let moveHandleRight = new St.Button(handleParams)
 			moveHandleRight.add_style_class_name("moveHandle")
 			moveHandleRight.set_style("font-size: " + this.settings.get_int("font-size-px") + "px; border-radius: " + (this.settings.get_boolean("round-key-corners") ? "5px;" : "0;") + "background-size: " + this.settings.get_int("font-size-px") + "px;");
 			if (this.lightOrDark(this.settings.get_double("background-r" + this.settings.scheme), this.settings.get_double("background-g" + this.settings.scheme), this.settings.get_double("background-b" + this.settings.scheme))) {
@@ -863,8 +858,8 @@ class Keyboard extends Dialog {
 				this.event(event, false)
 			})
 			gridRight.attach(moveHandleRight, (rowSize - halfSize), 0, (rowSize - halfSize - 4), 5)
-			gridLeft.attach(new St.Widget({x_expand: true, y_expand: true}), 0, 5, halfSize, 1)
-			gridRight.attach(new St.Widget({x_expand: true, y_expand: true}), (rowSize - halfSize), 5, (rowSize - halfSize + 4), 1)
+			gridLeft.attach(new St.Widget({x_expand: true, height: 1}), 0, 5, halfSize, 1)
+			gridRight.attach(new St.Widget({x_expand: true, height: 1}), (rowSize - halfSize), 5, (rowSize - halfSize + 4), 1)
 		} else {
 			this.box.add_style_class_name("boxLay");
 			this.box.set_style("background-color: rgba(" + this.settings.get_double("background-r" + this.settings.scheme) + "," + this.settings.get_double("background-g" + this.settings.scheme) + "," + this.settings.get_double("background-b" + this.settings.scheme) + ", " + this.settings.get_double("background-a" + this.settings.scheme) + ");")
@@ -874,10 +869,7 @@ class Keyboard extends Dialog {
 				this.box.add_style_class_name("regular");
 			}
 
-			const settingsBtn = new St.Button({
-				x_expand: true,
-				y_expand: true
-			})
+			const settingsBtn = new St.Button(handleParams)
 			settingsBtn.add_style_class_name("settings_btn")
 			settingsBtn.add_style_class_name("key")
 			settingsBtn.connect("clicked", () => {
@@ -886,10 +878,7 @@ class Keyboard extends Dialog {
 			grid.attach(settingsBtn, 0, 0, 8, 5)
 			this.keys.push(settingsBtn)
 
-			const closeBtn = new St.Button({
-				x_expand: true,
-				y_expand: true
-			})
+			const closeBtn = new St.Button(handleParams)
 			closeBtn.add_style_class_name("close_btn")
 			closeBtn.add_style_class_name("key")
 			closeBtn.connect("clicked", () => {
@@ -899,10 +888,7 @@ class Keyboard extends Dialog {
 			grid.attach(closeBtn, (rowSize - 8), 0, 8, 5)
 			this.keys.push(closeBtn)
 			
-			let moveHandle= new St.Button({
-				x_expand: true,
-				y_expand: true
-			})
+			let moveHandle= new St.Button(handleParams)
 			moveHandle.add_style_class_name("moveHandle")
 			moveHandle.set_style("font-size: " + this.settings.get_int("font-size-px") + "px; border-radius: " + (this.settings.get_boolean("round-key-corners") ? "5px;" : "0;") + "background-size: " + this.settings.get_int("font-size-px") + "px;");
 			if (this.lightOrDark(this.settings.get_double("background-r" + this.settings.scheme), this.settings.get_double("background-g" + this.settings.scheme), this.settings.get_double("background-b" + this.settings.scheme))) {
@@ -918,7 +904,7 @@ class Keyboard extends Dialog {
 				this.event(event, false)
 			})
 			grid.attach(moveHandle, 8, 0, (rowSize - 16), 5)
-			grid.attach(new St.Widget({x_expand: true, y_expand: true}), 0, 5, rowSize, 1)
+			grid.attach(new St.Widget({x_expand: true, height: 1}), 0, 5, rowSize, 1)
 		}
 		
 		this.keys.forEach(item => {
