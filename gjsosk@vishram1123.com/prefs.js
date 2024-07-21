@@ -90,13 +90,13 @@ export default class GjsOskPreferences extends ExtensionPreferences {
 			title: _('Height (%)')
 		})
 
-		let numChanger_pW = Gtk.SpinButton.new_with_range(0, 100, 5);
+		let numChanger_pW = Gtk.SpinButton.new_with_range(0, 100, 1);
 		numChanger_pW.value = settings.get_int('portrait-width-percent');
 		numChanger_pW.valign = Gtk.Align.CENTER;
 		pW.add_suffix(numChanger_pW);
 		pW.activatable_widget = numChanger_pW;
 
-		let numChanger_pH = Gtk.SpinButton.new_with_range(0, 100, 5);
+		let numChanger_pH = Gtk.SpinButton.new_with_range(0, 100, 1);
 		numChanger_pH.value = settings.get_int('portrait-height-percent');
 		numChanger_pH.valign = Gtk.Align.CENTER;
 		pH.add_suffix(numChanger_pH);
@@ -117,13 +117,13 @@ export default class GjsOskPreferences extends ExtensionPreferences {
 			title: _('Height (%)')
 		});
 
-		let numChanger_lW = Gtk.SpinButton.new_with_range(0, 100, 5);
+		let numChanger_lW = Gtk.SpinButton.new_with_range(0, 100, 1);
 		numChanger_lW.value = settings.get_int('landscape-width-percent');
 		numChanger_lW.valign = Gtk.Align.CENTER;
 		lW.add_suffix(numChanger_lW);
 		lW.activatable_widget = numChanger_lW;
 
-		let numChanger_lH = Gtk.SpinButton.new_with_range(0, 100, 5);
+		let numChanger_lH = Gtk.SpinButton.new_with_range(0, 100, 1);
 		numChanger_lH.value = settings.get_int('landscape-height-percent');
 		numChanger_lH.valign = Gtk.Align.CENTER;
 		lH.add_suffix(numChanger_lH);

@@ -655,8 +655,10 @@ class Keyboard extends Dialog {
 		let monitor = Main.layoutManager.primaryMonitor
 		this.box.width = Math.round((monitor.width - this.settings.get_int("snap-spacing-px") * 2) * (layoutName.includes("Split") ? 1 : this.widthPercent))
 		this.box.height = Math.round((monitor.height - this.settings.get_int("snap-spacing-px") * 2) * this.heightPercent)
+		let totalRow = 0.625 + 0.75 + 5; // moveHandle + row0 + row1..5
 
 		const grid = this.box.layout_manager
+		grid.set_row_homogeneous((this.box.height - 38 - grid.get_row_spacing() * 14) / totalRow < 28)
 		grid.set_column_homogeneous(!layoutName.includes("Split"))
 
 		let gridLeft;
@@ -707,9 +709,6 @@ class Keyboard extends Dialog {
 		let halfSize;
 		let r = 0;
 		let c;
-		//     row2..6            row1              moveHandle
-		// (bH/magic_y)*5 + bH/(magic_y/0.75) + bH/(magic_y/0.625) = bH // where bH = (this.box.height - 68)
-		let magic_y = 6.375;
 		const doAddKey = (keydef) => {
 			const i = Object.hasOwn(keydef, "key") ? keycodes[keydef.key] : Object.hasOwn(keydef, "split") ? "split" : "empty space";
 			if (i != null && typeof i !== 'string') {
@@ -720,7 +719,7 @@ class Keyboard extends Dialog {
 				}
 				let keyParams = {
 					x_expand: true,
-					height: (this.box.height - 68) / (magic_y / (r == 0 ? 0.75 : 1)) * (Object.hasOwn(keydef, "height") ? keydef.height : 1)
+					height: (this.box.height - 38 - this.settings.get_int("border-spacing-px") * 14) / (totalRow / (r == 0 ? 0.75 : 1)) * (Object.hasOwn(keydef, "height") ? Math.min(keydef.height, 1) : 1)
 				}
 				
 				let iconKeys = ["left", "up", "right", "down", "space"]
@@ -790,7 +789,7 @@ class Keyboard extends Dialog {
 
 		let handleParams = {
 			x_expand: true,
-			height: (this.box.height - 68) / (magic_y / 0.625)
+			height: (this.box.height - 38 - this.settings.get_int("border-spacing-px") * 14) / (totalRow / 0.625)
 		}
 
 		if (left != null) {
