@@ -678,8 +678,8 @@ class Keyboard extends Dialog {
 		}
 
 		const grid = this.box.layout_manager
-		grid.set_row_homogeneous((this.box.height - 40 - grid.get_row_spacing() * (numRows + 3)) / colSize < 28)
-		grid.set_column_homogeneous((this.box.width - 40 - grid.get_column_spacing() * (numCols + 1))  / rowSize < 28 && !layoutName.includes("Split"))
+		grid.set_row_homogeneous((this.box.height - 40 - grid.get_row_spacing() * (numRows + 1)) / colSize < 28)
+		grid.set_column_homogeneous((this.box.width - 40 - grid.get_column_spacing() * (numCols - 1))  / rowSize < 28 && !layoutName.includes("Split"))
 
 		let gridLeft;
 		let gridRight;
@@ -698,7 +698,7 @@ class Keyboard extends Dialog {
 			})
 			gridLeft = left.layout_manager;
 			gridLeft.set_row_homogeneous((left.height - 40 - gridLeft.get_row_spacing() * (numRows + 1)) / colSize < 28)
-			gridLeft.set_column_homogeneous((left.width - 40 - gridLeft.get_column_spacing() * (numHalf + 1))  / halfSize < 28)
+			gridLeft.set_column_homogeneous((left.width - 40 - gridLeft.get_column_spacing() * (numHalf - 1))  / halfSize < 28)
 			let middle = new St.Widget({
 				width: this.box.width * (1 - this.widthPercent) - 10 + this.settings.get_int("border-spacing-px")
 			});
@@ -712,7 +712,7 @@ class Keyboard extends Dialog {
 			})
 			gridRight = right.layout_manager;
 			gridRight.set_row_homogeneous((right.height - 40 - gridRight.get_row_spacing() * (numRows + 1)) / colSize < 28)
-			gridRight.set_column_homogeneous((right.width - 40 - gridRight.get_column_spacing() * (numHalf + 1))  / halfSize < 28)
+			gridRight.set_column_homogeneous((right.width - 40 - gridRight.get_column_spacing() * (numHalf - 1))  / halfSize < 28)
 			this.box.add_child(left)
 			this.box.add_child(middle)
 			this.box.add_child(right)
@@ -724,21 +724,22 @@ class Keyboard extends Dialog {
 		let c;
 		const doAddKey = (keydef) => {
 			const i = Object.hasOwn(keydef, "key") ? keycodes[keydef.key] : Object.hasOwn(keydef, "split") ? "split" : "empty space";
-			if (i != null && typeof i !== 'string') {
+			let keyParams = {
+				width: ((left ? left.width : this.box.width) - 40 - currentGrid.get_column_spacing() * ((left ? numHalf : numCols) - 1)) / (left ? halfSize : rowSize),
+				height: (this.box.height - 40 - currentGrid.get_row_spacing() * (numRows + 1)) / colSize
+			}
+			keyParams.translation_x = Math.round((keyParams.width - Math.floor(keyParams.width)) * (left ? halfSize : rowSize) / 2)
+			keyParams.translation_y = Math.round((keyParams.height - Math.floor(keyParams.height)) * colSize / 2)
+			keyParams.width = keyParams.width * (Object.hasOwn(keydef, "width") ? Math.min(keydef.width, 1) : 1)
+			keyParams.height = keyParams.height * (Object.hasOwn(keydef, "height") ? Math.min(keydef.height, 1) : 1)
+
+			if(i != null && typeof i !== 'string') {
 				if (i.layers.default == null) {
 					for (var key of Object.keys(i.layers)) {
 						i.layers[key] = i.layers["_" + key]
 					}
 				}
 
-				let keyParams = {}
-				if (layoutName.includes("Split")) {
-					keyParams.width = (left.width - 40 - currentGrid.get_column_spacing() * (numHalf + 1)) / halfSize * (Object.hasOwn(keydef, "width") ? Math.min(keydef.width, 1) : 1)
-				} else {
-					keyParams.width = (this.box.width - 40 - currentGrid.get_column_spacing() * (numCols + 1))  / rowSize * (Object.hasOwn(keydef, "width") ? Math.min(keydef.width, 1) : 1)
-				}
-				keyParams.height = (this.box.height - 40 - currentGrid.get_row_spacing() * (numRows + 3)) / colSize * (Object.hasOwn(keydef, "height") ? Math.min(keydef.height, 1) : 1)
-				
 				let iconKeys = ["left", "up", "right", "down", "space"]
 				if (this.settings.get_boolean("show-icons")) {
 					iconKeys = ["left", "up", "right", "down", "backspace", "tab", "capslock", "shift", "enter", "ctrl", "super", "alt", "space"]
@@ -776,8 +777,9 @@ class Keyboard extends Dialog {
 				keyBtn.visible = true
 				c += (Object.hasOwn(keydef, "width") ? keydef.width : 1) * 8
 				this.keys.push(keyBtn)
-			} else if (i == "empty space") {
-				c += (Object.hasOwn(keydef, "width") ? keydef.width : 1) * 8
+			} else if(i == "empty space") {
+				currentGrid.attach(new St.Button(keyParams), c, 6 + r, (Object.hasOwn(keydef, "width") ? keydef.width : 1) * 8, (Object.hasOwn(keydef, "height") ? keydef.height : 1) * 8)
+				c += (Object.hasOwn(keydef, "width") ? keydef.width : 1) * 8 
 			} else if (i == "split") {
 				currentGrid = gridRight
 			}
@@ -802,13 +804,12 @@ class Keyboard extends Dialog {
 
 		let rowSpan = rowSize * 8;
 		let halfSpan = halfSize * 8;
-		let handleParams = {}
-		if (layoutName.includes("Split")) {
-			handleParams.width = (left.width - 40 - currentGrid.get_column_spacing() * (numHalf + 1)) / halfSize
-		} else {
-			handleParams.width = (this.box.width - 40 - currentGrid.get_column_spacing() * (numCols + 1)) / rowSize
+		let handleParams = {
+			width: ((left ? left.width : this.box.width) - 40 - currentGrid.get_column_spacing() * ((left ? numHalf : numCols) - 1)) / (left ? halfSize : rowSize),
+			height: (this.box.height - 40 - currentGrid.get_row_spacing() * (numRows + 1)) / colSize * 0.625
 		}
-		handleParams.height = (this.box.height - 40 - currentGrid.get_row_spacing() * (numRows + 3)) / (colSize / 0.625)
+		handleParams.translation_x = Math.round((handleParams.width - Math.floor(handleParams.width)) * (left ? halfSize : rowSize) / 2)
+		handleParams.translation_y = Math.round((handleParams.height - Math.floor(handleParams.height)) * colSize / 2)
 
 		if (left != null) {
 			this.set_reactive(false)
