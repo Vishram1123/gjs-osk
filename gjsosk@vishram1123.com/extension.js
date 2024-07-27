@@ -754,12 +754,12 @@ class Keyboard extends Dialog {
 				} else if (i.code == 42 || i.code == 54) {
 					this.shiftButtons.push(keyBtn)
 				}
-				currentGrid.attach(keyBtn, c, 6 + r, (Object.hasOwn(keydef, "width") ? keydef.width : 1) * 8, r == 0 ? 6 : (Object.hasOwn(keydef, "height") ? keydef.height : 1) * 8)
+				currentGrid.attach(keyBtn, c, 5 + r, (Object.hasOwn(keydef, "width") ? keydef.width : 1) * 2, r == 0 ? 3 : (Object.hasOwn(keydef, "height") ? keydef.height : 1) * 4)
 				keyBtn.visible = true
-				c += (Object.hasOwn(keydef, "width") ? keydef.width : 1) * 8
+				c += (Object.hasOwn(keydef, "width") ? keydef.width : 1) * 2
 				this.keys.push(keyBtn)
 			} else if (i == "empty space") {
-				c += (Object.hasOwn(keydef, "width") ? keydef.width : 1) * 8
+				c += (Object.hasOwn(keydef, "width") ? keydef.width : 1) * 2
 			} else if (i == "split") {
 				currentGrid = gridRight
 				const size = c
@@ -774,19 +774,20 @@ class Keyboard extends Dialog {
 			}
 			for (const keydef of kRow) {
 				if (keydef instanceof Array) {
-					keydef.forEach(i => {doAddKey(i); r += 4; c -= 8});
-					c += 8;
-					r -= 8;
+					keydef.forEach(i => {doAddKey(i); r += 2; c -= 2});
+					c += 2;
+					r -= 4;
 				} else {
 					doAddKey(keydef)
 				}
 			}
 			const size = c;
 			if (!rowSize) rowSize = size;
-			r += r == 0 ? 6 : 8
+			r += r == 0 ? 3 : 4
 		}
 
 		if (left != null) {
+			   
 			this.set_reactive(false)
 			left.add_style_class_name("boxLay");
 			left.set_style("background-color: rgba(" + this.settings.get_double("background-r" + this.settings.scheme) + "," + this.settings.get_double("background-g" + this.settings.scheme) + "," + this.settings.get_double("background-b" + this.settings.scheme) + ", " + this.settings.get_double("background-a" + this.settings.scheme) + ");")
@@ -808,7 +809,7 @@ class Keyboard extends Dialog {
 			settingsBtn.connect("clicked", () => {
 				this.settingsOpenFunction();
 			})
-			gridLeft.attach(settingsBtn, 0, 0, 8, 5)
+			gridLeft.attach(settingsBtn, 0, 0, 2, 3)
 			this.keys.push(settingsBtn)
 
 			const closeBtn = new St.Button({
@@ -821,7 +822,7 @@ class Keyboard extends Dialog {
 				this.close();
 				this.closedFromButton = true;
 			})
-			gridRight.attach(closeBtn, (rowSize - 8), 0, 8, 5)
+			gridRight.attach(closeBtn, (rowSize - 2), 0, 2, 3)
 			this.keys.push(closeBtn)
 			
 			let moveHandleLeft = new St.Button({
@@ -842,7 +843,7 @@ class Keyboard extends Dialog {
 				}
 				this.event(event, false)
 			})
-			gridLeft.attach(moveHandleLeft, 8, 0, (halfSize - 8), 5)
+			gridLeft.attach(moveHandleLeft, 2, 0, (halfSize - 2), 3)
 
 			let moveHandleRight = new St.Button({
 				x_expand: true,
@@ -862,9 +863,9 @@ class Keyboard extends Dialog {
 				}
 				this.event(event, false)
 			})
-			gridRight.attach(moveHandleRight, (rowSize - halfSize), 0, (rowSize - halfSize - 4), 5)
-			gridLeft.attach(new St.Widget({x_expand: true, y_expand: true}), 0, 5, halfSize, 1)
-			gridRight.attach(new St.Widget({x_expand: true, y_expand: true}), (rowSize - halfSize), 5, (rowSize - halfSize + 4), 1)
+			gridRight.attach(moveHandleRight, (rowSize - halfSize), 0, (rowSize - halfSize - 1), 3)
+			gridLeft.attach(new St.Widget({x_expand: true, y_expand: true}), 0, 3, halfSize, 1)
+			gridRight.attach(new St.Widget({x_expand: true, y_expand: true}), (rowSize - halfSize), 3, (rowSize - halfSize + 1), 1)
 		} else {
 			this.box.add_style_class_name("boxLay");
 			this.box.set_style("background-color: rgba(" + this.settings.get_double("background-r" + this.settings.scheme) + "," + this.settings.get_double("background-g" + this.settings.scheme) + "," + this.settings.get_double("background-b" + this.settings.scheme) + ", " + this.settings.get_double("background-a" + this.settings.scheme) + ");")
@@ -883,7 +884,7 @@ class Keyboard extends Dialog {
 			settingsBtn.connect("clicked", () => {
 				this.settingsOpenFunction();
 			})
-			grid.attach(settingsBtn, 0, 0, 8, 5)
+			grid.attach(settingsBtn, 0, 0, 2, 3)
 			this.keys.push(settingsBtn)
 
 			const closeBtn = new St.Button({
@@ -896,7 +897,7 @@ class Keyboard extends Dialog {
 				this.close();
 				this.closedFromButton = true;
 			})
-			grid.attach(closeBtn, (rowSize - 8), 0, 8, 5)
+			grid.attach(closeBtn, (rowSize - 2), 0, 2, 3)
 			this.keys.push(closeBtn)
 			
 			let moveHandle= new St.Button({
@@ -917,8 +918,8 @@ class Keyboard extends Dialog {
 				}
 				this.event(event, false)
 			})
-			grid.attach(moveHandle, 8, 0, (rowSize - 16), 5)
-			grid.attach(new St.Widget({x_expand: true, y_expand: true}), 0, 5, rowSize, 1)
+			grid.attach(moveHandle, 2, 0, (rowSize - 4), 3)
+			grid.attach(new St.Widget({x_expand: true, y_expand: true}), 0, 3, rowSize, 1)
 		}
 		
 		this.keys.forEach(item => {
