@@ -620,7 +620,7 @@ class Keyboard extends Dialog {
 		}
 		return Clutter.EVENT_PROPAGATE;
 	}
-	
+
 	vfunc_motion_event() {
 		let event = Clutter.get_current_event();
 		if (this._dragging && !this._grabbedSequence) {
@@ -720,7 +720,7 @@ class Keyboard extends Dialog {
 					x_expand: true,
 					y_expand: true
 				}
-				
+
 				let iconKeys = ["left", "up", "right", "down", "space"]
 				if (this.settings.get_boolean("show-icons")) {
 					iconKeys = ["left", "up", "right", "down", "backspace", "tab", "capslock", "shift", "enter", "ctrl", "super", "alt", "space"]
@@ -766,7 +766,7 @@ class Keyboard extends Dialog {
 				if (!halfSize) halfSize = size
 			}
 		}
-		
+
 		for (const kRow of currentLayout) {
 			c = 0;
 			if (layoutName.includes("Split")) {
@@ -787,12 +787,12 @@ class Keyboard extends Dialog {
 		}
 
 		if (left != null) {
-			   
+
 			this.set_reactive(false)
 			left.add_style_class_name("boxLay");
-			left.set_style("background-color: rgba(" + this.settings.get_double("background-r" + this.settings.scheme) + "," + this.settings.get_double("background-g" + this.settings.scheme) + "," + this.settings.get_double("background-b" + this.settings.scheme) + ", " + this.settings.get_double("background-a" + this.settings.scheme) + ");")
+			left.set_style("background-color: rgba(" + this.settings.get_double("background-r" + this.settings.scheme) + "," + this.settings.get_double("background-g" + this.settings.scheme) + "," + this.settings.get_double("background-b" + this.settings.scheme) + ", " + this.settings.get_double("background-a" + this.settings.scheme) + "); padding: " + this.settings.get_int("outer-spacing-px") + "px;")
 			right.add_style_class_name("boxLay");
-			right.set_style("background-color: rgba(" + this.settings.get_double("background-r" + this.settings.scheme) + "," + this.settings.get_double("background-g" + this.settings.scheme) + "," + this.settings.get_double("background-b" + this.settings.scheme) + ", " + this.settings.get_double("background-a" + this.settings.scheme) + ");")
+			right.set_style("background-color: rgba(" + this.settings.get_double("background-r" + this.settings.scheme) + "," + this.settings.get_double("background-g" + this.settings.scheme) + "," + this.settings.get_double("background-b" + this.settings.scheme) + ", " + this.settings.get_double("background-a" + this.settings.scheme) + "); padding: " + this.settings.get_int("outer-spacing-px") + "px;")
 			if (this.lightOrDark(this.settings.get_double("background-r" + this.settings.scheme), this.settings.get_double("background-g" + this.settings.scheme), this.settings.get_double("background-b" + this.settings.scheme))) {
 				left.add_style_class_name("inverted");
 				right.add_style_class_name("inverted");
@@ -824,7 +824,7 @@ class Keyboard extends Dialog {
 			})
 			gridRight.attach(closeBtn, (rowSize - 2), 0, 2, 3)
 			this.keys.push(closeBtn)
-			
+
 			let moveHandleLeft = new St.Button({
 				x_expand: true,
 				y_expand: true
@@ -868,7 +868,7 @@ class Keyboard extends Dialog {
 			gridRight.attach(new St.Widget({x_expand: true, y_expand: true}), (rowSize - halfSize), 3, (rowSize - halfSize + 1), 1)
 		} else {
 			this.box.add_style_class_name("boxLay");
-			this.box.set_style("background-color: rgba(" + this.settings.get_double("background-r" + this.settings.scheme) + "," + this.settings.get_double("background-g" + this.settings.scheme) + "," + this.settings.get_double("background-b" + this.settings.scheme) + ", " + this.settings.get_double("background-a" + this.settings.scheme) + ");")
+			this.box.set_style("background-color: rgba(" + this.settings.get_double("background-r" + this.settings.scheme) + "," + this.settings.get_double("background-g" + this.settings.scheme) + "," + this.settings.get_double("background-b" + this.settings.scheme) + ", " + this.settings.get_double("background-a" + this.settings.scheme) + "); padding: " + this.settings.get_int("outer-spacing-px") + "px;")
 			if (this.lightOrDark(this.settings.get_double("background-r" + this.settings.scheme), this.settings.get_double("background-g" + this.settings.scheme), this.settings.get_double("background-b" + this.settings.scheme))) {
 				this.box.add_style_class_name("inverted");
 			} else {
@@ -899,7 +899,7 @@ class Keyboard extends Dialog {
 			})
 			grid.attach(closeBtn, (rowSize - 2), 0, 2, 3)
 			this.keys.push(closeBtn)
-			
+
 			let moveHandle= new St.Button({
 				x_expand: true,
 				y_expand: true
@@ -921,7 +921,7 @@ class Keyboard extends Dialog {
 			grid.attach(moveHandle, 2, 0, (rowSize - 4), 3)
 			grid.attach(new St.Widget({x_expand: true, y_expand: true}), 0, 3, rowSize, 1)
 		}
-		
+
 		this.keys.forEach(item => {
 			item.set_style("font-size: " + this.settings.get_int("font-size-px") + "px; border-radius: " + (this.settings.get_boolean("round-key-corners") ? "5px;" : "0;") + "background-size: " + this.settings.get_int("font-size-px") + "px; font-weight: " + (this.settings.get_boolean("font-bold") ? "bold" : "normal") + ";");
 			if (this.lightOrDark(this.settings.get_double("background-r" + this.settings.scheme), this.settings.get_double("background-g" + this.settings.scheme), this.settings.get_double("background-b" + this.settings.scheme))) {

@@ -228,7 +228,7 @@ export default class GjsOskPreferences extends ExtensionPreferences {
 		let numChanger_font = Gtk.SpinButton.new_with_range(0, 100, 1);
 		numChanger_font.value = settings.get_int('font-size-px');
 		numChanger_font.valign = Gtk.Align.CENTER;
-		
+
 		fontSize.add_suffix(numChanger_font);
 		fontSize.activatable_widget = numChanger_font;
 
@@ -255,6 +255,17 @@ export default class GjsOskPreferences extends ExtensionPreferences {
 		numChanger_bord.valign = Gtk.Align.CENTER;
 		borderSpacing.add_suffix(numChanger_bord);
 		borderSpacing.activatable_widget = numChanger_bord;
+
+		let outerSpacing = new Adw.ActionRow({
+			title: _('Outer Spacing (px)')
+		});
+		appearanceGroup.add(outerSpacing);
+
+		let numChanger_outer = Gtk.SpinButton.new_with_range(0, 30, 1);
+		numChanger_outer.value = settings.get_int('outer-spacing-px');
+		numChanger_outer.valign = Gtk.Align.CENTER;
+		outerSpacing.add_suffix(numChanger_outer);
+		outerSpacing.activatable_widget = numChanger_outer;
 
 		let snapSpacing = new Adw.ActionRow({
 			title: _('Drag snap spacing (px)')
@@ -365,8 +376,9 @@ export default class GjsOskPreferences extends ExtensionPreferences {
 		page2.add(links_pref_group);
 
 		window.add(page2);
-		
-		settings.bind("layout", layoutDrop, "selected", 0);
+
+		settings.bind("layout-landscape", layoutLandscapeDrop, "selected", 0);
+		settings.bind("layout-portrait", layoutPortraitDrop, "selected", 0);
 		settings.bind("enable-drag", dragEnableDT, "active", 0);
 		settings.bind("enable-tap-gesture", dragOpt, "selected", 0);
 		settings.bind("indicator-enabled", indEnabled, "active", 0);
@@ -397,7 +409,8 @@ export default class GjsOskPreferences extends ExtensionPreferences {
 		settings.bind("default-snap", snapDrop, "selected", 0);
 
 		window.connect("close-request", () => {
-			settings.set_int("layout", layoutDrop.selected);
+			settings.set_int("layout-landscape", layoutLandscapeDrop.selected);
+			settings.set_int("layout-portrait", layoutPortraitDrop.selected);
 			settings.set_boolean("enable-drag", dragEnableDT.active);
 			settings.set_int("enable-tap-gesture", dragOpt.selected);
 			settings.set_boolean("indicator-enabled", indEnabled.active);
