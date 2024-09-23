@@ -307,10 +307,9 @@ class Keyboard extends Dialog {
 		let monitor = Main.layoutManager.primaryMonitor;
 		super._init(Main.layoutManager.modalDialogGroup, 'db-keyboard-content');
 		this.box = new St.Widget({
+			reactive: true,
 			layout_manager: new Clutter.GridLayout({
 				orientation: Clutter.Orientation.HORIZONTAL,
-				row_spacing: settings.get_int("border-spacing-px") * 2,
-				column_spacing: settings.get_int("border-spacing-px") * 2,
 			})
 		});
 		this.widthPercent = (monitor.width > monitor.height) ? settings.get_int("landscape-width-percent") / 100 : settings.get_int("portrait-width-percent") / 100;
@@ -667,11 +666,11 @@ class Keyboard extends Dialog {
 		let right;
 
 		if (layoutName.includes("Split")) {
+			this.box.reactive = false;
 			left = new St.Widget({
+				reactive: true,
 				layout_manager: new Clutter.GridLayout({
 					orientation: Clutter.Orientation.HORIZONTAL,
-					row_spacing: this.settings.get_int("border-spacing-px") * 2,
-					column_spacing: this.settings.get_int("border-spacing-px") * 2,
 					row_homogeneous: true,
 					column_homogeneous: true
 				}),
@@ -679,13 +678,13 @@ class Keyboard extends Dialog {
 			})
 			gridLeft = left.layout_manager;
 			let middle = new St.Widget({
+				reactive: false,
 				width: this.box.width * (1 - this.widthPercent) - 10 + this.settings.get_int("border-spacing-px")
 			});
 			right = new St.Widget({
+				reactive: true,
 				layout_manager: new Clutter.GridLayout({
 					orientation: Clutter.Orientation.HORIZONTAL,
-					row_spacing: this.settings.get_int("border-spacing-px") * 2,
-					column_spacing: this.settings.get_int("border-spacing-px") * 2,
 					row_homogeneous: true,
 					column_homogeneous: true
 				}),
@@ -774,7 +773,7 @@ class Keyboard extends Dialog {
 			}
 			for (const keydef of kRow) {
 				if (keydef instanceof Array) {
-					keydef.forEach(i => {doAddKey(i); r += 2; c -= 2});
+					keydef.forEach(i => { doAddKey(i); r += 2; c -= 2 });
 					c += 2;
 					r -= 4;
 				} else {
@@ -830,7 +829,7 @@ class Keyboard extends Dialog {
 				y_expand: true
 			})
 			moveHandleLeft.add_style_class_name("moveHandle")
-			moveHandleLeft.set_style("font-size: " + this.settings.get_int("font-size-px") + "px; border-radius: " + (this.settings.get_boolean("round-key-corners") ? "5px;" : "0;") + "background-size: " + this.settings.get_int("font-size-px") + "px;");
+			moveHandleLeft.set_style("font-size: " + this.settings.get_int("font-size-px") + "px; border-radius: " + (this.settings.get_boolean("round-key-corners") ? "5px;" : "0;") + "background-size: " + this.settings.get_int("font-size-px") + "px; font-weight: " + (this.settings.get_boolean("font-bold") ? "bold" : "normal") + "; border: " + this.settings.get_int("border-spacing-px") + "px solid transparent;");
 			if (this.lightOrDark(this.settings.get_double("background-r" + this.settings.scheme), this.settings.get_double("background-g" + this.settings.scheme), this.settings.get_double("background-b" + this.settings.scheme))) {
 				moveHandleLeft.add_style_class_name("inverted");
 			} else {
@@ -850,7 +849,7 @@ class Keyboard extends Dialog {
 				y_expand: true
 			})
 			moveHandleRight.add_style_class_name("moveHandle")
-			moveHandleRight.set_style("font-size: " + this.settings.get_int("font-size-px") + "px; border-radius: " + (this.settings.get_boolean("round-key-corners") ? "5px;" : "0;") + "background-size: " + this.settings.get_int("font-size-px") + "px;");
+			moveHandleRight.set_style("font-size: " + this.settings.get_int("font-size-px") + "px; border-radius: " + (this.settings.get_boolean("round-key-corners") ? "5px;" : "0;") + "background-size: " + this.settings.get_int("font-size-px") + "px; font-weight: " + (this.settings.get_boolean("font-bold") ? "bold" : "normal") + "; border: " + this.settings.get_int("border-spacing-px") + "px solid transparent;");
 			if (this.lightOrDark(this.settings.get_double("background-r" + this.settings.scheme), this.settings.get_double("background-g" + this.settings.scheme), this.settings.get_double("background-b" + this.settings.scheme))) {
 				moveHandleRight.add_style_class_name("inverted");
 			} else {
@@ -864,8 +863,8 @@ class Keyboard extends Dialog {
 				this.event(event, false)
 			})
 			gridRight.attach(moveHandleRight, (rowSize - halfSize), 0, (rowSize - halfSize - 1), 3)
-			gridLeft.attach(new St.Widget({x_expand: true, y_expand: true}), 0, 3, halfSize, 1)
-			gridRight.attach(new St.Widget({x_expand: true, y_expand: true}), (rowSize - halfSize), 3, (rowSize - halfSize + 1), 1)
+			gridLeft.attach(new St.Widget({ x_expand: true, y_expand: true }), 0, 3, halfSize, 1)
+			gridRight.attach(new St.Widget({ x_expand: true, y_expand: true }), (rowSize - halfSize), 3, (rowSize - halfSize + 1), 1)
 		} else {
 			this.box.add_style_class_name("boxLay");
 			this.box.set_style("background-color: rgba(" + this.settings.get_double("background-r" + this.settings.scheme) + "," + this.settings.get_double("background-g" + this.settings.scheme) + "," + this.settings.get_double("background-b" + this.settings.scheme) + ", " + this.settings.get_double("background-a" + this.settings.scheme) + "); padding: " + this.settings.get_int("outer-spacing-px") + "px;")
@@ -900,12 +899,12 @@ class Keyboard extends Dialog {
 			grid.attach(closeBtn, (rowSize - 2), 0, 2, 3)
 			this.keys.push(closeBtn)
 
-			let moveHandle= new St.Button({
+			let moveHandle = new St.Button({
 				x_expand: true,
 				y_expand: true
 			})
 			moveHandle.add_style_class_name("moveHandle")
-			moveHandle.set_style("font-size: " + this.settings.get_int("font-size-px") + "px; border-radius: " + (this.settings.get_boolean("round-key-corners") ? "5px;" : "0;") + "background-size: " + this.settings.get_int("font-size-px") + "px;");
+			moveHandle.set_style("font-size: " + this.settings.get_int("font-size-px") + "px; border-radius: " + (this.settings.get_boolean("round-key-corners") ? "5px;" : "0;") + "background-size: " + this.settings.get_int("font-size-px") + "px; font-weight: " + (this.settings.get_boolean("font-bold") ? "bold" : "normal") + "; border: " + this.settings.get_int("border-spacing-px") + "px solid transparent;");
 			if (this.lightOrDark(this.settings.get_double("background-r" + this.settings.scheme), this.settings.get_double("background-g" + this.settings.scheme), this.settings.get_double("background-b" + this.settings.scheme))) {
 				moveHandle.add_style_class_name("inverted");
 			} else {
@@ -919,11 +918,11 @@ class Keyboard extends Dialog {
 				this.event(event, false)
 			})
 			grid.attach(moveHandle, 2, 0, (rowSize - 4), 3)
-			grid.attach(new St.Widget({x_expand: true, y_expand: true}), 0, 3, rowSize, 1)
+			grid.attach(new St.Widget({ x_expand: true, y_expand: true }), 0, 3, rowSize, 1)
 		}
 
 		this.keys.forEach(item => {
-			item.set_style("font-size: " + this.settings.get_int("font-size-px") + "px; border-radius: " + (this.settings.get_boolean("round-key-corners") ? "5px;" : "0;") + "background-size: " + this.settings.get_int("font-size-px") + "px; font-weight: " + (this.settings.get_boolean("font-bold") ? "bold" : "normal") + ";");
+			item.set_style("font-size: " + this.settings.get_int("font-size-px") + "px; border-radius: " + (this.settings.get_boolean("round-key-corners") ? "5px;" : "0;") + "background-size: " + this.settings.get_int("font-size-px") + "px; font-weight: " + (this.settings.get_boolean("font-bold") ? "bold" : "normal") + "; border: " + this.settings.get_int("border-spacing-px") + "px solid transparent;");
 			if (this.lightOrDark(this.settings.get_double("background-r" + this.settings.scheme), this.settings.get_double("background-g" + this.settings.scheme), this.settings.get_double("background-b" + this.settings.scheme))) {
 				item.add_style_class_name("inverted");
 			} else {
@@ -949,6 +948,7 @@ class Keyboard extends Dialog {
 				}
 			})
 			let pressEv = (evType) => {
+				this.box.set_child_at_index(item, this.box.get_children().length - 1);
 				item.space_motion_handler = null
 				item.set_scale(1.2, 1.2)
 				item.add_style_pseudo_class("pressed")
