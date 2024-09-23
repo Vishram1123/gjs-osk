@@ -25,18 +25,35 @@ export default class GjsOskPreferences extends ExtensionPreferences {
 		});
 		page1.add(behaviorGroup);
 
-		const layoutRow = new Adw.ActionRow({
+		const layoutRow = new Adw.ExpanderRow({
 			title: _('Layout')
 		});
 		behaviorGroup.add(layoutRow);
 
-		let layoutList = ["Full Sized International", "Full Sized US", "Tenkeyless International", "Tenkeyless US", "Compact International", "Compact US", "Split International", "Split US"];
-		let layoutDrop = Gtk.DropDown.new_from_strings(layoutList);
-		layoutDrop.valign = Gtk.Align.CENTER;
-		layoutDrop.selected = settings.get_int("layout");
+		const layoutLandscapeRow = new Adw.ActionRow({
+			title: _('Layout')
+		});
+		layoutRow.add_row(layoutLandscapeRow);
 
-		layoutRow.add_suffix(layoutDrop);
-		layoutRow.activatable_widget = layoutDrop;
+		let layoutList = ["Full Sized International", "Full Sized US", "Tenkeyless International", "Tenkeyless US", "Compact International", "Compact US", "Split International", "Split US"];
+		let layoutLandscapeDrop = Gtk.DropDown.new_from_strings(layoutList);
+		layoutLandscapeDrop.valign = Gtk.Align.CENTER;
+		layoutLandscapeDrop.selected = settings.get_int("layout-landscape");
+
+		layoutLandscapeRow.add_suffix(layoutLandscapeDrop);
+		layoutLandscapeRow.activatable_widget = layoutLandscapeDrop;
+
+		const layoutPortraitRow = new Adw.ActionRow({
+			title: _('Layout')
+		});
+		layoutRow.add_row(layoutPortraitRow);
+
+		let layoutPortraitDrop = Gtk.DropDown.new_from_strings(layoutList);
+		layoutPortraitDrop.valign = Gtk.Align.CENTER;
+		layoutPortraitDrop.selected = settings.get_int("layout-portrait");
+
+		layoutPortraitRow.add_suffix(layoutPortraitDrop);
+		layoutPortraitRow.activatable_widget = layoutPortraitDrop;
 
 		const enableDragRow = new Adw.ActionRow({
 			title: _('Enable Dragging')
@@ -372,6 +389,7 @@ export default class GjsOskPreferences extends ExtensionPreferences {
 		settings.bind("font-size-px", numChanger_font, "value", 0);
 		settings.bind("font-bold", fontBoldEnabled, "active", 0)
 		settings.bind("border-spacing-px", numChanger_bord, "value", 0);
+		settings.bind("outer-spacing-px", numChanger_outer, "value", 0);
 		settings.bind("snap-spacing-px", numChanger_snap, "value", 0)
 		settings.bind("round-key-corners", roundKeyCDT, "active", 0);
 		settings.bind("play-sound", soundPlayDT, "active", 0);
@@ -398,6 +416,7 @@ export default class GjsOskPreferences extends ExtensionPreferences {
 			settings.set_int("font-size-px", numChanger_font.value);
 			settings.set_boolean("font-bold", fontBoldEnabled.active)
 			settings.set_int("border-spacing-px", numChanger_bord.value);
+			settings.set_int("outer-spacing-px", numChanger_outer.value);
 			settings.set_int("snap-spacing-px", numChanger_snap.value)
 			settings.set_boolean("round-key-corners", roundKeyCDT.active);
 			settings.set_boolean("play-sound", soundPlayDT.active);

@@ -651,8 +651,8 @@ class Keyboard extends Dialog {
 	buildUI() {
 		this.box.set_opacity(0);
 		this.keys = [];
-		let layoutName = Object.keys(layouts)[this.settings.get_int("layout")];
 		let monitor = Main.layoutManager.primaryMonitor
+		let layoutName = Object.keys(layouts)[(monitor.width > monitor.height) ? this.settings.get_int("layout-landscape") : this.settings.get_int("layout-portrait")];
 		this.box.width = Math.round((monitor.width - this.settings.get_int("snap-spacing-px") * 2) * (layoutName.includes("Split") ? 1 : this.widthPercent))
 		this.box.height = Math.round((monitor.height - this.settings.get_int("snap-spacing-px") * 2) * this.heightPercent)
 
