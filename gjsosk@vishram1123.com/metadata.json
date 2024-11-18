@@ -1,13 +1,14 @@
 {
-  "description": "A new Onscreen Keyboard built using GNOME JS",
-  "gettext-domain": "gjsosk@vishram1123.com",
-  "name": "GJS OSK",
-  "settings-schema": "org.gnome.shell.extensions.gjsosk",
-  "shell-version": [
-    "45",
-    "46"
-  ],
-  "url": "https://github.com/Vishram1123/gjs-osk",
-  "uuid": "gjsosk@vishram1123.com",
-  "version": 100000
+"description": "A new Onscreen Keyboard built using GNOME JS",
+"gettext-domain": "gjsosk@vishram1123.com",
+"name": "GJS OSK",
+"settings-schema": "org.gnome.shell.extensions.gjsosk",
+"shell-version": [
+"45",
+"46",
+"47"
+],
+"url": "https://github.com/Vishram1123/gjs-osk",
+"uuid": "gjsosk@vishram1123.com",
+"version": 29
 }
