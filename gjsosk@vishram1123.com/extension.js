@@ -106,19 +106,21 @@ export default class GjsOskExtension extends Extension {
 			this.openInterval = null;
 		}
 		this.openInterval = setInterval(() => {
-			if (global.stage.key_focus == this.Keyboard && this.Keyboard.prevKeyFocus != null) {
-				global.stage.key_focus = this.Keyboard.prevKeyFocus
-			}
-			this.Keyboard.get_parent().set_child_at_index(this.Keyboard, this.Keyboard.get_parent().get_n_children() - 1);
-			this.Keyboard.set_child_at_index(this.Keyboard.box, this.Keyboard.get_n_children() - 1);
-			if (!this.Keyboard.openedFromButton && this.lastInputMethod) {
-				if (Main.inputMethod.currentFocus != null && Main.inputMethod.currentFocus.is_focused() && !this.Keyboard.closedFromButton) {
-					this._openKeyboard();
-				} else if (!this.Keyboard.closedFromButton && !this.Keyboard._dragging) {
-					this._closeKeyboard();
-					this.Keyboard.closedFromButton = false
-				} else if (Main.inputMethod.currentFocus == null) {
-					this.Keyboard.closedFromButton = false
+			if (this.Keyboard != null) {
+				if (global.stage.key_focus == this.Keyboard && this.Keyboard.prevKeyFocus != null) {
+					global.stage.key_focus = this.Keyboard.prevKeyFocus
+				}
+				this.Keyboard.get_parent().set_child_at_index(this.Keyboard, this.Keyboard.get_parent().get_n_children() - 1);
+				this.Keyboard.set_child_at_index(this.Keyboard.box, this.Keyboard.get_n_children() - 1);
+				if (!this.Keyboard.openedFromButton && this.lastInputMethod) {
+					if (Main.inputMethod.currentFocus != null && Main.inputMethod.currentFocus.is_focused() && !this.Keyboard.closedFromButton) {
+						this._openKeyboard();
+					} else if (!this.Keyboard.closedFromButton && !this.Keyboard._dragging) {
+						this._closeKeyboard();
+						this.Keyboard.closedFromButton = false
+					} else if (Main.inputMethod.currentFocus == null) {
+						this.Keyboard.closedFromButton = false
+					}
 				}
 			}
 		}, 300);
@@ -174,8 +176,10 @@ export default class GjsOskExtension extends Extension {
 					throw new Error(err);
 				}
 			}
-			if (this.Keyboard)
+			if (this.Keyboard) {
 				this.Keyboard.destroy();
+				this.Keyboard = null;
+			}
 			let [ok, contents] = GLib.file_get_contents(this.path + '/keycodes/' + KeyboardManager.getKeyboardManager().currentLayout.id + '.json');
 			if (ok) {
 				keycodes = JSON.parse(contents);
@@ -331,6 +335,7 @@ class Keyboard extends Dialog {
 		});
 		this.widthPercent = (monitor.width > monitor.height) ? settings.get_int("landscape-width-percent") / 100 : settings.get_int("portrait-width-percent") / 100;
 		this.heightPercent = (monitor.width > monitor.height) ? settings.get_int("landscape-height-percent") / 100 : settings.get_int("portrait-height-percent") / 100;
+		this.nonDragBlocker = new Clutter.Actor();
 		this.buildUI();
 		this.draggable = false;
 		this.add_child(this.box);
@@ -435,6 +440,9 @@ class Keyboard extends Dialog {
 		this.keymap.disconnect(this.numLockConnect);
 		global.backend.get_monitor_manager().disconnect(this.monitorChecker)
 		super.destroy();
+		if (this.nonDragBlocker !== null) {
+			Main.layoutManager.removeChrome(this.nonDragBlocker)
+		}
 	}
 
 	startDragging(event, delta) {
@@ -580,6 +588,12 @@ class Keyboard extends Dialog {
 				duration: instant == null || !instant ? 100 : 0,
 				mode: Clutter.AnimationMode.EASE_OUT_QUAD
 			})
+			if (!this.settings.get_boolean("enable-drag") && this.nonDragBlocker !== null) {
+				Main.layoutManager.addChrome(this.nonDragBlocker, {
+					affectsStruts: true,
+					trackFullscreen: true,
+				})
+			}
 			this.opened = true;
 		}
 	}
@@ -614,6 +628,12 @@ class Keyboard extends Dialog {
 			duration: instant == null || !instant ? 100 : 0,
 			mode: Clutter.AnimationMode.EASE_OUT_QUAD
 		})
+		if (!this.settings.get_boolean("enable-drag") && this.nonDragBlocker !== null) {
+			Main.layoutManager.removeChrome(this.nonDragBlocker, {
+				affectsStruts: true,
+				trackFullscreen: true,
+			})
+		}
 		this.openedFromButton = false
 		this.releaseAllKeys();
 	}
@@ -664,6 +684,48 @@ class Keyboard extends Dialog {
 		let layoutName = Object.keys(layouts)[(monitor.width > monitor.height) ? this.settings.get_int("layout-landscape") : this.settings.get_int("layout-portrait")];
 		this.box.width = Math.round((monitor.width - this.settings.get_int("snap-spacing-px") * 2) * (layoutName.includes("Split") ? 1 : this.widthPercent))
 		this.box.height = Math.round((monitor.height - this.settings.get_int("snap-spacing-px") * 2) * this.heightPercent)
+
+		if (!this.settings.get_boolean("enable-drag")) {
+			this.nonDragBlocker = new Clutter.Actor();
+			switch (this.settings.get_int("default-snap")) {
+				case 0:
+				case 1:
+				case 2:
+					this.nonDragBlocker.x = monitor.x;
+					this.nonDragBlocker.y = monitor.y;
+					this.nonDragBlocker.width = monitor.width;
+					this.nonDragBlocker.height = this.box.height;
+					break;
+				case 3:
+					this.nonDragBlocker.x = monitor.x;
+					this.nonDragBlocker.y = monitor.y;
+					this.nonDragBlocker.width = this.box.width;
+					this.nonDragBlocker.height = monitor.height;
+					break;
+				case 5:
+					this.nonDragBlocker.x = monitor.x + monitor.width - this.box.width;
+					this.nonDragBlocker.y = monitor.y;
+					this.nonDragBlocker.width = this.box.width;
+					this.nonDragBlocker.height = monitor.height;
+					break;
+				case 6:
+				case 7:
+				case 8:
+					this.nonDragBlocker.x = monitor.x;
+					this.nonDragBlocker.y = monitor.y + monitor.height - this.box.height;
+					this.nonDragBlocker.width = monitor.width;
+					this.nonDragBlocker.height = this.box.height;
+					break;
+			}
+			if (this.settings.get_int("default-snap") == 4) {
+				this.nonDragBlocker.destroy();
+				this.nonDragBlocker = null;
+			}
+			console.log(this.nonDragBlocker)
+		} else {
+			this.nonDragBlocker.destroy();
+			this.nonDragBlocker = null;
+		}
 
 		const grid = this.box.layout_manager
 		grid.set_row_homogeneous(true)
