@@ -67,6 +67,9 @@
     <key name="default-snap" type="i">
       <default>7</default>
     </key>
+    <key name="default-monitor" type="s">
+      <default>"1:0"</default>
+    </key>
     <key name="enable-tap-gesture" type="i">
 		<default>1</default>
     </key>

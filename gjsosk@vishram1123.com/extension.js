@@ -71,6 +71,7 @@ class KeyboardMenuToggle extends QuickSettings.QuickMenuToggle {
 
 let keycodes;
 let layouts;
+let currentMonitorId = 0;
 
 export default class GjsOskExtension extends Extension {
 	_openKeyboard(instant) {
@@ -150,6 +151,22 @@ export default class GjsOskExtension extends Extension {
 		}
 
 		let refresh = () => {
+			let currentMonitors = this.settings.get_string("default-monitor").split(";")
+			let currentMonitorMap = {};
+			let monitors = Main.layoutManager.monitors;
+			for (var i of currentMonitors) {
+				let tmp = i.split(":");
+				currentMonitorMap[tmp[0]] = tmp[1] + "";
+			}
+			if (!Object.keys(currentMonitorMap).includes(monitors.length + "")) {
+				let allConfigs = Object.keys(currentMonitorMap).map(Number.parseInt).sort();
+				currentMonitorMap[monitors.length + ""] = allConfigs[allConfigs.length - 1];
+			}
+			currentMonitorId = global.backend.get_monitor_manager().get_monitor_for_connector(currentMonitorMap[monitors.length + ""]);
+			console.log("GJS-OSK:", monitors.length, JSON.stringify(currentMonitorMap), currentMonitorMap[monitors.length + ""], currentMonitorId)
+			if (currentMonitorId == -1) {
+				currentMonitorId = 0;
+			}
 			if (!Gio.File.new_for_path(this.path + "/keycodes").query_exists(null)) {
 				Gio.File.new_for_path(this.path + "/keycodes").make_directory(null);
 				let [status, out, err, code] = GLib.spawn_command_line_sync("tar -Jxf " + this.path + "/keycodes.tar.xz -C " + this.path + "/keycodes")
@@ -304,7 +321,7 @@ class Keyboard extends Dialog {
 		this.settingsOpenFunction = extensionObject.openPrefs
 		this.inputDevice = Clutter.get_default_backend().get_default_seat().create_virtual_device(Clutter.InputDeviceType.KEYBOARD_DEVICE);
 		this.settings = settings;
-		let monitor = Main.layoutManager.primaryMonitor;
+		let monitor = Main.layoutManager.monitors[currentMonitorId];
 		super._init(Main.layoutManager.modalDialogGroup, 'db-keyboard-content');
 		this.box = new St.Widget({
 			reactive: true,
@@ -327,7 +344,9 @@ class Keyboard extends Dialog {
 		this.opened = false;
 		this.state = State.CLOSED;
 		this.delta = [];
-		this.checkMonitor();
+		this.monitorChecker = global.backend.get_monitor_manager().connect('monitors-changed', () => {
+			this.refresh()
+		});
 		this._dragging = false;
 		let side = null;
 		switch (this.settings.get_int("default-snap")) {
@@ -400,10 +419,6 @@ class Keyboard extends Dialog {
 		global.stage.remove_action_by_name('osk')
 		if (this.oldBottomDragAction !== null && this.oldBottomDragAction instanceof Clutter.Action)
 			global.stage.add_action_full('osk', Clutter.EventPhase.CAPTURE, this.oldBottomDragAction)
-		if (this.monitorChecker !== null) {
-			clearInterval(this.monitorChecker);
-			this.monitorChecker = null;
-		}
 		if (this.textboxChecker !== null) {
 			clearInterval(this.textboxChecker);
 			this.textboxChecker = null;
@@ -418,6 +433,7 @@ class Keyboard extends Dialog {
 		}
 		this.keymap.disconnect(this.capslockConnect);
 		this.keymap.disconnect(this.numLockConnect);
+		global.backend.get_monitor_manager().disconnect(this.monitorChecker)
 		super.destroy();
 	}
 
@@ -491,7 +507,13 @@ class Keyboard extends Dialog {
 	}
 
 	snapMovement(xPos, yPos) {
-		let monitor = Main.layoutManager.primaryMonitor
+		let monitor = Main.layoutManager.monitors[currentMonitorId]
+		if (xPos < monitor.x || yPos < monitor.y || xPos > monitor.x + monitor.width || yPos > monitor.y + monitor.width) {
+			this.set_translation(xPos, yPos, 0);
+			return;
+		}
+		xPos -= monitor.x;
+		yPos -= monitor.y;
 		let snap_px = this.settings.get_int("snap-spacing-px")
 		if (Math.abs(xPos - ((monitor.width * .5) - ((this.width * .5)))) <= 50) {
 			xPos = ((monitor.width * .5) - ((this.width * .5)));
@@ -507,28 +529,16 @@ class Keyboard extends Dialog {
 		} else if (Math.abs(yPos - ((monitor.height * .5) - (this.height * .5))) <= 50) {
 			yPos = (monitor.height * .5) - (this.height * .5);
 		}
-		this.set_translation(xPos, yPos, 0);
-	}
-
-	checkMonitor() {
-		let monitor = Main.layoutManager.primaryMonitor;
-		let oldMonitorDimensions = [monitor.width, monitor.height];
-		this.monitorChecker = setInterval(() => {
-			monitor = Main.layoutManager.primaryMonitor;
-			if (oldMonitorDimensions[0] != monitor.width || oldMonitorDimensions[1] != monitor.height) {
-				this.refresh()
-				oldMonitorDimensions = [monitor.width, monitor.height];
-			}
-		}, 200);
+		this.set_translation(xPos + monitor.x, yPos + monitor.y, 0);
 	}
 
 	setOpenState(percent) {
-		let monitor = Main.layoutManager.primaryMonitor;
+		let monitor = Main.layoutManager.monitors[currentMonitorId];
 		let posX = [this.settings.get_int("snap-spacing-px"), ((monitor.width * .5) - ((this.width * .5))), monitor.width - this.width - this.settings.get_int("snap-spacing-px")][(this.settings.get_int("default-snap") % 3)];
 		let posY = [this.settings.get_int("snap-spacing-px"), ((monitor.height * .5) - ((this.height * .5))), monitor.height - this.height - this.settings.get_int("snap-spacing-px")][Math.floor((this.settings.get_int("default-snap") / 3))];
 		let mX = [-this.box.width, 0, this.box.width][(this.settings.get_int("default-snap") % 3)];
 		let mY = [-this.box.height, 0, this.box.height][Math.floor((this.settings.get_int("default-snap") / 3))]
-		let [dx, dy] = [posX + mX * ((100 - percent) / 100), posY + mY * ((100 - percent) / 100)]
+		let [dx, dy] = [posX + mX * ((100 - percent) / 100) + monitor.x, posY + mY * ((100 - percent) / 100) + monitor.y]
 		let op = 255 * (percent / 100);
 		this.set_translation(dx, dy, 0)
 		this.box.set_opacity(op)
@@ -542,13 +552,13 @@ class Keyboard extends Dialog {
 			this.show();
 		}
 		if (noPrep == null || noPrep) {
-			let monitor = Main.layoutManager.primaryMonitor;
+			let monitor = Main.layoutManager.monitors[currentMonitorId];
 			let posX = [this.settings.get_int("snap-spacing-px"), ((monitor.width * .5) - ((this.width * .5))), monitor.width - this.width - this.settings.get_int("snap-spacing-px")][(this.settings.get_int("default-snap") % 3)];
 			let posY = [this.settings.get_int("snap-spacing-px"), ((monitor.height * .5) - ((this.height * .5))), monitor.height - this.height - this.settings.get_int("snap-spacing-px")][Math.floor((this.settings.get_int("default-snap") / 3))];
 			if (noPrep == null) {
 				let mX = [-this.box.width, 0, this.box.width][(this.settings.get_int("default-snap") % 3)];
 				let mY = [-this.box.height, 0, this.box.height][Math.floor((this.settings.get_int("default-snap") / 3))]
-				this.set_translation(posX + mX, posY + mY, 0)
+				this.set_translation(posX + mX + monitor.x, posY + mY + monitor.y, 0)
 			}
 			this.box.ease({
 				opacity: 255,
@@ -565,8 +575,8 @@ class Keyboard extends Dialog {
 				}
 			});
 			this.ease({
-				translation_x: posX,
-				translation_y: posY,
+				translation_x: posX + monitor.x,
+				translation_y: posY + monitor.y,
 				duration: instant == null || !instant ? 100 : 0,
 				mode: Clutter.AnimationMode.EASE_OUT_QUAD
 			})
@@ -576,7 +586,7 @@ class Keyboard extends Dialog {
 
 	close(instant = null) {
 		this.prevKeyFocus = null;
-		let monitor = Main.layoutManager.primaryMonitor;
+		let monitor = Main.layoutManager.monitors[currentMonitorId];
 		let posX = [this.settings.get_int("snap-spacing-px"), ((monitor.width * .5) - ((this.width * .5))), monitor.width - this.width - this.settings.get_int("snap-spacing-px")][(this.settings.get_int("default-snap") % 3)];
 		let posY = [this.settings.get_int("snap-spacing-px"), ((monitor.height * .5) - ((this.height * .5))), monitor.height - this.height - this.settings.get_int("snap-spacing-px")][Math.floor((this.settings.get_int("default-snap") / 3))];
 		let mX = [-this.box.width, 0, this.box.width][(this.settings.get_int("default-snap") % 3)];
@@ -599,8 +609,8 @@ class Keyboard extends Dialog {
 			},
 		});
 		this.ease({
-			translation_x: posX + mX,
-			translation_y: posY + mY,
+			translation_x: posX + mX + monitor.x,
+			translation_y: posY + mY + monitor.y,
 			duration: instant == null || !instant ? 100 : 0,
 			mode: Clutter.AnimationMode.EASE_OUT_QUAD
 		})
@@ -650,7 +660,7 @@ class Keyboard extends Dialog {
 	buildUI() {
 		this.box.set_opacity(0);
 		this.keys = [];
-		let monitor = Main.layoutManager.primaryMonitor
+		let monitor = Main.layoutManager.monitors[currentMonitorId]
 		let layoutName = Object.keys(layouts)[(monitor.width > monitor.height) ? this.settings.get_int("layout-landscape") : this.settings.get_int("layout-portrait")];
 		this.box.width = Math.round((monitor.width - this.settings.get_int("snap-spacing-px") * 2) * (layoutName.includes("Split") ? 1 : this.widthPercent))
 		this.box.height = Math.round((monitor.height - this.settings.get_int("snap-spacing-px") * 2) * this.heightPercent)
