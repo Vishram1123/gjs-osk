@@ -3,6 +3,7 @@
 import Adw from 'gi://Adw';
 import Gtk from 'gi://Gtk';
 import Gdk from 'gi://Gdk';
+import GLib from 'gi://GLib';
 
 import { ExtensionPreferences, gettext as _ } from 'resource:///org/gnome/Shell/Extensions/js/extensions/prefs.js';
 
@@ -35,7 +36,13 @@ export default class GjsOskPreferences extends ExtensionPreferences {
 		});
 		layoutRow.add_row(layoutLandscapeRow);
 
-		let layoutList = ["Full Sized International", "Full Sized US", "Tenkeyless International", "Tenkeyless US", "Compact International", "Compact US", "Split International", "Split US"];
+		let layouts;
+		let [okL, contentsL] = GLib.file_get_contents(this.path + '/physicalLayouts.json');
+		if (okL) {
+			layouts = JSON.parse(contentsL);
+		}
+
+		let layoutList = Object.keys(layouts);
 		let layoutLandscapeDrop = Gtk.DropDown.new_from_strings(layoutList);
 		layoutLandscapeDrop.valign = Gtk.Align.CENTER;
 		layoutLandscapeDrop.selected = settings.get_int("layout-landscape");
