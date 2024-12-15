@@ -13,6 +13,7 @@ import * as PopupMenu from 'resource:///org/gnome/shell/ui/popupMenu.js';
 import * as QuickSettings from 'resource:///org/gnome/shell/ui/quickSettings.js';
 import * as KeyboardManager from 'resource:///org/gnome/shell/misc/keyboardManager.js';
 import * as KeyboardUI from 'resource:///org/gnome/shell/ui/keyboard.js';
+import * as InputSourceManager from 'resource:///org/gnome/shell/ui/status/keyboard.js';
 import { Dialog } from 'resource:///org/gnome/shell/ui/dialog.js';
 
 import { Extension, gettext as _ } from 'resource:///org/gnome/shell/extensions/extension.js';
@@ -131,7 +132,7 @@ export default class GjsOskExtension extends Extension {
 	enable() {
 		this.settings = this.getSettings();
 		this.darkSchemeSettings = this.getSettings("org.gnome.desktop.interface");
-		this.inputLanguageSettings = this.getSettings('org.gnome.desktop.input-sources')
+		this.inputLanguageSettings = InputSourceManager.getInputSourceManager();
 		this.gnomeKeyboardSettings = this.getSettings('org.gnome.desktop.a11y.applications');
 		this.isGnomeKeyboardEnabled = this.gnomeKeyboardSettings.get_boolean('screen-keyboard-enabled');
 		this.gnomeKeyboardSettings.set_boolean('screen-keyboard-enabled', false)
@@ -263,7 +264,7 @@ export default class GjsOskExtension extends Extension {
 		this.settingsHandlers = [
 			this.settings.connect("changed", settingsChanged),
 			this.darkSchemeSettings.connect("changed", (_, key) => { if (key == "color-scheme") settingsChanged() }),
-			this.inputLanguageSettings.connect("changed", settingsChanged)
+			this.inputLanguageSettings.connect("current-source-changed", settingsChanged)
 		];
 	}
 
