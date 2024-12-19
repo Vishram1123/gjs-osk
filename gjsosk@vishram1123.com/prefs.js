@@ -179,7 +179,7 @@ function fillPreferencesWindow(window) {
 			monitors.push(monitor);
 		}
 	}
-	let monitorDrop = Gtk.DropDown.new_from_strings(monitors.map(m => m.get_description()))
+	let monitorDrop = Gtk.DropDown.new_from_strings(monitors.map(m => m.get_model()))
 	monitorDrop.valign = Gtk.Align.CENTER;
 	let currentMonitors = settings.get_string("default-monitor").split(";")
 	let currentMonitorMap = {};
