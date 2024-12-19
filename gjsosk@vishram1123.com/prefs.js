@@ -44,7 +44,7 @@ function fillPreferencesWindow(window) {
 	layoutRow.add_row(layoutLandscapeRow);
 
 	let layouts;
-	let [okL, contentsL] = GLib.file_get_contents(this.path + '/physicalLayouts.json');
+	let [okL, contentsL] = GLib.file_get_contents(Me.path + '/physicalLayouts.json');
 	if (okL) {
 		layouts = JSON.parse(contentsL);
 	}
