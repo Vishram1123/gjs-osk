@@ -32,18 +32,41 @@ function fillPreferencesWindow(window) {
 	});
 	page1.add(behaviorGroup);
 
-	const layoutRow = new Adw.ActionRow({
+	const layoutRow = new Adw.ExpanderRow({
 		title: _('Layout')
 	});
 	behaviorGroup.add(layoutRow);
 
-	let layoutList = ["Full Sized International", "Full Sized US", "Tenkeyless International", "Tenkeyless US", "Compact International", "Compact US", "Split International", "Split US"];
-	let layoutDrop = Gtk.DropDown.new_from_strings(layoutList);
-	layoutDrop.valign = Gtk.Align.CENTER;
-	layoutDrop.selected = settings.get_int("layout");
+	const layoutLandscapeRow = new Adw.ActionRow({
+		title: _('Landscape Layout')
+	});
+	layoutRow.add_row(layoutLandscapeRow);
 
-	layoutRow.add_suffix(layoutDrop);
-	layoutRow.activatable_widget = layoutDrop;
+	let layouts;
+	let [okL, contentsL] = GLib.file_get_contents(this.path + '/physicalLayouts.json');
+	if (okL) {
+		layouts = JSON.parse(contentsL);
+	}
+
+	let layoutList = Object.keys(layouts);
+	let layoutLandscapeDrop = Gtk.DropDown.new_from_strings(layoutList);
+	layoutLandscapeDrop.valign = Gtk.Align.CENTER;
+	layoutLandscapeDrop.selected = settings.get_int("layout-landscape");
+
+	layoutLandscapeRow.add_suffix(layoutLandscapeDrop);
+	layoutLandscapeRow.activatable_widget = layoutLandscapeDrop;
+
+	const layoutPortraitRow = new Adw.ActionRow({
+		title: _('Portrait Layout')
+	});
+	layoutRow.add_row(layoutPortraitRow);
+
+	let layoutPortraitDrop = Gtk.DropDown.new_from_strings(layoutList);
+	layoutPortraitDrop.valign = Gtk.Align.CENTER;
+	layoutPortraitDrop.selected = settings.get_int("layout-portrait");
+
+	layoutPortraitRow.add_suffix(layoutPortraitDrop);
+	layoutPortraitRow.activatable_widget = layoutPortraitDrop;
 
 	const enableDragRow = new Adw.ActionRow({
 		title: _('Enable Dragging')
@@ -139,6 +162,44 @@ function fillPreferencesWindow(window) {
 	landscapeSizing.add_row(lW);
 	landscapeSizing.add_row(lH);
 
+	const defaultMonitor = new Adw.ActionRow({
+		title: _('Default Monitor')
+	})
+	behaviorGroup.add(defaultMonitor);
+
+	let monitors = [];
+
+	const display = Gdk.Display.get_default();
+	if (display && "get_monitors" in display) {
+		const monitorsAvailable = display.get_monitors();
+
+		for (let idx = 0; idx < monitorsAvailable.get_n_items(); idx++) {
+			const monitor = monitorsAvailable.get_item(idx);
+			monitors.push(monitor);
+		}
+	}
+	let monitorDrop = Gtk.DropDown.new_from_strings(monitors.map(m => m.get_description()))
+	monitorDrop.valign = Gtk.Align.CENTER;
+	let currentMonitors = settings.get_string("default-monitor").split(";")
+	let currentMonitorMap = {};
+
+	for (var i of currentMonitors) {
+		let tmp = i.split(":");
+		currentMonitorMap[tmp[0]] = tmp[1] + "";
+	}
+	if (!Object.keys(currentMonitorMap).includes(monitors.length + "")) {
+		let allConfigs = Object.keys(currentMonitorMap).map(Number.parseInt).sort();
+		currentMonitorMap[monitors.length + ""] = allConfigs[allConfigs.length - 1];
+	}
+	let index = monitors.map(m => { return m.get_connector() }).indexOf(currentMonitorMap[monitors.length + ""]);
+	if (index == -1) {
+		index = 0
+	}
+	monitorDrop.selected = index;
+
+	defaultMonitor.add_suffix(monitorDrop);
+	defaultMonitor.activatable_widget = monitorDrop;
+
 	const defaultPosition = new Adw.ActionRow({
 		title: _('Default Position')
 	});
@@ -218,7 +279,7 @@ function fillPreferencesWindow(window) {
 	let numChanger_font = Gtk.SpinButton.new_with_range(0, 100, 1);
 	numChanger_font.value = settings.get_int('font-size-px');
 	numChanger_font.valign = Gtk.Align.CENTER;
-	
+
 	fontSize.add_suffix(numChanger_font);
 	fontSize.activatable_widget = numChanger_font;
 
@@ -245,6 +306,17 @@ function fillPreferencesWindow(window) {
 	numChanger_bord.valign = Gtk.Align.CENTER;
 	borderSpacing.add_suffix(numChanger_bord);
 	borderSpacing.activatable_widget = numChanger_bord;
+
+	let outerSpacing = new Adw.ActionRow({
+		title: _('Outer Spacing (px)')
+	});
+	appearanceGroup.add(outerSpacing);
+
+	let numChanger_outer = Gtk.SpinButton.new_with_range(0, 30, 1);
+	numChanger_outer.value = settings.get_int('outer-spacing-px');
+	numChanger_outer.valign = Gtk.Align.CENTER;
+	outerSpacing.add_suffix(numChanger_outer);
+	outerSpacing.activatable_widget = numChanger_outer;
 
 	let snapSpacing = new Adw.ActionRow({
 		title: _('Drag snap spacing (px)')
@@ -355,8 +427,9 @@ function fillPreferencesWindow(window) {
 	page2.add(links_pref_group);
 
 	window.add(page2);
-	
-	settings.bind("layout", layoutDrop, "selected", 0);
+
+	settings.bind("layout-landscape", layoutLandscapeDrop, "selected", 0);
+	settings.bind("layout-portrait", layoutPortraitDrop, "selected", 0);
 	settings.bind("enable-drag", dragEnableDT, "active", 0);
 	settings.bind("enable-tap-gesture", dragOpt, "selected", 0);
 	settings.bind("indicator-enabled", indEnabled, "active", 0);
@@ -379,14 +452,24 @@ function fillPreferencesWindow(window) {
 	settings.bind("font-size-px", numChanger_font, "value", 0);
 	settings.bind("font-bold", fontBoldEnabled, "active", 0)
 	settings.bind("border-spacing-px", numChanger_bord, "value", 0);
+	settings.bind("outer-spacing-px", numChanger_outer, "value", 0);
 	settings.bind("snap-spacing-px", numChanger_snap, "value", 0)
 	settings.bind("round-key-corners", roundKeyCDT, "active", 0);
 	settings.bind("play-sound", soundPlayDT, "active", 0);
 	settings.bind("show-icons", showIconDT, "active", 0)
 	settings.bind("default-snap", snapDrop, "selected", 0);
+	monitorDrop.connect("notify::selected", () => {
+		currentMonitorMap[monitors.length + ""] = monitors.map(m => { return m.get_connector() })[monitorDrop.selected];
+		let representation = [];
+		for (var k of Object.keys(currentMonitorMap)) {
+			representation.push(k + ":" + currentMonitorMap[k])
+		}
+		settings.set_string("default-monitor", representation.join(";"))
+	})
 
 	window.connect("close-request", () => {
-		settings.set_int("layout", layoutDrop.selected);
+		settings.set_int("layout-landscape", layoutLandscapeDrop.selected);
+		settings.set_int("layout-portrait", layoutPortraitDrop.selected);
 		settings.set_boolean("enable-drag", dragEnableDT.active);
 		settings.set_int("enable-tap-gesture", dragOpt.selected);
 		settings.set_boolean("indicator-enabled", indEnabled.active);
@@ -405,10 +488,17 @@ function fillPreferencesWindow(window) {
 		settings.set_int("font-size-px", numChanger_font.value);
 		settings.set_boolean("font-bold", fontBoldEnabled.active)
 		settings.set_int("border-spacing-px", numChanger_bord.value);
+		settings.set_int("outer-spacing-px", numChanger_outer.value);
 		settings.set_int("snap-spacing-px", numChanger_snap.value)
 		settings.set_boolean("round-key-corners", roundKeyCDT.active);
 		settings.set_boolean("play-sound", soundPlayDT.active);
 		settings.set_boolean("show-icons", showIconDT.active)
 		settings.set_int("default-snap", snapDrop.selected);
+		currentMonitorMap[monitors.length + ""] = monitors.map(m => { return m.get_connector() })[monitorDrop.selected];
+		let representation = [];
+		for (var k of Object.keys(currentMonitorMap)) {
+			representation.push(k + ":" + currentMonitorMap[k])
+		}
+		settings.set_string("default-monitor", representation.join(";"))
 	})
 }

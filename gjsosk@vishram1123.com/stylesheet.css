@@ -1,11 +1,13 @@
 .regular:pressed {
      background-color: rgba(255, 255, 255, 0.2);
      color: white;
+     border: 0;
 }
 
 .inverted:pressed {
      background-color: rgba(0, 0, 0, 0.2);
      color: black;
+     border: 0;
 }
 
 .regular {
@@ -17,12 +19,16 @@
      background-color: rgba(0, 0, 0, 0.05);
      color: black;
 }
-.key, .moveHandle {
-     border: 0;
+
+.key,
+.moveHandle {
      padding: 0;
      margin: 0;
      background-clip: padding-box;
      box-sizing: border-box;
+     background-image: url(ui/icons/hicolor/scalable/actions/transparent.svg);
+     background-repeat: no-repeat;
+     background-position: center;
 }
 
 .dr-b {
@@ -51,11 +57,13 @@
      background-position: center;
 }
 
-.close_btn.regular, .close_btn.selected.inverted {
+.close_btn.regular,
+.close_btn.selected.inverted {
      background-image: url(ui/icons/hicolor/scalable/actions/close.svg);
 }
 
-.close_btn.inverted, .close_btn.selected.regular {
+.close_btn.inverted,
+.close_btn.selected.regular {
      background-image: url(ui/icons/hicolor/scalable/actions/close-dark.svg);
 }
 
@@ -67,107 +75,133 @@
      background-image: url(ui/icons/hicolor/scalable/actions/settings-dark.svg);
 }
 
-.backspace_btn.regular, .backspace_btn.selected.inverted {
+.backspace_btn.regular,
+.backspace_btn.selected.inverted {
      background-image: url(ui/icons/hicolor/scalable/actions/backspace.svg);
 }
 
-.backspace_btn.inverted, .backspace_btn.selected.regular {
+.backspace_btn.inverted,
+.backspace_btn.selected.regular {
      background-image: url(ui/icons/hicolor/scalable/actions/backspace-dark.svg);
 }
 
-.tab_btn.regular, .tab_btn.selected.inverted {
+.tab_btn.regular,
+.tab_btn.selected.inverted {
      background-image: url(ui/icons/hicolor/scalable/actions/tab.svg);
 }
 
-.tab_btn.inverted, .tab_btn.selected.regular {
+.tab_btn.inverted,
+.tab_btn.selected.regular {
      background-image: url(ui/icons/hicolor/scalable/actions/tab-dark.svg);
 }
 
-.capslock_btn.regular, .capslock_btn.selected.inverted {
+.capslock_btn.regular,
+.capslock_btn.selected.inverted {
      background-image: url(ui/icons/hicolor/scalable/actions/capslock.svg);
 }
 
-.capslock_btn.inverted, .capslock_btn.selected.regular {
+.capslock_btn.inverted,
+.capslock_btn.selected.regular {
      background-image: url(ui/icons/hicolor/scalable/actions/capslock-dark.svg);
 }
 
-.shift_btn.regular, .shift_btn.selected.inverted {
+.shift_btn.regular,
+.shift_btn.selected.inverted {
      background-image: url(ui/icons/hicolor/scalable/actions/shift.svg);
 }
 
-.shift_btn.inverted, .shift_btn.selected.regular {
+.shift_btn.inverted,
+.shift_btn.selected.regular {
      background-image: url(ui/icons/hicolor/scalable/actions/shift-dark.svg);
 }
 
-.enter_btn.regular, .enter_btn.selected.inverted {
+.enter_btn.regular,
+.enter_btn.selected.inverted {
      background-image: url(ui/icons/hicolor/scalable/actions/enter.svg);
 }
 
-.enter_btn.inverted, .enter_btn.selected.regular {
+.enter_btn.inverted,
+.enter_btn.selected.regular {
      background-image: url(ui/icons/hicolor/scalable/actions/enter-dark.svg);
 }
 
-.ctrl_btn.regular, .ctrl_btn.selected.inverted {
+.ctrl_btn.regular,
+.ctrl_btn.selected.inverted {
      background-image: url(ui/icons/hicolor/scalable/actions/ctrl.svg);
 }
 
-.ctrl_btn.inverted, .ctrl_btn.selected.regular {
+.ctrl_btn.inverted,
+.ctrl_btn.selected.regular {
      background-image: url(ui/icons/hicolor/scalable/actions/ctrl-dark.svg);
 }
 
-.super_btn.regular, .super_btn.selected.inverted {
+.super_btn.regular,
+.super_btn.selected.inverted {
      background-image: url(ui/icons/hicolor/scalable/actions/super.svg);
 }
 
-.super_btn.inverted, .super_btn.selected.regular {
+.super_btn.inverted,
+.super_btn.selected.regular {
      background-image: url(ui/icons/hicolor/scalable/actions/super-dark.svg);
 }
 
-.alt_btn.regular, .alt_btn.selected.inverted {
+.alt_btn.regular,
+.alt_btn.selected.inverted {
      background-image: url(ui/icons/hicolor/scalable/actions/alt.svg);
 }
 
-.alt_btn.inverted, .alt_btn.selected.regular {
+.alt_btn.inverted,
+.alt_btn.selected.regular {
      background-image: url(ui/icons/hicolor/scalable/actions/alt-dark.svg);
 }
 
-.space_btn.regular, .space_btn.selected.inverted {
+.space_btn.regular,
+.space_btn.selected.inverted {
      background-image: url(ui/icons/hicolor/scalable/actions/space.svg);
 }
 
-.space_btn.inverted, .space_btn.selected.regular {
+.space_btn.inverted,
+.space_btn.selected.regular {
      background-image: url(ui/icons/hicolor/scalable/actions/space-dark.svg);
 }
 
-.left_btn.regular, .left_btn.selected.inverted {
+.left_btn.regular,
+.left_btn.selected.inverted {
      background-image: url(ui/icons/hicolor/scalable/actions/left.svg);
 }
 
-.left_btn.inverted, .left_btn.selected.regular {
+.left_btn.inverted,
+.left_btn.selected.regular {
      background-image: url(ui/icons/hicolor/scalable/actions/left-dark.svg);
 }
 
-.up_btn.regular, .up_btn.selected.inverted {
+.up_btn.regular,
+.up_btn.selected.inverted {
      background-image: url(ui/icons/hicolor/scalable/actions/up.svg);
 }
 
-.up_btn.inverted, .up_btn.selected.regular {
+.up_btn.inverted,
+.up_btn.selected.regular {
      background-image: url(ui/icons/hicolor/scalable/actions/up-dark.svg);
 }
 
-.down_btn.regular, .down_btn.selected.inverted {
+.down_btn.regular,
+.down_btn.selected.inverted {
      background-image: url(ui/icons/hicolor/scalable/actions/down.svg);
 }
 
-.down_btn.inverted, .down_btn.selected.regular {
+.down_btn.inverted,
+.down_btn.selected.regular {
      background-image: url(ui/icons/hicolor/scalable/actions/down-dark.svg);
 }
 
-.right_btn.regular, .right_btn.selected.inverted {
+.right_btn.regular,
+.right_btn.selected.inverted {
      background-image: url(ui/icons/hicolor/scalable/actions/right.svg);
 }
 
-.right_btn.inverted, .right_btn.selected.regular {
+.right_btn.inverted,
+.right_btn.selected.regular {
      background-image: url(ui/icons/hicolor/scalable/actions/right-dark.svg);
 }
 
@@ -196,6 +230,5 @@
 }
 
 .boxLay {
-     padding: 20px;
      border-radius: 10px;
 }
