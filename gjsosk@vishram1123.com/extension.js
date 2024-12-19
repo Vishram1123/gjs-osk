@@ -836,7 +836,6 @@ class Keyboard extends Dialog {
 				currentGrid = gridRight
 				const size = c
 				if (!halfSize) halfSize = size
-
 			}
 		}
 
@@ -854,14 +853,13 @@ class Keyboard extends Dialog {
 					doAddKey(keydef)
 				}
 			}
-			if (!topBtnWidth) topBtnWidth = (Object.hasOwn(kRow[kRow.length - 1], "width") ? kRow[kRow.length - 1].width : 1)
+			if (!topBtnWidth) topBtnWidth = ((Object.hasOwn(kRow[kRow.length - 1], "width") && (Object.hasOwn(kRow[kRow.length - 1], "key"))) ? kRow[kRow.length - 1].width : 1)
 			const size = c;
 			if (!rowSize) rowSize = size;
 			r += r == 0 ? 3 : 4
 		}
 
 		if (left != null) {
-
 			this.set_reactive(false)
 			left.add_style_class_name("boxLay");
 			left.set_style("background-color: rgba(" + this.settings.get_double("background-r" + this.settings.scheme) + "," + this.settings.get_double("background-g" + this.settings.scheme) + "," + this.settings.get_double("background-b" + this.settings.scheme) + ", " + this.settings.get_double("background-a" + this.settings.scheme) + "); padding: " + this.settings.get_int("outer-spacing-px") + "px;")
