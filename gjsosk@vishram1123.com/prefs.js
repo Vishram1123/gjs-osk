@@ -3,7 +3,8 @@
 const {
 	Adw,
 	Gtk,
-	Gdk
+	Gdk,
+	GLib
 } = imports.gi;
 
 const Gettext = imports.gettext;

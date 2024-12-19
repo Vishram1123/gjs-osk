@@ -854,7 +854,7 @@ class Keyboard extends Dialog {
 					doAddKey(keydef)
 				}
 			}
-			if (!topBtnWidth) topBtnWidth = (("width" in kRow[kRow.length - 1]) ? kRow[kRow.length - 1].width : 1)
+			if (!topBtnWidth) topBtnWidth = ((("width" in kRow[kRow.length - 1]) && ("key" in kRow[kRow.length - 1])) ? kRow[kRow.length - 1].width : 1)
 			const size = c;
 			if (!rowSize) rowSize = size;
 			r += r == 0 ? 3 : 4
@@ -1295,6 +1295,6 @@ class Keyboard extends Dialog {
 };
 
 function init() {
-    ExtensionUtils.initTranslations(Me.metadata.uuid);
+	ExtensionUtils.initTranslations(Me.metadata.uuid);
 	return new GjsOskExtension();
 }
