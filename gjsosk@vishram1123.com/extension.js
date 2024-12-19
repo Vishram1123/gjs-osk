@@ -694,27 +694,27 @@ class Keyboard extends Dialog {
 					this.nonDragBlocker.x = monitor.x;
 					this.nonDragBlocker.y = monitor.y;
 					this.nonDragBlocker.width = monitor.width;
-					this.nonDragBlocker.height = this.box.height;
+					this.nonDragBlocker.height = this.box.height + 2 * this.settings.get_int("snap-spacing-px");
 					break;
 				case 3:
 					this.nonDragBlocker.x = monitor.x;
 					this.nonDragBlocker.y = monitor.y;
-					this.nonDragBlocker.width = this.box.width;
+					this.nonDragBlocker.width = this.box.width + 2 * this.settings.get_int("snap-spacing-px");
 					this.nonDragBlocker.height = monitor.height;
 					break;
 				case 5:
-					this.nonDragBlocker.x = monitor.x + monitor.width - this.box.width;
+					this.nonDragBlocker.x = monitor.x + monitor.width - (this.box.width + 2 * this.settings.get_int("snap-spacing-px"));
 					this.nonDragBlocker.y = monitor.y;
-					this.nonDragBlocker.width = this.box.width;
+					this.nonDragBlocker.width = this.box.width + 2 * this.settings.get_int("snap-spacing-px");
 					this.nonDragBlocker.height = monitor.height;
 					break;
 				case 6:
 				case 7:
 				case 8:
 					this.nonDragBlocker.x = monitor.x;
-					this.nonDragBlocker.y = monitor.y + monitor.height - this.box.height;
+					this.nonDragBlocker.y = monitor.y + monitor.height - (this.box.height + 2 * this.settings.get_int("snap-spacing-px"));
 					this.nonDragBlocker.width = monitor.width;
-					this.nonDragBlocker.height = this.box.height;
+					this.nonDragBlocker.height = this.box.height + 2 * this.settings.get_int("snap-spacing-px");
 					break;
 			}
 			if (this.settings.get_int("default-snap") == 4) {
