@@ -382,7 +382,7 @@ export default class GjsOskPreferences extends ExtensionPreferences {
 		context.add_class("title-1");
 
 		let another_label = new Gtk.Label({
-			label: _("Autorelease ") + `{{VERSION}}`
+			label: _("Autorelease ") + `e70335c`
 		});
 
 		let links_pref_group = new Adw.PreferencesGroup();

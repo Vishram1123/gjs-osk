@@ -1,5 +1,25 @@
-# [GJS OSK](https://extensions.gnome.org/extension/5949/gjs-osk/)
+# GJS OSK modified for handwriting input on the PineNote
 A (marginally) better on screen keyboard for GNOME 45+ (go to the [pre-45 branch](https://github.com/Vishram1123/gjs-osk/tree/pre-45) for compatibility from gnome 42-44)
+
+This fork was modified to include a handwriting area. Using a unix socket, the strokes are transferred to [inkput_daemon.py](TODO) and the recognized text is sent back
+
+Press the button on the top right to switch to handwriting input, and the "keyboard" button to switch back.
+
+Drawing performance is terrible, even though the display is already redrawn just at the end of each stroke.
+
+Only tested with these extension preferences:
+- portrait/landscape sizing: width 100%, height as you wish (I use 35% for portrait anf 45% for landscape)
+- default position: bottom center
+- Drag snap spacing (px): 0
+
+Video:
+
+TODO
+
+Installation: go to the releases page, download the zip file, run `gnome-extensions install /path/to/gjsosk@vishram1123_[version].zip`
+
+**original readme continues...**
+
 ## Advantages over the default OSK:
 -	Function, modifier, tab, and arrow key support
 -	Ability to move around the screen
