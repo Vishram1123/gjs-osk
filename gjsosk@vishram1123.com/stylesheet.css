@@ -77,10 +77,13 @@
 }
 
 .handwriting_btn.regular,
-.handwriting_btn.selected.inverted,
+.handwriting_btn.selected.inverted {
+     background-image: url(ui/icons/hicolor/scalable/actions/handwriting.svg);
+}
+
 .handwriting_btn.inverted,
 .handwriting_btn.selected.regular {
-     background-image: url(ui/icons/hicolor/scalable/actions/handwriting.svg);
+     background-image: url(ui/icons/hicolor/scalable/actions/handwriting-dark.svg);
 }
 
 .backspace_btn.regular,
@@ -239,14 +242,4 @@
 
 .boxLay {
      border-radius: 10px;
-}
-
-.handwriting_controlbutton_box {
-     background-color: white;
-}
-.keyboard_btn {
-     background-color: white;
-     color: black;
-     border: 1px black;
-     padding: 10px;
 }

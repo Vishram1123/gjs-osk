@@ -4,6 +4,7 @@ import GLib from 'gi://GLib';
 import GObject from 'gi://GObject';
 import St from 'gi://St';
 import Shell from 'gi://Shell';
+import Cairo from 'cairo';
 
 
 import * as EdgeDragAction from 'resource:///org/gnome/shell/ui/edgeDragAction.js';
@@ -73,6 +74,7 @@ class KeyboardMenuToggle extends QuickSettings.QuickMenuToggle {
 let keycodes;
 let layouts;
 let currentMonitorId = 0;
+let trainingdatapath = "";
 
 export default class GjsOskExtension extends Extension {
 	_openKeyboard(instant) {
@@ -154,6 +156,7 @@ export default class GjsOskExtension extends Extension {
 		}
 
 		let refresh = () => {
+			trainingdatapath = this.path + "/tesseract-train"
 			let currentMonitors = this.settings.get_string("default-monitor").split(";")
 			let currentMonitorMap = {};
 			let monitors = Main.layoutManager.monitors;
@@ -310,10 +313,12 @@ export default class GjsOskExtension extends Extension {
 	}
 }
 
-const HandwritingInput = GObject.registerClass({
-	Properties: {},
-}, class HandwritingInput extends St.DrawingArea{
-	_init(options) {
+class HandwritingInput extends St.DrawingArea {
+	static {
+		GObject.registerClass(this);
+	}
+
+	_init(options, inverted) {
 		super._init(options);
 		this.current_stroke = [];
 		this.strokes = [];
@@ -321,6 +326,7 @@ const HandwritingInput = GObject.registerClass({
 		this.drawing = false;
 		this.topleft_x = 0;
 		this.topleft_y = 0;
+		this.inverted = inverted
 	}
 
 	vfunc_repaint() {
@@ -328,54 +334,60 @@ const HandwritingInput = GObject.registerClass({
 		this.width = width;
 		this.height = height;
 
-		if (!this.drawing){
-			let cr = this.get_context();
+		let cr = this.get_context();
 
-			cr.setSourceRGB(1, 1, 1);
-			cr.rectangle(0, 0, width, height);
-			cr.fill();
+		cr.setSourceRGBA(1, 1, 1, 0);
+		cr.rectangle(0, 0, width, height);
+		cr.fill();
 
 
+		if (this.inverted) {
 			cr.setSourceRGB(0, 0, 0);
+		} else {
+			cr.setSourceRGB(1, 1, 1);
+		}
 
-			if(this.strokes.length > 0){
-				for(let s=0; s<this.strokes.length; s++){
-					cr.moveTo(this.strokes[s][0][0], this.strokes[s][0][1]);
+		if (this.strokes.length > 0) {
+			for (let s = 0; s < this.strokes.length; s++) {
 
-					for(let i=1; i<this.strokes[s].length; i++){
+				for (let i = 0; i < this.strokes[s].length; i++) {
+					if (i == 0) {
+						cr.moveTo(this.strokes[s][i][0], this.strokes[s][i][1]);
+					} else {
 						cr.lineTo(this.strokes[s][i][0], this.strokes[s][i][1]);
 					}
 
-					cr.stroke();
 				}
-			}
 
-			cr.$dispose();
+				cr.stroke();
+			}
 		}
+		if (this)
+			cr.$dispose();
 	}
 
 
 	vfunc_motion_event() {
-		if(this.drawing) {
+		if (this.drawing) {
 			let event = Clutter.get_current_event();
 			let [absX, absY] = event.get_coords();
+			console.log(this.topleft_x, this.topleft_y)
+			this.strokes[this.strokes.length - 1].push([absX - this.topleft_x, absY - this.topleft_y - this.height / 6]);
 
-			this.current_stroke.push([absX-this.topleft_x, absY-this.topleft_y, Date.now()/1000]);
+			this.queue_repaint();
 		}
 
 		return Clutter.EVENT_STOP;
 	}
 
 	vfunc_button_press_event() {
-		// this seems to be the only way to find the coordinates of the drawing area on screen
+		// this seems to be the only way to find the coordinates 
+		// of the drawing area on screen
 		// we need this because the motion events give us absolute coordinates on the screen, but we need relative ones to draw dots
 		// will only work if the keybard is on the bottom with snap margin 0 - TODO: make it better
 
-		let monitor = Main.layoutManager.monitors[currentMonitorId];
-		this.topleft_x = monitor.width - this.width;
-		this.topleft_y = monitor.height - this.height;
-
 		this.drawing = true;
+		this.strokes.push([]);
 
 		return Clutter.EVENT_STOP;
 	}
@@ -383,8 +395,9 @@ const HandwritingInput = GObject.registerClass({
 	vfunc_button_release_event() {
 		this.drawing = false;
 
-		this.strokes.push(this.current_stroke);
-		this.current_stroke = [];
+		if (this.strokes[this.strokes.length - 1].length == 0) {
+			this.strokes.pop();
+		}
 
 		this.queue_repaint();
 
@@ -396,7 +409,7 @@ const HandwritingInput = GObject.registerClass({
 		for (const key in keycodes) {
 			if (keycodes[key].layers) {
 				for (const modifier in keycodes[key].layers) {
-					if (character === " "){
+					if (character === " ") {
 						character = "Space";
 					}
 
@@ -414,43 +427,75 @@ const HandwritingInput = GObject.registerClass({
 	}
 
 	// credits to https://github.com/jeffchannell/gnome-shell-socket/blob/master/client.js
-	makeRequest(request) {
+	makeRequest(request, w, h) {
 		let response = ''
-		try {
-			// start a new client
-			let client = new Gio.SocketClient();
-			let connection = client.connect(new Gio.UnixSocketAddress({path: "/tmp/gnome_to_python.sock"}), null);
-			if (!connection) {
-				return "Connection failed";
-			}
-
-			// get the input and output streams
-			let input = connection.get_input_stream();
-			let output = connection.get_output_stream();
-
-			// write the signal as a string to the output stream
-			output.write_bytes(new GLib.Bytes(''+request), null);
-
-			// get the response from the input stream as a string
-			response = String.fromCharCode.apply(null, input.read_bytes(1024, null).get_data());
-
-			connection.close(null);
-		} catch (err) {
-			return err.message + err.stack;
+		let [ok1, out1, err1, wait1] = GLib.spawn_command_line_sync("convert -size " + w + "x" + h + " xc:white +antialias -fill transparent -strokewidth 20,  -stroke black -draw \"" + request + "\" /tmp/output.png")
+		let [ok2, out2, err2, wait2] = GLib.spawn_command_line_sync("tesseract --psm 7 --tessdata-dir " + trainingdatapath + " /tmp/output.png -")
+		if (!ok1 || !ok2) {
+			throw new Error(String.fromCharCode.apply(null, err1) + "\n" + String.fromCharCode.apply(null, err2))
 		}
+
+		response = String.fromCharCode.apply(null, out2);
 
 		return response;
 	}
 
 
 
-	predict(){
-		try{
-			let prediction = this.makeRequest(JSON.stringify(this.strokes));
-
+	predict() {
+		try {
+			let draw = "";
+			if (this.strokes.length == 0) {
+				return [];
+			}
+			let minX = null;
+			let minY = null;
+			let maxX = null;
+			let maxY = null;
+			for (var i of this.strokes) {
+				if (i.length < 1) {
+					continue;
+				}
+				for (var j of i) {
+					if (minX === null || j[0] < minX) {
+						minX = j[0]
+					}
+					if (maxX === null || j[0] > maxX) {
+						maxX = j[0]
+					}
+					if (minY === null || j[1] < minY) {
+						minY = j[1]
+					}
+					if (maxY === null || j[1] > maxY) {
+						maxY = j[1]
+					}
+				}
+			}
+			minX -= 50;
+			minY -= 50;
+			maxX += 50;
+			maxY += 50;
+			minX = Math.round(minX)
+			minY = Math.round(minY)
+			maxX = Math.round(maxX)
+			maxY = Math.round(maxY)
+			for (var i of this.strokes) {
+				if (i.length < 1) {
+					continue;
+				}
+				if (i.length < 2) {
+					draw += "point " + (i[0][0] - minX) * 5 + "," + (i[0][1] - minY) * 5 + " ";
+				} else {
+					draw += "polyline "
+					for (var l = 0; l < i.length; l++) {
+						draw += (i[l][0] - minX) * 5 + "," + (i[l][1] - minY) * 5 + " "
+					}
+				}
+			}
+			let prediction = this.makeRequest(draw.trim(), (maxX - minX) * 5, (maxY - minY) * 5);
+			console.log(prediction)
 			let keyCodesList = [];
 			for (let char of prediction) {
-				let keyCodes = [];
 				const result = this.findKeyForCharacter(char);
 
 				if (result != null) {
@@ -463,13 +508,18 @@ const HandwritingInput = GObject.registerClass({
 
 			return keyCodesList;
 
-		} catch(e) {
+		} catch (e) {
 			Main.notify(e.message, e.stack);
 			return [];
 		}
 
 	}
-});
+
+	clear() {
+		this.strokes = [];
+		this.queue_repaint();
+	}
+}
 
 
 class Keyboard extends Dialog {
@@ -499,14 +549,8 @@ class Keyboard extends Dialog {
 		this.nonDragBlocker = new Clutter.Actor();
 		this.buildUI();
 		this.draggable = false;
-		this.handwriting_mode = false; // false = keyboard, true = handwriting
-
-		this.buildHandwritingUI();
-
+		this.handwriting_mode = false;
 		this.add_child(this.box);
-
-
-
 		this.close();
 		this.box.set_name("osk-gjs")
 		this.mod = [];
@@ -611,17 +655,6 @@ class Keyboard extends Dialog {
 		if (this.nonDragBlocker !== null) {
 			Main.layoutManager.removeChrome(this.nonDragBlocker)
 		}
-	}
-
-	switch_to_handwriting() {
-		this.handwriting_mode = true;
-		this.remove_child(this.box);
-		this.add_child(this.handwriting_box);
-	}
-	switch_to_keyboard() {
-		this.handwriting_mode = false;
-		this.remove_child(this.handwriting_box);
-		this.add_child(this.box);
 	}
 
 	startDragging(event, delta) {
@@ -774,6 +807,9 @@ class Keyboard extends Dialog {
 				})
 			}
 			this.opened = true;
+			this.drawingArea.topleft_x = posX + monitor.x + this.settings.get_int("outer-spacing-px");
+			this.drawingArea.topleft_y = posY + monitor.y + this.settings.get_int("outer-spacing-px");
+			console.log(this.drawingArea.get_position())
 		}
 	}
 
@@ -815,6 +851,7 @@ class Keyboard extends Dialog {
 		}
 		this.openedFromButton = false
 		this.releaseAllKeys();
+		this.drawingArea.clear();
 	}
 
 	vfunc_button_press_event() {
@@ -949,6 +986,7 @@ class Keyboard extends Dialog {
 		}
 
 		this.shiftButtons = [];
+		let drawButtons = {};
 
 		let currentLayout = layouts[layoutName];
 		let width = 0;
@@ -975,6 +1013,10 @@ class Keyboard extends Dialog {
 				let iconKeys = ["left", "up", "right", "down", "space"]
 				if (this.settings.get_boolean("show-icons")) {
 					iconKeys = ["left", "up", "right", "down", "backspace", "tab", "capslock", "shift", "enter", "ctrl", "super", "alt", "space"]
+				}
+				let drawKey = null;
+				if (["enter", "left", "right", "backspace", "space"].some(j => { return i.layers.default.toLowerCase() == j })) {
+					drawKey = i.layers.default.toLowerCase()
 				}
 				if (iconKeys.some(j => { return i.layers.default.toLowerCase() == j })) {
 					params.style_class = i.layers.default.toLowerCase() + "_btn"
@@ -1011,6 +1053,14 @@ class Keyboard extends Dialog {
 				keyBtn.visible = true
 				c += (Object.hasOwn(keydef, "width") ? keydef.width : 1) * 2
 				this.keys.push(keyBtn)
+				if (drawKey !== null) {
+					const drawActionBtn = new St.Button(params)
+					drawActionBtn.add_style_class_name('key')
+					drawActionBtn.char = i
+					drawActionBtn.visible = true
+					this.keys.push(drawActionBtn)
+					drawButtons[drawKey] = drawActionBtn
+				}
 			} else if (i == "empty space") {
 				c += (Object.hasOwn(keydef, "width") ? keydef.width : 1) * 2
 			} else if (i == "split") {
@@ -1040,7 +1090,6 @@ class Keyboard extends Dialog {
 			r += r == 0 ? 3 : 4
 		}
 
-		// if it is a split layout? TODO: make it work here as well
 		if (left != null) {
 			this.set_reactive(false)
 			left.add_style_class_name("boxLay");
@@ -1120,7 +1169,7 @@ class Keyboard extends Dialog {
 			gridRight.attach(moveHandleRight, halfSize, 0, (rowSize - halfSize - 2 * topBtnWidth), 3)
 			gridLeft.attach(new St.Widget({ x_expand: true, y_expand: true }), 0, 3, halfSize, 1)
 			gridRight.attach(new St.Widget({ x_expand: true, y_expand: true }), halfSize, 3, (rowSize - halfSize), 1)
-		} else { // if it is a normal non-split layout
+		} else {
 			this.box.add_style_class_name("boxLay");
 			this.box.set_style("background-color: rgba(" + this.settings.get_double("background-r" + this.settings.scheme) + "," + this.settings.get_double("background-g" + this.settings.scheme) + "," + this.settings.get_double("background-b" + this.settings.scheme) + ", " + this.settings.get_double("background-a" + this.settings.scheme) + "); padding: " + this.settings.get_int("outer-spacing-px") + "px;")
 			if (this.lightOrDark(this.settings.get_double("background-r" + this.settings.scheme), this.settings.get_double("background-g" + this.settings.scheme), this.settings.get_double("background-b" + this.settings.scheme))) {
@@ -1161,8 +1210,108 @@ class Keyboard extends Dialog {
 			})
 			handwritingBtn.add_style_class_name("handwriting_btn")
 			handwritingBtn.add_style_class_name("key")
+
+			this.drawingArea = new HandwritingInput({
+				reactive: true,
+				x_expand: true,
+				y_expand: true
+			}, this.lightOrDark(this.settings.get_double("background-r" + this.settings.scheme), this.settings.get_double("background-g" + this.settings.scheme), this.settings.get_double("background-b" + this.settings.scheme)));
+
+			const predictBtn = new St.Button({
+				label: "Predict",
+				y_expand: true
+			})
+			predictBtn.add_style_class_name('key')
+			this.keys.push(predictBtn)
+
+			const clearBtn = new St.Button({
+				label: "Clear",
+				y_expand: true
+			})
+			clearBtn.add_style_class_name('key')
+			this.keys.push(clearBtn)
+
+			predictBtn.connect("clicked", () => {
+				let keyList = this.drawingArea.predict();
+				if (keyList.length > 0) {
+					let i = 0;
+					let sendPredictedValues = setInterval(() => {
+						console.log(keyList[i].map(j => j.code))
+						this.sendKey(keyList[i].map(c => c.code))
+						i++;
+						if (i == keyList.length) {
+							clearInterval(sendPredictedValues)
+							sendPredictedValues = null;
+						}
+					}, 500)
+					this.releaseAllKeys();
+				}
+			})
+
+			clearBtn.connect("clicked", () => {
+				this.drawingArea.clear();
+			})
+
+			grid.attach(this.drawingArea, 0, 4, rowSize - 8 * topBtnWidth, 24)
+			grid.attach(predictBtn, rowSize - 8 * topBtnWidth, 4, 8 * topBtnWidth, 6)
+			grid.attach(clearBtn, rowSize - 8 * topBtnWidth, 10, 8 * topBtnWidth, 6)
+			grid.attach(drawButtons["enter"], rowSize - 8 * topBtnWidth, 16, 5 * topBtnWidth, 6)
+			grid.attach(drawButtons["backspace"], rowSize - 3 * topBtnWidth, 16, 3 * topBtnWidth, 6)
+			grid.attach(drawButtons["left"], rowSize - 8 * topBtnWidth, 22, 2 * topBtnWidth, 6)
+			grid.attach(drawButtons["space"], rowSize - 6 * topBtnWidth, 22, 4 * topBtnWidth, 6)
+			grid.attach(drawButtons["right"], rowSize - 2 * topBtnWidth, 22, 2 * topBtnWidth, 6)
+			this.drawingArea.reactive = false;
+			this.drawingArea.opacity = 0;
+			predictBtn.reactive = false;
+			predictBtn.opacity = 0;
+			clearBtn.reactive = false;
+			clearBtn.opacity = 0;
+			for (var key of Object.keys(drawButtons)) {
+				drawButtons[key].reactive = false;
+				drawButtons[key].opacity = 0;
+			}
+
+
 			handwritingBtn.connect("clicked", () => {
-				this.switch_to_handwriting();
+				if (!this.handwriting_mode) {
+					this.handwriting_mode = true;
+					handwritingBtn.add_style_class_name("selected")
+					this.keys.forEach(i => {
+						if (i != closeBtn && i != handwritingBtn && i != settingsBtn) {
+							i.reactive = false;
+							i.opacity = 0;
+						}
+					})
+					this.drawingArea.reactive = true;
+					this.drawingArea.opacity = 255;
+					predictBtn.reactive = true;
+					predictBtn.opacity = 255;
+					clearBtn.reactive = true;
+					clearBtn.opacity = 255;
+					for (var key of Object.keys(drawButtons)) {
+						drawButtons[key].reactive = true;
+						drawButtons[key].opacity = 255;
+					}
+				} else {
+					this.handwriting_mode = false;
+					handwritingBtn.remove_style_class_name("selected")
+					this.keys.forEach(i => {
+						if (i != closeBtn && i != handwritingBtn && i != settingsBtn) {
+							i.reactive = true;
+							i.opacity = 255;
+						}
+					})
+					this.drawingArea.reactive = false;
+					this.drawingArea.opacity = 0;
+					predictBtn.reactive = false;
+					predictBtn.opacity = 0;
+					clearBtn.reactive = false;
+					clearBtn.opacity = 0;
+					for (var key of Object.keys(drawButtons)) {
+						drawButtons[key].reactive = false;
+						drawButtons[key].opacity = 0;
+					}
+				}
 			})
 			grid.attach(handwritingBtn, (rowSize - 4 * topBtnWidth), 0, 2 * topBtnWidth, 3)
 			this.keys.push(handwritingBtn)
@@ -1320,86 +1469,6 @@ class Keyboard extends Dialog {
 				}
 			})
 		});
-	}
-
-	buildHandwritingUI() {
-		let monitor = Main.layoutManager.monitors[currentMonitorId];
-
-		/* handwriting UI:
-		+-------------------------------------------------------------------+
-		|                          [handwriting_box]                        |
-		|+--------------+                                                   |
-		|| [controlbox] |                                                   |
-		|| keyboard     |                                                   |
-		|| predict      |           [HandwritingInput extends DrawingArea]  |
-		||              |                                                   |
-		|+--------------+                                                   |
-		+-------------------------------------------------------------------+
-		*/
-
-		this.handwriting_box = new St.BoxLayout({
-			reactive: true,
-			width: Math.round((monitor.width - this.settings.get_int("snap-spacing-px") * 2) * this.widthPercent),
-			height: Math.round((monitor.height - this.settings.get_int("snap-spacing-px") * 2) * this.heightPercent)
-		});
-
-		this.handwriting_controlbutton_box = new St.BoxLayout({
-			reactive: true,
-			vertical: true,
-		});
-		this.handwriting_controlbutton_box.add_style_class_name("handwriting_controlbutton_box");
-
-
-		this.drawingarea = new HandwritingInput({
-			reactive: true,
-			x_expand: true,
-			y_expand: true
-		});
-
-		this.drawingarea.add_style_class_name("drawingarea");
-
-
-
-		const keyboadBtn = new St.Button({
-			label: "keyboard",
-			y_expand: true
-		})
-		keyboadBtn.add_style_class_name("keyboard_btn");
-		keyboadBtn.connect("clicked", () => {
-			this.switch_to_keyboard();
-		})
-		const predictBtn = new St.Button({
-			label: "predict",
-			y_expand: true
-		})
-		predictBtn.add_style_class_name("keyboard_btn");
-
-		predictBtn.connect("clicked", () => {
-			let keyList = this.drawingarea.predict();
-			keyList.forEach((keys, index, array) => {
-
-				// just one character
-				if (keys.length == 1) {
-					this.inputDevice.notify_key(Clutter.get_current_event_time(), keys[0].code, Clutter.KeyState.PRESSED);
-					this.inputDevice.notify_key(Clutter.get_current_event_time(), keys[0].code, Clutter.KeyState.RELEASED);
-				}
-
-				// shift (or other modifier in the future) + character
-				else if (keys.length == 2) {
-					this.inputDevice.notify_key(Clutter.get_current_event_time(), keys[0].code, Clutter.KeyState.PRESSED);
-					this.inputDevice.notify_key(Clutter.get_current_event_time(), keys[1].code, Clutter.KeyState.PRESSED);
-					this.inputDevice.notify_key(Clutter.get_current_event_time(), keys[1].code, Clutter.KeyState.RELEASED);
-					this.inputDevice.notify_key(Clutter.get_current_event_time(), keys[0].code, Clutter.KeyState.RELEASED);
-				}
-			});
-		})
-
-
-		this.handwriting_controlbutton_box.add_child(keyboadBtn);
-		this.handwriting_controlbutton_box.add_child(predictBtn);
-
-		this.handwriting_box.add_child(this.handwriting_controlbutton_box);
-		this.handwriting_box.add_child(this.drawingarea);
 	}
 
 	lightOrDark(r, g, b) {
