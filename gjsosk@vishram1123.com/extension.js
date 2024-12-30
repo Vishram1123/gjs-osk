@@ -1243,7 +1243,7 @@ class Keyboard extends Dialog {
 							clearInterval(sendPredictedValues)
 							sendPredictedValues = null;
 						}
-					}, 500)
+					}, 200)
 					this.releaseAllKeys();
 				}
 			})

@@ -1,4 +1,40 @@
-# GJS OSK
+# GJS OSK modified by @sw12u for handwriting input on the PineNote
+A (marginally) better on screen keyboard for GNOME 45+ (go to the [pre-45 branch](https://github.com/Vishram1123/gjs-osk/tree/pre-45) for compatibility from gnome 42-44)
+
+@sw12u's additions:
+> This fork was modified to include a handwriting area. Using a unix socket, the strokes are transferred to [inkput_daemon.py](https://github.com/s12wu/inkput/blob/main/inkput_daemon.py) and the recognized text is sent back, so the extension can type it in.
+>
+> Press the button on the top right to switch to handwriting input, and the "keyboard" button to switch back.
+>
+> Drawing performance is **terrible**, even though the display is already redrawn just at the end of each stroke.
+>
+> Only tested with these extension preferences:
+> - portrait/landscape sizing: width 100%, height as you wish (I use 35% for portrait anf 45% for landscape)
+> - default position: bottom center
+> - Drag snap spacing (px): 0
+>
+> Video:
+>
+> [gjsosk_pinenote_demo.webm](https://github.com/user-attachments/assets/a1928fe6-ca6f-4288-9017-a13e81f8b952)
+>
+>
+> Installation: clone this repo and copy the `gjsosk@vishram1123.com` directory to `.local/share/gnome-shell/extensions/`
+>
+> The daemon side: see https://github.com/s12wu/inkput?tab=readme-ov-file#integration-into-the-on-screen-keyboard-gnome-only
+
+I initially saw [this fork](https://github.com/s12wu/gjs-osk) and was intrigued, so I tried to improve it by integrating it more cleanly with the existing GJS-OSK. I made a couple of changes from the fork, including using `tesseract` instead of `inkput` for handwriting recognition, in hopes of more accurate recognition (which I could not achieve). I also made the handwriting area more responsive and provide more action buttons. Here is my demo of this:
+
+
+
+This will not be merged into the main branch at any point, as it is too unstable to use on a daily basis. However, if you wish to install this you need the following:
+- `tesseract`
+- ImageMagick
+
+To install, clone this repository, and copy the `gjsosk@vishram1123.com` directory to `.local/share/gnome-shell/extensions/`
+
+**original readme continues...**
+
+
 A (marginally) better on screen keyboard for GNOME 45+ (go to the [pre-45 branch](https://github.com/Vishram1123/gjs-osk/tree/pre-45) for compatibility from gnome 42-44)
 
 ## Advantages over the default OSK:
