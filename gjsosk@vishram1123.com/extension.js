@@ -381,11 +381,6 @@ class HandwritingInput extends St.DrawingArea {
 	}
 
 	vfunc_button_press_event() {
-		// this seems to be the only way to find the coordinates 
-		// of the drawing area on screen
-		// we need this because the motion events give us absolute coordinates on the screen, but we need relative ones to draw dots
-		// will only work if the keybard is on the bottom with snap margin 0 - TODO: make it better
-
 		this.drawing = true;
 		this.strokes.push([]);
 
