@@ -1332,7 +1332,7 @@ class Keyboard extends Dialog {
 				this.event(event, false)
 			})
 			grid.attach(moveHandle, 2 * topBtnWidth, 0, (rowSize - 6 * topBtnWidth), 3) // increased 4 to 6 to make room for the button to switch to handwiting mode. These buttons have a width of 2*topBtnWidth each
-			grid.attach(new St.Widget({ x_expand: true, y_expand: true }), 0, 3, rowSize, 1) //small margin underneath the top row
+			grid.attach(new St.Widget({ x_expand: true, y_expand: true }), 0, 3, rowSize, 1)
 		}
 
 		this.keys.forEach(item => {
