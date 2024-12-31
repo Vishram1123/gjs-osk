@@ -371,7 +371,6 @@ class HandwritingInput extends St.DrawingArea {
 		if (this.drawing) {
 			let event = Clutter.get_current_event();
 			let [absX, absY] = event.get_coords();
-			console.log(this.topleft_x, this.topleft_y)
 			this.strokes[this.strokes.length - 1].push([absX - this.topleft_x, absY - this.topleft_y - this.height / 6]);
 
 			this.queue_repaint();
@@ -489,7 +488,6 @@ class HandwritingInput extends St.DrawingArea {
 				}
 			}
 			let prediction = this.makeRequest(draw.trim(), (maxX - minX) * 5, (maxY - minY) * 5);
-			console.log(prediction)
 			let keyCodesList = [];
 			for (let char of prediction) {
 				const result = this.findKeyForCharacter(char);
@@ -805,7 +803,6 @@ class Keyboard extends Dialog {
 			this.opened = true;
 			this.drawingArea.topleft_x = posX + monitor.x + this.settings.get_int("outer-spacing-px");
 			this.drawingArea.topleft_y = posY + monitor.y + this.settings.get_int("outer-spacing-px");
-			console.log(this.drawingArea.get_position())
 		}
 	}
 
@@ -933,7 +930,6 @@ class Keyboard extends Dialog {
 				this.nonDragBlocker.destroy();
 				this.nonDragBlocker = null;
 			}
-			console.log(this.nonDragBlocker)
 		} else {
 			this.nonDragBlocker.destroy();
 			this.nonDragBlocker = null;
@@ -1232,7 +1228,6 @@ class Keyboard extends Dialog {
 				if (keyList.length > 0) {
 					let i = 0;
 					let sendPredictedValues = setInterval(() => {
-						console.log(keyList[i].map(j => j.code))
 						this.sendKey(keyList[i].map(c => c.code))
 						i++;
 						if (i == keyList.length) {
