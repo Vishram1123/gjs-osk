@@ -26,6 +26,10 @@ I initially saw [this fork](https://github.com/s12wu/gjs-osk) and was intrigued,
 
 
 
+[Handwriting attempt.mp4](https://github.com/user-attachments/assets/ece4a1c4-ebf4-44f6-99e3-cc43be1b4170)
+
+
+
 This will not be merged into the main branch at any point, as it is too unstable to use on a daily basis. However, if you wish to install this you need the following:
 - `tesseract`
 - ImageMagick
