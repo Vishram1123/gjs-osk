@@ -24,11 +24,9 @@ A (marginally) better on screen keyboard for GNOME 45+ (go to the [pre-45 branch
 
 I initially saw [this fork](https://github.com/s12wu/gjs-osk) and was intrigued, so I tried to improve it by integrating it more cleanly with the existing GJS-OSK. I made a couple of changes from the fork, including using `tesseract` instead of `inkput` for handwriting recognition, in hopes of more accurate recognition (which I could not achieve). I also made the handwriting area more responsive and provide more action buttons. Here is my demo of this:
 
-
-
 [Handwriting attempt.mp4](https://github.com/user-attachments/assets/ece4a1c4-ebf4-44f6-99e3-cc43be1b4170)
 
-
+(Model from [Story Squad](https://github.com/BloomTech-Labs/scribble-stadium-ds/))
 
 This will not be merged into the main branch at any point, as it is too unstable to use on a daily basis. However, if you wish to install this you need the following:
 - `tesseract`
