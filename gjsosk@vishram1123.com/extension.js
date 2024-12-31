@@ -429,7 +429,7 @@ class HandwritingInput extends St.DrawingArea {
 	// credits to https://github.com/jeffchannell/gnome-shell-socket/blob/master/client.js
 	makeRequest(request, w, h) {
 		let response = ''
-		let [ok1, out1, err1, wait1] = GLib.spawn_command_line_sync("convert -size " + w + "x" + h + " xc:white +antialias -fill transparent -strokewidth 20,  -stroke black -draw \"" + request + "\" /tmp/output.png")
+		let [ok1, out1, err1, wait1] = GLib.spawn_command_line_sync("convert -size " + w + "x" + h + " xc:white +antialias -fill none -strokewidth 20,  -stroke black -draw \"" + request + "\" /tmp/output.png")
 		let [ok2, out2, err2, wait2] = GLib.spawn_command_line_sync("tesseract --psm 7 --tessdata-dir " + trainingdatapath + " /tmp/output.png -")
 		if (!ok1 || !ok2) {
 			throw new Error(String.fromCharCode.apply(null, err1) + "\n" + String.fromCharCode.apply(null, err2))
@@ -486,10 +486,11 @@ class HandwritingInput extends St.DrawingArea {
 				if (i.length < 2) {
 					draw += "point " + (i[0][0] - minX) * 5 + "," + (i[0][1] - minY) * 5 + " ";
 				} else {
-					draw += "polyline "
+					draw += "path 'M "
 					for (var l = 0; l < i.length; l++) {
 						draw += (i[l][0] - minX) * 5 + "," + (i[l][1] - minY) * 5 + " "
 					}
+					draw += "'"
 				}
 			}
 			let prediction = this.makeRequest(draw.trim(), (maxX - minX) * 5, (maxY - minY) * 5);
