@@ -34,7 +34,7 @@ This will not be merged into the main branch at any point, as it is too unstable
 
 To install, clone this branch with `git clone https://github.com/Vishram1123/gjs-osk -b experimental-handwriting`, `cd /path/to/gjs-osk/`, `glib-compile-schemas gjsosk@vishram1123.com/schemas`, and copy the `gjsosk@vishram1123.com` directory to `.local/share/gnome-shell/extensions/`
 
-Alternatively, clone the main branch (`git clone https://github.com/Vishram1123/gjs-osk`), and download the [handwriting patch found here](https://github.com/Vishram1123/gjs-osk/raw/refs/heads/experimental-handwriting/handwriting.patch) (right click and save as). Then `cd /path/to/gjs-osk/`, `glib-compile-schemas gjsosk@vishram1123.com/schemas` and `git apply /path/to/handwriting.patch` (This is so you can theoretically get the latest updates but still have access to the handwriting features, as I will not be updating this branch).
+Alternatively, install GJS-OSK as normal (from the `main` branch, not the `pre-45` branch unfortunately), and run `bash -c "$(curl -fsSL https://raw.githubusercontent.com/Vishram1123/gjs-osk/refs/heads/experimental-handwriting/patch-handwriting.sh)"`
 
 **original readme continues...**
 

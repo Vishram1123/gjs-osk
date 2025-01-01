@@ -4,7 +4,6 @@ import GLib from 'gi://GLib';
 import GObject from 'gi://GObject';
 import St from 'gi://St';
 import Shell from 'gi://Shell';
-import Cairo from 'cairo';
 
 
 import * as EdgeDragAction from 'resource:///org/gnome/shell/ui/edgeDragAction.js';
@@ -514,7 +513,6 @@ class HandwritingInput extends St.DrawingArea {
 		this.queue_repaint();
 	}
 }
-
 
 class Keyboard extends Dialog {
 	static [GObject.signals] = {
@@ -1195,7 +1193,6 @@ class Keyboard extends Dialog {
 			grid.attach(closeBtn, (rowSize - 2 * topBtnWidth), 0, 2 * topBtnWidth, 3)
 			this.keys.push(closeBtn)
 
-
 			const handwritingBtn = new St.Button({
 				x_expand: true,
 				y_expand: true
@@ -1307,7 +1304,6 @@ class Keyboard extends Dialog {
 			grid.attach(handwritingBtn, (rowSize - 4 * topBtnWidth), 0, 2 * topBtnWidth, 3)
 			this.keys.push(handwritingBtn)
 
-
 			let moveHandle = new St.Button({
 				x_expand: true,
 				y_expand: true
@@ -1326,7 +1322,7 @@ class Keyboard extends Dialog {
 				}
 				this.event(event, false)
 			})
-			grid.attach(moveHandle, 2 * topBtnWidth, 0, (rowSize - 6 * topBtnWidth), 3) // increased 4 to 6 to make room for the button to switch to handwiting mode. These buttons have a width of 2*topBtnWidth each
+			grid.attach(moveHandle, 2 * topBtnWidth, 0, (rowSize - 6 * topBtnWidth), 3)
 			grid.attach(new St.Widget({ x_expand: true, y_expand: true }), 0, 3, rowSize, 1)
 		}
 
