@@ -554,8 +554,8 @@ class Keyboard extends Dialog {
 	}
 
 	open(noPrep = null, instant = null) {
-		this.setCapsLock(keyBtn, this.keymap.get_caps_lock_state())
-		this.setNumLock(keyBtn, this.keymap.get_num_lock_state())
+		if (this.updateCapsLock) this.updateCapsLock()
+		if (this.updateNumLock) this.updateNumLock()
 		if (noPrep == null || !noPrep) {
 			this.prevKeyFocus = global.stage.key_focus
 			this.inputDevice = Clutter.get_default_backend().get_default_seat().create_virtual_device(Clutter.InputDeviceType.KEYBOARD_DEVICE);
@@ -821,11 +821,13 @@ class Keyboard extends Dialog {
 					this.capslockConnect = this.keymap.connect("state-changed", (a, e) => {
 						this.setCapsLock(keyBtn, this.keymap.get_caps_lock_state())
 					})
+					this.updateCapsLock = () => this.setCapsLock(keyBtn, this.keymap.get_caps_lock_state())
 				} else if (i.code == 69) {
 					this.keymap = Clutter.get_default_backend().get_default_seat().get_keymap()
 					this.numLockConnect = this.keymap.connect("state-changed", (a, e) => {
 						this.setNumLock(keyBtn, this.keymap.get_num_lock_state())
 					})
+					this.updateNumLock = () => this.setNumLock(keyBtn, this.keymap.get_num_lock_state())
 				} else if (i.code == 42 || i.code == 54) {
 					this.shiftButtons.push(keyBtn)
 				}
