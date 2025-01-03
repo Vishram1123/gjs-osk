@@ -46,6 +46,9 @@
     <key name="background-a-dark" type="d">
       <default>1</default>
     </key>
+    <key name="system-accent-col" type="b">
+      <default>false</default>
+    </key>
     <key name="font-size-px" type="i">
       <default>14</default>
     </key>

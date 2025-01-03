@@ -6,7 +6,8 @@ import Gdk from 'gi://Gdk';
 import GLib from 'gi://GLib';
 
 import { ExtensionPreferences, gettext as _ } from 'resource:///org/gnome/Shell/Extensions/js/extensions/prefs.js';
-
+import * as Config from 'resource:///org/gnome/Shell/Extensions/js/misc/config.js'
+const [major, minor] = Config.PACKAGE_VERSION.split('.').map(s => Number(s));
 
 export default class GjsOskPreferences extends ExtensionPreferences {
 	fillPreferencesWindow(window) {
@@ -265,6 +266,23 @@ export default class GjsOskPreferences extends ExtensionPreferences {
 		darkCol.add_suffix(colorButton_d);
 		darkCol.activatable_widget = colorButton_d;
 
+		const systemAccCol = new Adw.ActionRow({
+			title: _("Use System Accent Color")
+		})
+		colorRow.add_row(systemAccCol)
+
+		const systemAccColEnabled = new Gtk.Switch({
+			active: settings.get_boolean("system-accent-col"),
+			valign: Gtk.Align.CENTER
+		})
+
+		systemAccCol.add_suffix(systemAccColEnabled)
+		systemAccCol.activatable_widget = systemAccColEnabled
+		
+		systemAccCol.set_sensitive(major >= 47)
+		lightCol.set_sensitive(!settings.get_boolean("system-accent-col"));
+		darkCol.set_sensitive(!settings.get_boolean("system-accent-col"));
+		
 		let fontSize = new Adw.ActionRow({
 			title: _('Font Size (px)')
 		});
@@ -460,6 +478,11 @@ export default class GjsOskPreferences extends ExtensionPreferences {
 			}
 			settings.set_string("default-monitor", representation.join(";"))
 		})
+		systemAccColEnabled.connect("state-set", () => {
+			settings.set_boolean("system-accent-col", systemAccColEnabled.active)
+			lightCol.set_sensitive(!settings.get_boolean("system-accent-col"));
+			darkCol.set_sensitive(!settings.get_boolean("system-accent-col"));
+		})
 
 		window.connect("close-request", () => {
 			settings.set_int("layout-landscape", layoutLandscapeDrop.selected);
@@ -494,6 +517,7 @@ export default class GjsOskPreferences extends ExtensionPreferences {
 				representation.push(k + ":" + currentMonitorMap[k])
 			}
 			settings.set_string("default-monitor", representation.join(";"))
+			settings.set_boolean("system-accent-col", systemAccColEnabled.active)
 		})
 	}
 };
