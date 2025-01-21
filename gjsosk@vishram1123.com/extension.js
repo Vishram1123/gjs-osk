@@ -173,9 +173,10 @@ export default class GjsOskExtension extends Extension {
             if (currentMonitorId == -1) {
                 currentMonitorId = 0;
             }
-            if (!Gio.File.new_for_path(this.path + "/keycodes").query_exists(null)) {
-                Gio.File.new_for_path(this.path + "/keycodes").make_directory(null);
-                let [status, out, err, code] = GLib.spawn_command_line_sync("tar -Jxf " + this.path + "/keycodes.tar.xz -C " + this.path + "/keycodes")
+            if (!Gio.File.new_for_path(GLib.get_user_cache_dir() + "/gjs-osk").query_exists(null)) {
+                Gio.File.new_for_path(GLib.get_user_cache_dir() + "/gjs-osk").make_directory(null);
+                Gio.File.new_for_path(GLib.get_user_cache_dir() + "/gjs-osk/keycodes").make_directory(null);
+                let [status, out, err, code] = GLib.spawn_command_line_sync("tar -Jxf " + this.path + "/keycodes.tar.xz -C " + GLib.get_user_cache_dir() + "/gjs-osk/keycodes")
                 if (err != "" || code != 0) {
                     throw new Error(err);
                 }
@@ -184,7 +185,7 @@ export default class GjsOskExtension extends Extension {
                 this.Keyboard.destroy();
                 this.Keyboard = null;
             }
-            let [ok, contents] = GLib.file_get_contents(this.path + '/keycodes/' + KeyboardManager.getKeyboardManager().currentLayout.id + '.json');
+            let [ok, contents] = GLib.file_get_contents(GLib.get_user_cache_dir() + '/gjs-osk/keycodes/' + KeyboardManager.getKeyboardManager().currentLayout.id + '.json');
             if (ok) {
                 keycodes = JSON.parse(contents);
             }
