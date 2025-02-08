@@ -169,8 +169,12 @@ export default class GjsOskExtension extends Extension {
                 let allConfigs = Object.keys(currentMonitorMap).map(Number.parseInt).sort();
                 currentMonitorMap[monitors.length + ""] = allConfigs[allConfigs.length - 1];
             }
-            currentMonitorId = global.backend.get_monitor_manager().get_monitor_for_connector(currentMonitorMap[monitors.length + ""]);
-            if (currentMonitorId == -1) {
+            try {
+                currentMonitorId = global.backend.get_monitor_manager().get_monitor_for_connector(currentMonitorMap[monitors.length + ""]);
+                if (currentMonitorId == -1) {
+                    currentMonitorId = 0;
+                }
+            } catch {
                 currentMonitorId = 0;
             }
             if (!Gio.File.new_for_path(GLib.get_user_cache_dir() + "/gjs-osk").query_exists(null)) {
@@ -181,7 +185,7 @@ export default class GjsOskExtension extends Extension {
                     throw new Error(err);
                 }
             }
-            if (this.Keyboard) {
+            if (this.Keyboard != null) {
                 this.Keyboard.destroy();
                 this.Keyboard = null;
             }
@@ -226,7 +230,11 @@ export default class GjsOskExtension extends Extension {
             this._toggleKeyboard();
         })
         let settingsChanged = () => {
-            let opened = this.Keyboard.opened
+            let opened;
+            if (this.Keyboard != null)
+                opened = this.Keyboard.opened
+            else
+                opened = false
             if (this.darkSchemeSettings.get_string("color-scheme") == "prefer-dark")
                 this.settings.scheme = "-dark"
             else
@@ -288,7 +296,8 @@ export default class GjsOskExtension extends Extension {
             this._indicator.destroy();
             this._indicator = null;
         }
-        this.Keyboard.destroy();
+        if (this.Keyboard != null)
+            this.Keyboard.destroy();
         this.settings.disconnect(this.settingsHandlers[0]);
         this.darkSchemeSettings.disconnect(this.settingsHandlers[1])
         this.inputLanguageSettings.disconnect(this.settingsHandlers[2])

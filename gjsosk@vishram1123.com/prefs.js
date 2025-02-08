@@ -175,8 +175,13 @@ export default class GjsOskPreferences extends ExtensionPreferences {
 		}
 		let monitorDrop = Gtk.DropDown.new_from_strings(monitors.map(m => m.get_model()))
 		monitorDrop.valign = Gtk.Align.CENTER;
-		let currentMonitors = settings.get_string("default-monitor").split(";")
 		let currentMonitorMap = {};
+		let currentMonitors;
+		if (settings.get_string("default-monitor").includes(";")) {
+			currentMonitors = settings.get_string("default-monitor").split(";")
+		} else {
+			currentMonitors = [("1:" + monitors[0].get_connector())]
+		}
 
 		for (var i of currentMonitors) {
 			let tmp = i.split(":");
@@ -278,11 +283,11 @@ export default class GjsOskPreferences extends ExtensionPreferences {
 
 		systemAccCol.add_suffix(systemAccColEnabled)
 		systemAccCol.activatable_widget = systemAccColEnabled
-		
+
 		systemAccCol.set_sensitive(major >= 47)
 		lightCol.set_sensitive(!settings.get_boolean("system-accent-col"));
 		darkCol.set_sensitive(!settings.get_boolean("system-accent-col"));
-		
+
 		let fontSize = new Adw.ActionRow({
 			title: _('Font Size (px)')
 		});
