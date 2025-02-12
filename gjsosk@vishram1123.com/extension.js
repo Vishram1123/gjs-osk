@@ -75,6 +75,7 @@ class KeyboardMenuToggle extends QuickSettings.QuickMenuToggle {
 let keycodes;
 let layouts;
 let currentMonitorId = 0;
+let extract_dir = GLib.get_user_cache_dir() + "/gjs-osk";
 // [insert handwriting 1]
 
 export default class GjsOskExtension extends Extension {
@@ -177,10 +178,10 @@ export default class GjsOskExtension extends Extension {
             } catch {
                 currentMonitorId = 0;
             }
-            if (!Gio.File.new_for_path(GLib.get_user_cache_dir() + "/gjs-osk").query_exists(null)) {
-                Gio.File.new_for_path(GLib.get_user_cache_dir() + "/gjs-osk").make_directory(null);
-                Gio.File.new_for_path(GLib.get_user_cache_dir() + "/gjs-osk/keycodes").make_directory(null);
-                let [status, out, err, code] = GLib.spawn_command_line_sync("tar -Jxf " + this.path + "/keycodes.tar.xz -C " + GLib.get_user_cache_dir() + "/gjs-osk/keycodes")
+            if (!Gio.File.new_for_path(extract_dir).query_exists(null)) {
+                Gio.File.new_for_path(extract_dir).make_directory(null);
+                Gio.File.new_for_path(extract_dir + "/keycodes").make_directory(null);
+                let [status, out, err, code] = GLib.spawn_command_line_sync("tar -Jxf " + this.path + "/keycodes.tar.xz -C " + extract_dir + "/keycodes")
                 if (err != "" || code != 0) {
                     throw new Error(err);
                 }
@@ -189,7 +190,7 @@ export default class GjsOskExtension extends Extension {
                 this.Keyboard.destroy();
                 this.Keyboard = null;
             }
-            let [ok, contents] = GLib.file_get_contents(GLib.get_user_cache_dir() + '/gjs-osk/keycodes/' + KeyboardManager.getKeyboardManager().currentLayout.id + '.json');
+            let [ok, contents] = GLib.file_get_contents(extract_dir + "/keycodes/" + KeyboardManager.getKeyboardManager().currentLayout.id + '.json');
             if (ok) {
                 keycodes = JSON.parse(contents);
             }
