@@ -1321,12 +1321,15 @@ class Keyboard extends Dialog {
 
     setNormMod(button) {
         if (this.mod.includes(button.char.code)) {
+            console.log(button.char.code + " off");
             this.mod.splice(this.mod.indexOf(button.char.code), this.mod.indexOf(button.char.code) + 1);
             if (!(button.char.code == 42) && !(button.char.code == 54))
                 button.remove_style_class_name("selected");
             this.modBtns.splice(this.modBtns.indexOf(button), this.modBtns.indexOf(button) + 1);
             this.inputDevice.notify_key(Clutter.get_current_event_time(), button.char.code, Clutter.KeyState.RELEASED);
+            this.sendKey([button.char.code])
         } else {
+            console.log(button.char.code + " on");
             if (!(button.char.code == 42) && !(button.char.code == 54))
                 button.add_style_class_name("selected");
             this.mod.push(button.char.code);
