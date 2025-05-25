@@ -171,28 +171,35 @@ class GjsOskExtension {
                 let allConfigs = Object.keys(currentMonitorMap).map(Number.parseInt).sort();
                 currentMonitorMap[monitors.length + ""] = allConfigs[allConfigs.length - 1];
             }
-            currentMonitorId = global.backend.get_monitor_manager().get_monitor_for_connector(currentMonitorMap[monitors.length + ""]);
-            if (currentMonitorId == -1) {
+            try {
+                currentMonitorId = global.backend.get_monitor_manager().get_monitor_for_connector(currentMonitorMap[monitors.length + ""]);
+                if (currentMonitorId == -1) {
+                    currentMonitorId = 0;
+                }
+            } catch {
                 currentMonitorId = 0;
             }
-            if (!Gio.File.new_for_path(GLib.get_user_cache_dir() + "/gjs-osk").query_exists(null)) {
-                Gio.File.new_for_path(GLib.get_user_cache_dir() + "/gjs-osk").make_directory(null);
-                Gio.File.new_for_path(GLib.get_user_cache_dir() + "/gjs-osk/keycodes").make_directory(null);
-                let [status, out, err, code] = GLib.spawn_command_line_sync("tar -Jxf " + Me.path + "/keycodes.tar.xz -C " + GLib.get_user_cache_dir() + "/gjs-osk/keycodes")
-                if (err != "" || code != 0) {
-                    throw new Error(err);
+            let postExtract = () => {
+                if (this.Keyboard != null) {
+                    this.Keyboard.destroy();
+                    this.Keyboard = null;
                 }
+                let [ok, contents] = GLib.file_get_contents(extract_dir + "/keycodes/" + (KeyboardManager.getKeyboardManager().currentLayout != null ? KeyboardManager.getKeyboardManager().currentLayout.id : "us") + '.json');
+                if (ok) {
+                    keycodes = JSON.parse(contents);
+                }
+                this.Keyboard = new Keyboard(this.settings, this);
+                this.Keyboard.refresh = refresh
             }
-            if (this.Keyboard) {
-                this.Keyboard.destroy();
-                this.Keyboard = null;
+            if (!Gio.File.new_for_path(extract_dir).query_exists(null)) {
+                Gio.File.new_for_path(extract_dir).make_directory(null);
+                Gio.File.new_for_path(extract_dir + "/keycodes").make_directory(null);
+                Gio.Subprocess.new(["tar", "-Jxf", this.path + "/keycodes.tar.xz", "-C", extract_dir + "/keycodes"], Gio.SubprocessFlags.NONE)
+                    .wait_check_async(null)
+                    .then(postExtract)
+            } else {
+                postExtract();
             }
-            let [ok, contents] = GLib.file_get_contents(GLib.get_user_cache_dir() + '/gjs-osk/keycodes/' + (KeyboardManager.getKeyboardManager().currentLayout != null ? KeyboardManager.getKeyboardManager().currentLayout.id : "us") + '.json');
-            if (ok) {
-                keycodes = JSON.parse(contents);
-            }
-            this.Keyboard = new Keyboard(this.settings, this);
-            this.Keyboard.refresh = refresh
         }
         refresh()
 
