@@ -732,7 +732,6 @@ class Keyboard extends Dialog {
                 this.nonDragBlocker.destroy();
                 this.nonDragBlocker = null;
             }
-            console.log(this.nonDragBlocker)
         } else {
             this.nonDragBlocker.destroy();
             this.nonDragBlocker = null;
