@@ -187,7 +187,7 @@ class GjsOskExtension {
                 this.Keyboard.destroy();
                 this.Keyboard = null;
             }
-            let [ok, contents] = GLib.file_get_contents(GLib.get_user_cache_dir() + '/gjs-osk/keycodes/' + KeyboardManager.getKeyboardManager().currentLayout.id + '.json');
+            let [ok, contents] = GLib.file_get_contents(GLib.get_user_cache_dir() + '/gjs-osk/keycodes/' + (KeyboardManager.getKeyboardManager().currentLayout != null ? KeyboardManager.getKeyboardManager().currentLayout.id : "us") + '.json');
             if (ok) {
                 keycodes = JSON.parse(contents);
             }
@@ -225,7 +225,11 @@ class GjsOskExtension {
             this._toggleKeyboard();
         })
         let settingsChanged = () => {
-            let opened = this.Keyboard.opened
+            let opened;
+            if (this.Keyboard != null)
+                opened = this.Keyboard.opened
+            else
+                opened = false
             if (this.darkSchemeSettings.get_string("color-scheme") == "prefer-dark")
                 this.settings.scheme = "-dark"
             else
@@ -285,7 +289,8 @@ class GjsOskExtension {
             this._indicator.destroy();
             this._indicator = null;
         }
-        this.Keyboard.destroy();
+        if (this.Keyboard != null)
+            this.Keyboard.destroy();
         this.settings.disconnect(this.settingsHandlers[0]);
         this.darkSchemeSettings.disconnect(this.settingsHandlers[1])
         this.inputLanguageSettings.disconnect(this.settingsHandlers[2])
