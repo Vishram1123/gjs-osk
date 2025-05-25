@@ -178,24 +178,27 @@ export default class GjsOskExtension extends Extension {
             } catch {
                 currentMonitorId = 0;
             }
+            let postExtract = () => {
+                if (this.Keyboard != null) {
+                    this.Keyboard.destroy();
+                    this.Keyboard = null;
+                }
+                let [ok, contents] = GLib.file_get_contents(extract_dir + "/keycodes/" + (KeyboardManager.getKeyboardManager().currentLayout != null ? KeyboardManager.getKeyboardManager().currentLayout.id : "us") + '.json');
+                if (ok) {
+                    keycodes = JSON.parse(contents);
+                }
+                this.Keyboard = new Keyboard(this.settings, this);
+                this.Keyboard.refresh = refresh
+            }
             if (!Gio.File.new_for_path(extract_dir).query_exists(null)) {
                 Gio.File.new_for_path(extract_dir).make_directory(null);
                 Gio.File.new_for_path(extract_dir + "/keycodes").make_directory(null);
-                let [status, out, err, code] = GLib.spawn_command_line_sync("tar -Jxf " + this.path + "/keycodes.tar.xz -C " + extract_dir + "/keycodes")
-                if (err != "" || code != 0) {
-                    throw new Error(err);
-                }
+                Gio.Subprocess.new(["tar", "-Jxf", this.path + "/keycodes.tar.xz", "-C", extract_dir + "/keycodes"], Gio.SubprocessFlags.NONE)
+                    .wait_check_async(null)
+                    .then(postExtract)
+            } else {
+                postExtract();
             }
-            if (this.Keyboard != null) {
-                this.Keyboard.destroy();
-                this.Keyboard = null;
-            }
-            let [ok, contents] = GLib.file_get_contents(extract_dir + "/keycodes/" + (KeyboardManager.getKeyboardManager().currentLayout != null ? KeyboardManager.getKeyboardManager().currentLayout.id : "us") + '.json');
-            if (ok) {
-                keycodes = JSON.parse(contents);
-            }
-            this.Keyboard = new Keyboard(this.settings, this);
-            this.Keyboard.refresh = refresh
         }
         refresh()
 
