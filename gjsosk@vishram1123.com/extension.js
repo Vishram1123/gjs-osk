@@ -190,7 +190,7 @@ export default class GjsOskExtension extends Extension {
                 this.Keyboard.destroy();
                 this.Keyboard = null;
             }
-            let [ok, contents] = GLib.file_get_contents(extract_dir + "/keycodes/" + KeyboardManager.getKeyboardManager().currentLayout.id + '.json');
+            let [ok, contents] = GLib.file_get_contents(extract_dir + "/keycodes/" + (KeyboardManager.getKeyboardManager().currentLayout != null ? KeyboardManager.getKeyboardManager().currentLayout.id : "us") + '.json');
             if (ok) {
                 keycodes = JSON.parse(contents);
             }
