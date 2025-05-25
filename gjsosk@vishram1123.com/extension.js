@@ -79,6 +79,7 @@ const KeyboardMenuToggle = QuickSettings != null ? GObject.registerClass(
 let keycodes;
 let layouts;
 let currentMonitorId = 0;
+let extract_dir = GLib.get_user_cache_dir() + "/gjs-osk";
 
 class GjsOskExtension {
     _openKeyboard(instant) {
