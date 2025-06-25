@@ -370,7 +370,9 @@ class Keyboard extends Dialog {
         this.state = State.CLOSED;
         this.delta = [];
         this.monitorChecker = global.backend.get_monitor_manager().connect('monitors-changed', () => {
-            this.refresh()
+            if (Main.layoutManager.monitors.length > 0) {
+                this.refresh();
+            }
         });
         this._dragging = false;
         let side = null;
