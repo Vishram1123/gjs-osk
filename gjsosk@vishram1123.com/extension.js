@@ -54,6 +54,37 @@ class KeyboardMenuToggle extends QuickSettings.QuickMenuToggle {
         }
 
         this.menu.addMenuItem(this._itemsSection);
+        
+        // Add transparency section
+        this.menu.addMenuItem(new PopupMenu.PopupSeparatorMenuItem());
+        this._transparencySection = new PopupMenu.PopupMenuSection();
+        this._transparencyHeader = new PopupMenu.PopupMenuItem(_('Transparency'), { reactive: false });
+        this._transparencyHeader.add_style_class_name('popup-menu-item-label');
+        this.menu.addMenuItem(this._transparencyHeader);
+        
+        this._transparencyItems = [];
+        const transparencyLevels = [
+            { label: _('Opaque'), value: 1.0 },
+            { label: _('90%'), value: 0.9 },
+            { label: _('80%'), value: 0.8 },
+            { label: _('70%'), value: 0.7 },
+            { label: _('60%'), value: 0.6 },
+        ];
+        
+        transparencyLevels.forEach((level, index) => {
+            const currentTransparency = this.settings.get_double("transparency") || 1.0;
+            const item = new PopupMenu.PopupImageMenuItem(
+                level.label, 
+                Math.abs(currentTransparency - level.value) < 0.01 ? 'emblem-ok-symbolic' : null
+            );
+            item.connect('activate', () => {
+                this.settings.set_double("transparency", level.value);
+                this._refreshTransparency();
+            });
+            this._transparencyItems.push(item);
+            this.menu.addMenuItem(item);
+        });
+
         this.settings.bind('indicator-enabled',
             this, 'checked',
             Gio.SettingsBindFlags.DEFAULT);
@@ -68,6 +99,15 @@ class KeyboardMenuToggle extends QuickSettings.QuickMenuToggle {
         for (var i in this._itemsSection._getMenuItems()) {
             this._itemsSection._getMenuItems()[i].setIcon(this.settings.get_int("enable-tap-gesture") == i ? 'emblem-ok-symbolic' : null)
         }
+        this._refreshTransparency();
+    }
+    
+    _refreshTransparency() {
+        const currentTransparency = this.settings.get_double("transparency") || 1.0;
+        this._transparencyItems.forEach((item, index) => {
+            const transparencyLevels = [1.0, 0.9, 0.8, 0.7, 0.6];
+            item.setIcon(Math.abs(currentTransparency - transparencyLevels[index]) < 0.01 ? 'emblem-ok-symbolic' : null);
+        });
     }
 };
 
@@ -470,9 +510,11 @@ class Keyboard extends Dialog {
             if (this._dragging)
                 return Clutter.EVENT_PROPAGATE;
             this._dragging = true;
-            this.box.set_opacity(255);
+            const transparency = this.settings.get_double("transparency") || 1.0;
+            const maxOpacity = 255 * transparency;
+            this.box.set_opacity(maxOpacity);
             this.box.ease({
-                opacity: 200,
+                opacity: 200 * transparency,
                 duration: 100,
                 mode: Clutter.AnimationMode.EASE_OUT_QUAD,
                 onComplete: () => { }
@@ -503,9 +545,10 @@ class Keyboard extends Dialog {
                     this._grab = null;
                 }
 
-                this.box.set_opacity(200);
+                const transparency = this.settings.get_double("transparency") || 1.0;
+                this.box.set_opacity(200 * transparency);
                 this.box.ease({
-                    opacity: 255,
+                    opacity: 255 * transparency,
                     duration: 100,
                     mode: Clutter.AnimationMode.EASE_OUT_QUAD,
                     onComplete: () => { }
@@ -567,7 +610,8 @@ class Keyboard extends Dialog {
         let mX = [-this.box.width, 0, this.box.width][(this.settings.get_int("default-snap") % 3)];
         let mY = [-this.box.height, 0, this.box.height][Math.floor((this.settings.get_int("default-snap") / 3))]
         let [dx, dy] = [posX + mX * ((100 - percent) / 100) + monitor.x, posY + mY * ((100 - percent) / 100) + monitor.y]
-        let op = 255 * (percent / 100);
+        const transparency = this.settings.get_double("transparency") || 1.0;
+        let op = 255 * transparency * (percent / 100);
         this.set_translation(dx, dy, 0)
         this.box.set_opacity(op)
     }
@@ -590,8 +634,9 @@ class Keyboard extends Dialog {
                 let mY = [-this.box.height, 0, this.box.height][Math.floor((this.settings.get_int("default-snap") / 3))]
                 this.set_translation(posX + mX + monitor.x, posY + mY + monitor.y, 0)
             }
+            const transparency = this.settings.get_double("transparency") || 1.0;
             this.box.ease({
-                opacity: 255,
+                opacity: 255 * transparency,
                 duration: instant == null || !instant ? 100 : 0,
                 mode: Clutter.AnimationMode.EASE_OUT_QUAD,
                 onComplete: () => {
@@ -891,17 +936,21 @@ class Keyboard extends Dialog {
             this.set_reactive(false)
             left.add_style_class_name("boxLay");
             right.add_style_class_name("boxLay");
+            
+            const transparency = this.settings.get_double("transparency") || 1.0;
+            
             if (this.settings.get_boolean("system-accent-col") && major >= 47) {
                 if (this.settings.scheme == "-dark") {
-                    left.set_style("background-color: st-darken(-st-accent-color, 30%); padding: " + this.settings.get_int("outer-spacing-px") + "px;")
-                    right.set_style("background-color: st-darken(-st-accent-color, 30%); padding: " + this.settings.get_int("outer-spacing-px") + "px;")
+                    left.set_style("background-color: alpha(st-darken(-st-accent-color, 30%), " + transparency + "); padding: " + this.settings.get_int("outer-spacing-px") + "px;")
+                    right.set_style("background-color: alpha(st-darken(-st-accent-color, 30%), " + transparency + "); padding: " + this.settings.get_int("outer-spacing-px") + "px;")
                 } else {
-                    left.set_style("background-color: st-lighten(-st-accent-color, 10%); padding: " + this.settings.get_int("outer-spacing-px") + "px;")
-                    right.set_style("background-color: st-lighten(-st-accent-color, 10%); padding: " + this.settings.get_int("outer-spacing-px") + "px;")
+                    left.set_style("background-color: alpha(st-lighten(-st-accent-color, 10%), " + transparency + "); padding: " + this.settings.get_int("outer-spacing-px") + "px;")
+                    right.set_style("background-color: alpha(st-lighten(-st-accent-color, 10%), " + transparency + "); padding: " + this.settings.get_int("outer-spacing-px") + "px;")
                 }
             } else {
-                left.set_style("background-color: rgba(" + this.settings.get_double("background-r" + this.settings.scheme) + "," + this.settings.get_double("background-g" + this.settings.scheme) + "," + this.settings.get_double("background-b" + this.settings.scheme) + ", " + this.settings.get_double("background-a" + this.settings.scheme) + "); padding: " + this.settings.get_int("outer-spacing-px") + "px;")
-                right.set_style("background-color: rgba(" + this.settings.get_double("background-r" + this.settings.scheme) + "," + this.settings.get_double("background-g" + this.settings.scheme) + "," + this.settings.get_double("background-b" + this.settings.scheme) + ", " + this.settings.get_double("background-a" + this.settings.scheme) + "); padding: " + this.settings.get_int("outer-spacing-px") + "px;")
+                const bgAlpha = this.settings.get_double("background-a" + this.settings.scheme) * transparency;
+                left.set_style("background-color: rgba(" + this.settings.get_double("background-r" + this.settings.scheme) + "," + this.settings.get_double("background-g" + this.settings.scheme) + "," + this.settings.get_double("background-b" + this.settings.scheme) + ", " + bgAlpha + "); padding: " + this.settings.get_int("outer-spacing-px") + "px;")
+                right.set_style("background-color: rgba(" + this.settings.get_double("background-r" + this.settings.scheme) + "," + this.settings.get_double("background-g" + this.settings.scheme) + "," + this.settings.get_double("background-b" + this.settings.scheme) + ", " + bgAlpha + "); padding: " + this.settings.get_int("outer-spacing-px") + "px;")
             }
             if (this.lightOrDark()) {
                 left.add_style_class_name("inverted");
@@ -978,14 +1027,18 @@ class Keyboard extends Dialog {
             gridRight.attach(new St.Widget({ x_expand: true, y_expand: true }), halfSize, 3, (rowSize - halfSize), 1)
         } else {
             this.box.add_style_class_name("boxLay");
+            
+            const transparency = this.settings.get_double("transparency") || 1.0;
+            
             if (this.settings.get_boolean("system-accent-col") && major >= 47) {
                 if (this.settings.scheme == "-dark") {
-                    this.box.set_style("background-color: st-darken(-st-accent-color, 30%); padding: " + this.settings.get_int("outer-spacing-px") + "px;")
+                    this.box.set_style("background-color: alpha(st-darken(-st-accent-color, 30%), " + transparency + "); padding: " + this.settings.get_int("outer-spacing-px") + "px;")
                 } else {
-                    this.box.set_style("background-color: st-lighten(-st-accent-color, 10%); padding: " + this.settings.get_int("outer-spacing-px") + "px;")
+                    this.box.set_style("background-color: alpha(st-lighten(-st-accent-color, 10%), " + transparency + "); padding: " + this.settings.get_int("outer-spacing-px") + "px;")
                 }
             } else {
-                this.box.set_style("background-color: rgba(" + this.settings.get_double("background-r" + this.settings.scheme) + "," + this.settings.get_double("background-g" + this.settings.scheme) + "," + this.settings.get_double("background-b" + this.settings.scheme) + ", " + this.settings.get_double("background-a" + this.settings.scheme) + "); padding: " + this.settings.get_int("outer-spacing-px") + "px;")
+                const bgAlpha = this.settings.get_double("background-a" + this.settings.scheme) * transparency;
+                this.box.set_style("background-color: rgba(" + this.settings.get_double("background-r" + this.settings.scheme) + "," + this.settings.get_double("background-g" + this.settings.scheme) + "," + this.settings.get_double("background-b" + this.settings.scheme) + ", " + bgAlpha + "); padding: " + this.settings.get_int("outer-spacing-px") + "px;")
             }
             if (this.lightOrDark()) {
                 this.box.add_style_class_name("inverted");

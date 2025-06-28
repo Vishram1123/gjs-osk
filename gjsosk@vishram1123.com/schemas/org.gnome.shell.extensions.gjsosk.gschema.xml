@@ -85,6 +85,9 @@
     <key name="show-icons" type="b">
 		  <default>true</default>
     </key>
+    <key name="transparency" type="d">
+      <default>1.0</default>
+    </key>
     <child name="indicator" schema="org.gnome.shell.extensions.gjsosk.indicator"/>
 	
   </schema>
