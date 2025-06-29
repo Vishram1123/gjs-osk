@@ -54,14 +54,14 @@ class KeyboardMenuToggle extends QuickSettings.QuickMenuToggle {
         }
 
         this.menu.addMenuItem(this._itemsSection);
-        
+
         // Add transparency section
         this.menu.addMenuItem(new PopupMenu.PopupSeparatorMenuItem());
         this._transparencySection = new PopupMenu.PopupMenuSection();
         this._transparencyHeader = new PopupMenu.PopupMenuItem(_('Transparency'), { reactive: false });
         this._transparencyHeader.add_style_class_name('popup-menu-item-label');
         this.menu.addMenuItem(this._transparencyHeader);
-        
+
         this._transparencyItems = [];
         const transparencyLevels = [
             { label: _('Opaque'), value: 1.0 },
@@ -70,11 +70,11 @@ class KeyboardMenuToggle extends QuickSettings.QuickMenuToggle {
             { label: _('70%'), value: 0.7 },
             { label: _('60%'), value: 0.6 },
         ];
-        
+
         transparencyLevels.forEach((level, index) => {
             const currentTransparency = this.settings.get_double("transparency") || 1.0;
             const item = new PopupMenu.PopupImageMenuItem(
-                level.label, 
+                level.label,
                 Math.abs(currentTransparency - level.value) < 0.01 ? 'emblem-ok-symbolic' : null
             );
             item.connect('activate', () => {
@@ -101,7 +101,7 @@ class KeyboardMenuToggle extends QuickSettings.QuickMenuToggle {
         }
         this._refreshTransparency();
     }
-    
+
     _refreshTransparency() {
         const currentTransparency = this.settings.get_double("transparency") || 1.0;
         this._transparencyItems.forEach((item, index) => {
@@ -850,6 +850,56 @@ class Keyboard extends Dialog {
         let r = 0;
         let c;
         const doAddKey = (keydef) => {
+            /* ---- Special layout‑defined buttons ---- */
+            if (keydef.key === 'SETTINGS') {
+                const btn = new St.Button({ x_expand: true, y_expand: true });
+                btn.add_style_class_name('settings_btn');
+                btn.add_style_class_name('key');
+                btn.connect('clicked', () => { this.settingsOpenFunction(); });
+                currentGrid.attach(btn, c, 5 + r,
+                    (Object.hasOwn(keydef, 'width') ? keydef.width : 1) * 2,
+                    r === 0 ? 3 : (Object.hasOwn(keydef, 'height') ? keydef.height : 1) * 4);
+                this.keys.push(btn);
+                c += (Object.hasOwn(keydef, 'width') ? keydef.width : 1) * 2;
+                return;
+            } else if (keydef.key === 'CLOSE') {
+                const btn = new St.Button({ x_expand: true, y_expand: true });
+                btn.add_style_class_name('close_btn');
+                btn.add_style_class_name('key');
+                btn.connect('clicked', () => { this.close(); this.closedFromButton = true; });
+                currentGrid.attach(btn, c, 5 + r,
+                    (Object.hasOwn(keydef, 'width') ? keydef.width : 1) * 2,
+                    r === 0 ? 3 : (Object.hasOwn(keydef, 'height') ? keydef.height : 1) * 4);
+                this.keys.push(btn);
+                c += (Object.hasOwn(keydef, 'width') ? keydef.width : 1) * 2;
+                return;
+            } else if (keydef.key === 'DRAG' || keydef.key === 'DRAG-L' || keydef.key === 'DRAG-R') {
+                const btn = new St.Button({ x_expand: true, y_expand: true });
+                btn.add_style_class_name('moveHandle');
+                btn.add_style_class_name('key');
+                btn.set_style(`font-size: ${this.settings.get_int('font-size-px')}px; \
+                border-radius: ${this.settings.get_boolean('round-key-corners') ? 5 : 0}px; \
+                background-size: ${this.settings.get_int('font-size-px')}px; \
+                font-weight: ${this.settings.get_boolean('font-bold') ? 'bold' : 'normal'}; \
+                border: ${this.settings.get_int('border-spacing-px')}px solid transparent;`);
+                if (this.lightOrDark())
+                    btn.add_style_class_name('inverted');
+                else
+                    btn.add_style_class_name('regular');
+                btn.connect('event', (actor, event) => {
+                    if (event.type() === Clutter.EventType.BUTTON_PRESS ||
+                        event.type() === Clutter.EventType.TOUCH_BEGIN)
+                        this.draggable = this.settings.get_boolean('enable-drag');
+                    this.event(event, false);
+                });
+                currentGrid.attach(btn, c, 5 + r,
+                    (Object.hasOwn(keydef, 'width') ? keydef.width : 1) * 2,
+                    r === 0 ? 3 : (Object.hasOwn(keydef, 'height') ? keydef.height : 1) * 4);
+                this.keys.push(btn);
+                c += (Object.hasOwn(keydef, 'width') ? keydef.width : 1) * 2;
+                return;
+            }
+            /* ---- end special buttons ---- */
             const i = Object.hasOwn(keydef, "key") ? keycodes[keydef.key] : Object.hasOwn(keydef, "split") ? "split" : "empty space";
             if (i != null && typeof i !== 'string') {
                 if (i.layers.default == null) {
@@ -936,9 +986,9 @@ class Keyboard extends Dialog {
             this.set_reactive(false)
             left.add_style_class_name("boxLay");
             right.add_style_class_name("boxLay");
-            
+
             const transparency = this.settings.get_double("transparency") || 1.0;
-            
+
             if (this.settings.get_boolean("system-accent-col") && major >= 47) {
                 if (this.settings.scheme == "-dark") {
                     left.set_style("background-color: alpha(st-darken(-st-accent-color, 30%), " + transparency + "); padding: " + this.settings.get_int("outer-spacing-px") + "px;")
@@ -959,77 +1009,14 @@ class Keyboard extends Dialog {
                 left.add_style_class_name("regular");
                 right.add_style_class_name("regular");
             }
-            const settingsBtn = new St.Button({
-                x_expand: true,
-                y_expand: true
-            })
-            settingsBtn.add_style_class_name("settings_btn")
-            settingsBtn.add_style_class_name("key")
-            settingsBtn.connect("clicked", () => {
-                this.settingsOpenFunction();
-            })
-            gridLeft.attach(settingsBtn, 0, 0, 2 * topBtnWidth, 3)
-            this.keys.push(settingsBtn)
-
-            const closeBtn = new St.Button({
-                x_expand: true,
-                y_expand: true
-            })
-            closeBtn.add_style_class_name("close_btn")
-            closeBtn.add_style_class_name("key")
-            closeBtn.connect("clicked", () => {
-                this.close();
-                this.closedFromButton = true;
-            })
-            gridRight.attach(closeBtn, (rowSize - 2 * topBtnWidth), 0, 2 * topBtnWidth, 3)
-            this.keys.push(closeBtn)
-
-            let moveHandleLeft = new St.Button({
-                x_expand: true,
-                y_expand: true
-            })
-            moveHandleLeft.add_style_class_name("moveHandle")
-            moveHandleLeft.set_style("font-size: " + this.settings.get_int("font-size-px") + "px; border-radius: " + (this.settings.get_boolean("round-key-corners") ? "5px;" : "0;") + "background-size: " + this.settings.get_int("font-size-px") + "px; font-weight: " + (this.settings.get_boolean("font-bold") ? "bold" : "normal") + "; border: " + this.settings.get_int("border-spacing-px") + "px solid transparent;");
-            if (this.lightOrDark()) {
-                moveHandleLeft.add_style_class_name("inverted");
-            } else {
-                moveHandleLeft.add_style_class_name("regular");
-            }
-
-            moveHandleLeft.connect("event", (actor, event) => {
-                if (event.type() == Clutter.EventType.BUTTON_PRESS || event.type() == Clutter.EventType.TOUCH_BEGIN) {
-                    this.draggable = this.settings.get_boolean("enable-drag");
-                }
-                this.event(event, false)
-            })
-            gridLeft.attach(moveHandleLeft, 2 * topBtnWidth, 0, (halfSize - 2 * topBtnWidth), 3)
-
-            let moveHandleRight = new St.Button({
-                x_expand: true,
-                y_expand: true
-            })
-            moveHandleRight.add_style_class_name("moveHandle")
-            moveHandleRight.set_style("font-size: " + this.settings.get_int("font-size-px") + "px; border-radius: " + (this.settings.get_boolean("round-key-corners") ? "5px;" : "0;") + "background-size: " + this.settings.get_int("font-size-px") + "px; font-weight: " + (this.settings.get_boolean("font-bold") ? "bold" : "normal") + "; border: " + this.settings.get_int("border-spacing-px") + "px solid transparent;");
-            if (this.lightOrDark()) {
-                moveHandleRight.add_style_class_name("inverted");
-            } else {
-                moveHandleRight.add_style_class_name("regular");
-            }
-
-            moveHandleRight.connect("event", (actor, event) => {
-                if (event.type() == Clutter.EventType.BUTTON_PRESS || event.type() == Clutter.EventType.TOUCH_BEGIN) {
-                    this.draggable = this.settings.get_boolean("enable-drag");
-                }
-                this.event(event, false)
-            })
-            gridRight.attach(moveHandleRight, halfSize, 0, (rowSize - halfSize - 2 * topBtnWidth), 3)
+            // (settingsBtn, closeBtn, moveHandleLeft, moveHandleRight blocks removed)
             gridLeft.attach(new St.Widget({ x_expand: true, y_expand: true }), 0, 3, halfSize, 1)
             gridRight.attach(new St.Widget({ x_expand: true, y_expand: true }), halfSize, 3, (rowSize - halfSize), 1)
         } else {
             this.box.add_style_class_name("boxLay");
-            
+
             const transparency = this.settings.get_double("transparency") || 1.0;
-            
+
             if (this.settings.get_boolean("system-accent-col") && major >= 47) {
                 if (this.settings.scheme == "-dark") {
                     this.box.set_style("background-color: alpha(st-darken(-st-accent-color, 30%), " + transparency + "); padding: " + this.settings.get_int("outer-spacing-px") + "px;")
@@ -1046,52 +1033,7 @@ class Keyboard extends Dialog {
                 this.box.add_style_class_name("regular");
             }
 
-            const settingsBtn = new St.Button({
-                x_expand: true,
-                y_expand: true
-            })
-            settingsBtn.add_style_class_name("settings_btn")
-            settingsBtn.add_style_class_name("key")
-            settingsBtn.connect("clicked", () => {
-                this.settingsOpenFunction();
-            })
-            grid.attach(settingsBtn, 0, 0, 2 * topBtnWidth, 3)
-            this.keys.push(settingsBtn)
-
-            const closeBtn = new St.Button({
-                x_expand: true,
-                y_expand: true
-            })
-            closeBtn.add_style_class_name("close_btn")
-            closeBtn.add_style_class_name("key")
-            closeBtn.connect("clicked", () => {
-                this.close();
-                this.closedFromButton = true;
-            })
-            grid.attach(closeBtn, (rowSize - 2 * topBtnWidth), 0, 2 * topBtnWidth, 3)
-            this.keys.push(closeBtn)
-
-            // [insert handwriting 10]
-
-            let moveHandle = new St.Button({
-                x_expand: true,
-                y_expand: true
-            })
-            moveHandle.add_style_class_name("moveHandle")
-            moveHandle.set_style("font-size: " + this.settings.get_int("font-size-px") + "px; border-radius: " + (this.settings.get_boolean("round-key-corners") ? "5px;" : "0;") + "background-size: " + this.settings.get_int("font-size-px") + "px; font-weight: " + (this.settings.get_boolean("font-bold") ? "bold" : "normal") + "; border: " + this.settings.get_int("border-spacing-px") + "px solid transparent;");
-            if (this.lightOrDark()) {
-                moveHandle.add_style_class_name("inverted");
-            } else {
-                moveHandle.add_style_class_name("regular");
-            }
-
-            moveHandle.connect("event", (actor, event) => {
-                if (event.type() == Clutter.EventType.BUTTON_PRESS || event.type() == Clutter.EventType.TOUCH_BEGIN) {
-                    this.draggable = this.settings.get_boolean("enable-drag");
-                }
-                this.event(event, false)
-            })
-            grid.attach(moveHandle, 2 * topBtnWidth, 0, (rowSize - 4 * topBtnWidth), 3) // [insert handwriting 11]
+            // (settingsBtn, closeBtn, moveHandle blocks removed)
             grid.attach(new St.Widget({ x_expand: true, y_expand: true }), 0, 3, rowSize, 1)
         }
 
