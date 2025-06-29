@@ -396,6 +396,34 @@ class Keyboard extends Dialog {
         this.heightPercent = (monitor.width > monitor.height) ? settings.get_int("landscape-height-percent") / 100 : settings.get_int("portrait-height-percent") / 100;
         this.nonDragBlocker = new Clutter.Actor();
         this.buildUI();
+        /* --- initialise arrow‑key navigation --- */
+        this.highlightKey(this.keys[0]);        // start on first key
+        this.connect('key-press-event', (actor, event) => {
+            const sym = event.get_key_symbol();
+            switch (sym) {
+                case Clutter.KEY_Left:
+                    this.moveSelection(-1, 0);
+                    break;
+                case Clutter.KEY_Right:
+                    this.moveSelection(1, 0);
+                    break;
+                case Clutter.KEY_Up:
+                    this.moveSelection(0, -1);
+                    break;
+                case Clutter.KEY_Down:
+                    this.moveSelection(0, 1);
+                    break;
+                case Clutter.KEY_Return:
+                case Clutter.KEY_KP_Enter:
+                    if (this.currentKey)
+                        this.currentKey.clicked();   // emulate press
+                    break;
+                default:
+                    return Clutter.EVENT_PROPAGATE;
+            }
+            return Clutter.EVENT_STOP;
+        });
+        /* --------------------------------------------------- */
         this.draggable = false;
         // [insert handwriting 4]
         this.add_child(this.box);
@@ -931,6 +959,7 @@ class Keyboard extends Dialog {
                     i.isMod = true;
                 }
                 const keyBtn = new St.Button(params)
+                keyBtn.can_focus = true;   // enable keyboard focus
                 keyBtn.add_style_class_name('key')
                 keyBtn.char = i
                 if (i.code == 58) {
@@ -979,6 +1008,7 @@ class Keyboard extends Dialog {
             if (!topBtnWidth) topBtnWidth = ((Object.hasOwn(kRow[kRow.length - 1], "width") && (Object.hasOwn(kRow[kRow.length - 1], "key"))) ? kRow[kRow.length - 1].width : 1)
             const size = c;
             if (!rowSize) rowSize = size;
+        this.rowSize = rowSize;  // remember columns per row for arrow nav
             r += r == 0 ? 3 : 4
         }
 
@@ -1168,6 +1198,31 @@ class Keyboard extends Dialog {
             })
         });
     }
+
+    /* ---------- joystick / arrow‑key navigation ---------- */
+    highlightKey(key) {
+        if (this.currentKey) {
+            this.currentKey.remove_style_pseudo_class('focus');
+        }
+        this.currentKey = key;
+        if (key) {
+            key.add_style_pseudo_class('focus');
+            key.grab_key_focus();
+        }
+    }
+
+    moveSelection(dx, dy) {
+        if (!this.keys || !this.currentKey) {
+            return;
+        }
+        let idx = this.keys.indexOf(this.currentKey);
+        if (idx === -1) idx = 0;
+        const cols = this.rowSize || 12;           // fallback if rowSize undefined
+        let newIdx = idx + dy * cols + dx;
+        newIdx = Math.max(0, Math.min(this.keys.length - 1, newIdx));
+        this.highlightKey(this.keys[newIdx]);
+    }
+    /* ----------------------------------------------------- */
 
     lightOrDark() {
         let r, g, b;
