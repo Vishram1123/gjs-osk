@@ -90,11 +90,11 @@
     ],
 
     "Modern Mini": [
-        [{"key": "ESC"}, {"key": "TLDE", "width": 0.5}, {"key": "AE01"}, {"key": "AE02"}, {"key": "AE03"}, {"key": "AE04"}, {"key": "AE05"}, {"key": "AE06"}, {"key": "AE07"}, {"key": "AE08"}, {"key": "AE09"}, {"key": "AE10"}, {"key": "AE11"}, {"key": "AE12"}, {"key": "BKSP", "width": 1.5}],
-        [{"key": "TAB", "width": 1.5}, {"key": "AD01"}, {"key": "AD02"}, {"key": "AD03"}, {"key": "AD04"}, {"key": "AD05"}, {"key": "AD06"}, {"key": "AD07"}, {"key": "AD08"}, {"key": "AD09"}, {"key": "AD10"}, {"key": "AD11"}, {"key": "AD12"}, {"key": "BKSL", "width": 1.5}],
-        [{"key": "CAPS", "width": 1.75}, {"key": "AC01"}, {"key": "AC02"}, {"key": "AC03"}, {"key": "AC04"}, {"key": "AC05"}, {"key": "AC06"}, {"key": "AC07"}, {"key": "AC08"}, {"key": "AC09"}, {"key": "AC10"}, {"key": "AC11"}, {"key": "RTRN", "width": 2.5}],
-        [{"key": "LFSH", "width": 2.5}, {"key": "AB01"}, {"key": "AB02"}, {"key": "AB03"}, {"key": "AB04"}, {"key": "AB05"}, {"key": "AB06"}, {"key": "AB07"}, {"key": "AB08"}, {"key": "AB09"}, {"key": "AB10"}, {"key": "RTSH", "width":1.5},{"key":"SETTINGS", "width":1}],
-        [{"key": "LCTL", "width": 2.25}, {"key":"LALT", "width": 1}, {"key": "SPCE", "width": 9} , {"key": "LEFT"}, [{"key": "UP", "height": 0.5}, {"key": "DOWN", "height": 0.5}], {"key": "RGHT"}, {"key":"CLOSE", "width":1}, {"key":"DRAG", "width":1}]
+        [{"key": "ESC"}, {"key": "TLDE", "width": 0.5}, {"key": "AE01"}, {"key": "AE02"}, {"key": "AE03"}, {"key": "AE04"}, {"key": "AE05"}, {"key": "AE06"}, {"key": "AE07"}, {"key": "AE08"}, {"key": "AE09"}, {"key": "AE10"}, {"key": "AE11"}, {"key": "AE12"}, {"key": "BKSP", "width": 2.5}],
+        [{"key": "TAB", "width": 2.5}, {"key": "AD01"}, {"key": "AD02"}, {"key": "AD03"}, {"key": "AD04"}, {"key": "AD05"}, {"key": "AD06"}, {"key": "AD07"}, {"key": "AD08"}, {"key": "AD09"}, {"key": "AD10"}, {"key": "AD11"}, {"key": "AD12"}, {"key": "BKSL", "width": 1.5}],
+        [{"key": "CAPS", "width": 2.75}, {"key": "AC01"}, {"key": "AC02"}, {"key": "AC03"}, {"key": "AC04"}, {"key": "AC05"}, {"key": "AC06"}, {"key": "AC07"}, {"key": "AC08"}, {"key": "AC09"}, {"key": "AC10"}, {"key": "AC11"}, {"key": "RTRN", "width": 2.5}],
+        [{"key": "LFSH", "width": 2.5}, {"key": "AB01"}, {"key": "AB02"}, {"key": "AB03"}, {"key": "AB04"}, {"key": "AB05"}, {"key": "AB06"}, {"key": "AB07"}, {"key": "AB08"}, {"key": "AB09"}, {"key": "AB10"}, {"key": "RTSH", "width":1.5},{"key":"SETTINGS", "width":1},{"key":"CLOSE", "width":1}],
+        [{"key": "LCTL", "width": 2.25}, {"key":"LALT", "width": 1}, {"key": "SPCE", "width": 9} , {"key": "LEFT"}, [{"key": "UP", "height": 0.5}, {"key": "DOWN", "height": 0.5}], {"key": "RGHT"}, {"key":"DRAG", "width":1}]
     ]
 
 }
