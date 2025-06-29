@@ -372,6 +372,17 @@ export default class GjsOskPreferences extends ExtensionPreferences {
 		showIcon.add_suffix(showIconDT);
 		showIcon.activatable_widget = showIconDT;
 
+		const transparencyRow = new Adw.ActionRow({
+			title: _('Transparency')
+		});
+		appearanceGroup.add(transparencyRow);
+
+		let numChanger_trans = Gtk.SpinButton.new_with_range(0, 1, 0.1);
+		numChanger_trans.value = settings.get_double('transparency');
+		numChanger_trans.valign = Gtk.Align.CENTER;
+		transparencyRow.add_suffix(numChanger_trans);
+		transparencyRow.activatable_widget = numChanger_trans;
+
 		window.add(page1);
 
 		let page2 = new Adw.PreferencesPage({
@@ -475,6 +486,7 @@ export default class GjsOskPreferences extends ExtensionPreferences {
 		settings.bind("play-sound", soundPlayDT, "active", 0);
 		settings.bind("show-icons", showIconDT, "active", 0)
 		settings.bind("default-snap", snapDrop, "selected", 0);
+		settings.bind('transparency', numChanger_trans, 'value', 0);
 		monitorDrop.connect("notify::selected", () => {
 			currentMonitorMap[monitors.length + ""] = monitors.map(m => { return m.get_connector() })[monitorDrop.selected];
 			let representation = [];
