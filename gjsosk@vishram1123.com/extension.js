@@ -190,7 +190,9 @@ export default class GjsOskExtension extends Extension {
                 this.Keyboard = new Keyboard(this.settings, this);
                 this.Keyboard.refresh = refresh
             }
-            if (!Gio.File.new_for_path(extract_dir).query_exists(null)) {
+            if (!Gio.File.new_for_path(extract_dir).query_exists(null)
+                || !Gio.File.new_for_path(extract_dir + "/keycodes").query_exists(null)
+                || !Gio.File.new_for_path(extract_dir + "/keycodes/" + (KeyboardManager.getKeyboardManager().currentLayout != null ? KeyboardManager.getKeyboardManager().currentLayout.id : "us") + '.json').query_exists(null)) {
                 Gio.File.new_for_path(extract_dir).make_directory(null);
                 Gio.File.new_for_path(extract_dir + "/keycodes").make_directory(null);
                 Gio.Subprocess.new(["tar", "-Jxf", this.path + "/keycodes.tar.xz", "-C", extract_dir + "/keycodes"], Gio.SubprocessFlags.NONE)
