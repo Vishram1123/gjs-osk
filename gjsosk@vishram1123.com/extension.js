@@ -30,18 +30,22 @@ if (major == 49) {
                 side,
             });
             this._gestureSignals = [];
-            const signalNames = GObject.signal_list_names(Shell.EdgeDragGesture.$gtype);
-            for (let sig of signalNames) {
-                if (sig === 'may-recognize') continue;
+            this._gestureSignals.push(
+                this._gesture.connect('begin', (g, actor) => this.emit('begin', actor))
+            );
+            this._gestureSignals.push(
+                this._gesture.connect('update', (g, actor) => this.emit('update', actor))
+            );
+            this._gestureSignals.push(
+                this._gesture.connect('end', (g, actor) => {
+                    this.emit('end', actor);
+                    this.emit('activated', actor);
+                })
+            );
+            this._gestureSignals.push(
+                this._gesture.connect('cancel', (g, actor) => this.emit('cancel', actor))
+            );
 
-                const id = this._gesture.connect(sig, (obj, ...args) => {
-                    this.emit(sig, ...args);
-                    if (sig === 'end') {
-                        this.emit('activated', ...args);
-                    }
-                });
-                this._gestureSignals.push(id);
-            }
             this._gesture.connect('may-recognize', () => {
                 return allowedModes & Main.actionMode;
             });
