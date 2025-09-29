@@ -570,6 +570,14 @@ class Keyboard extends Dialog {
                     this.gestureInProgress = false;
                     return Clutter.EVENT_PROPAGATE;
                 });
+                oskEdgeDragAction.connect('progress', (_action, progress) => {
+                    if (!this.gestureInProgress)
+                        this.open(false)
+                    this.setOpenState(Math.min(Math.max(0, (progress / (side % 2 == 0 ? this.box.height : this.box.width)) * 100), 100))
+                    this.gestureInProgress = true;
+                });
+                global.stage.add_action_full('osk', Clutter.EventPhase.CAPTURE, oskEdgeDragAction);
+                this.bottomDragAction = oskEdgeDragAction;
             } else {
                 oskEdgeDragAction = new Shell.EdgeDragGesture({
                     name: 'GJS-OSK Edge Drag Action',
@@ -593,15 +601,17 @@ class Keyboard extends Dialog {
                     this.gestureInProgress = false;
                     return Clutter.EVENT_PROPAGATE;
                 });
+                oskEdgeDragAction.connect('progress', (_action, progress) => {
+                    if (!this.gestureInProgress)
+                        this.open(false)
+                    this.setOpenState(Math.min(Math.max(0, (progress / (side % 2 == 0 ? this.box.height : this.box.width)) * 100), 100))
+                    this.gestureInProgress = true;
+                });
+                global.stage.add_action(oskEdgeDragAction);
+                this.bottomDragAction = oskEdgeDragAction;
             }
-            oskEdgeDragAction.connect('progress', (_action, progress) => {
-                if (!this.gestureInProgress)
-                    this.open(false)
-                this.setOpenState(Math.min(Math.max(0, (progress / (side % 2 == 0 ? this.box.height : this.box.width)) * 100), 100))
-                this.gestureInProgress = true;
-            });
-            global.stage.add_action_full('osk', Clutter.EventPhase.CAPTURE, oskEdgeDragAction);
-            this.bottomDragAction = oskEdgeDragAction;
+            
+            
             
         } else {
             this.bottomDragAction = null;
@@ -624,8 +634,10 @@ class Keyboard extends Dialog {
     destroy() {
         Main.keyboard.maybeHandleEvent = this._oldMaybeHandleEvent
         global.stage.remove_action_by_name('osk')
-        if (this.oldBottomDragAction !== null && this.oldBottomDragAction instanceof Clutter.Action)
+        if (this.oldBottomDragAction !== null && this.oldBottomDragAction instanceof Clutter.Action && EdgeDragAction != null)
             global.stage.add_action_full('osk', Clutter.EventPhase.CAPTURE, this.oldBottomDragAction)
+        else if (this.oldBottomDragAction != null) 
+            global.stage.add_action(this.oldBottomDragAction)
         if (this.textboxChecker !== null) {
             clearInterval(this.textboxChecker);
             this.textboxChecker = null;
