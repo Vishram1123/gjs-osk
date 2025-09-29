@@ -951,14 +951,14 @@ class Keyboard extends Dialog {
         let currentLayout = layouts[layoutName];
         let width = 0;
         for (const c of currentLayout[0]) {
-            width += (Object.hasOwn(c, "width") ? c.width : 1)
+            width += (("width" in c) ? c.width : 1)
         }
         let rowSize;
         let halfSize;
         let r = 0;
         let c;
         const doAddKey = (keydef) => {
-            const i = Object.hasOwn(keydef, "key") ? keycodes[keydef.key] : Object.hasOwn(keydef, "split") ? "split" : "empty space";
+            const i = ("key" in keydef) ? keycodes[keydef.key] : ("split" in keydef) ? "split" : "empty space";
             if (i != null && typeof i !== 'string') {
                 if (i.layers.default == null) {
                     for (var key of Object.keys(i.layers)) {
@@ -1006,13 +1006,13 @@ class Keyboard extends Dialog {
                 } else if (i.code == 42 || i.code == 54) {
                     this.shiftButtons.push(keyBtn)
                 }
-                currentGrid.attach(keyBtn, c, 5 + r, (Object.hasOwn(keydef, "width") ? keydef.width : 1) * 2, r == 0 ? 3 : (Object.hasOwn(keydef, "height") ? keydef.height : 1) * 4)
+                currentGrid.attach(keyBtn, c, 5 + r, (("width" in keydef) ? keydef.width : 1) * 2, r == 0 ? 3 : (("height" in keydef) ? keydef.height : 1) * 4)
                 keyBtn.visible = true
-                c += (Object.hasOwn(keydef, "width") ? keydef.width : 1) * 2
+                c += (("width" in keydef) ? keydef.width : 1) * 2
                 this.keys.push(keyBtn)
                 // [insert handwriting 9]
             } else if (i == "empty space") {
-                c += (Object.hasOwn(keydef, "width") ? keydef.width : 1) * 2
+                c += (("width" in keydef) ? keydef.width : 1) * 2
             } else if (i == "split") {
                 currentGrid = gridRight
                 const size = c
@@ -1027,14 +1027,14 @@ class Keyboard extends Dialog {
             }
             for (const keydef of kRow) {
                 if (keydef instanceof Array) {
-                    keydef.forEach(i => { doAddKey(i); r += 2; c -= (Object.hasOwn(i, "width") ? i.width : 1) * 2 });
-                    c += (Object.hasOwn(keydef[0], "width") ? keydef[0].width : 1) * 2;
+                    keydef.forEach(i => { doAddKey(i); r += 2; c -= (("width" in i) ? i.width : 1) * 2 });
+                    c += (("width" in keydef[0]) ? keydef[0].width : 1) * 2;
                     r -= 4;
                 } else {
                     doAddKey(keydef)
                 }
             }
-            if (!topBtnWidth) topBtnWidth = ((Object.hasOwn(kRow[kRow.length - 1], "width") && (Object.hasOwn(kRow[kRow.length - 1], "key"))) ? kRow[kRow.length - 1].width : 1)
+            if (!topBtnWidth) topBtnWidth = ((("width" in kRow[kRow.length - 1]) && ("key" in kRow[kRow.length - 1])) ? kRow[kRow.length - 1].width : 1)
             const size = c;
             if (!rowSize) rowSize = size;
             r += r == 0 ? 3 : 4
