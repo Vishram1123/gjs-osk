@@ -346,7 +346,7 @@ class Keyboard extends Dialog {
         this.settingsOpenFunction = extensionObject.openPrefs
         this.inputDevice = Clutter.get_default_backend().get_default_seat().create_virtual_device(Clutter.InputDeviceType.KEYBOARD_DEVICE);
         this.settings = settings;
-        let monitor = Main.layoutManager.monitors[currentMonitorId];
+        let monitor = Main.layoutManager.monitors[currentMonitorId] ?? Main.layoutManager.primaryMonitor;
         super._init(Main.layoutManager.modalDialogGroup, 'db-keyboard-content');
         this.box = new St.Widget({
             reactive: true,
@@ -539,7 +539,7 @@ class Keyboard extends Dialog {
     }
 
     snapMovement(xPos, yPos) {
-        let monitor = Main.layoutManager.monitors[currentMonitorId]
+        let monitor = Main.layoutManager.monitors[currentMonitorId] ?? Main.layoutManager.primaryMonitor
         if (xPos < monitor.x || yPos < monitor.y || xPos > monitor.x + monitor.width || yPos > monitor.y + monitor.width) {
             this.set_translation(xPos, yPos, 0);
             return;
@@ -565,7 +565,7 @@ class Keyboard extends Dialog {
     }
 
     setOpenState(percent) {
-        let monitor = Main.layoutManager.monitors[currentMonitorId];
+        let monitor = Main.layoutManager.monitors[currentMonitorId] ?? Main.layoutManager.primaryMonitor;
         let posX = [this.settings.get_int("snap-spacing-px"), ((monitor.width * .5) - ((this.width * .5))), monitor.width - this.width - this.settings.get_int("snap-spacing-px")][(this.settings.get_int("default-snap") % 3)];
         let posY = [this.settings.get_int("snap-spacing-px"), ((monitor.height * .5) - ((this.height * .5))), monitor.height - this.height - this.settings.get_int("snap-spacing-px")][Math.floor((this.settings.get_int("default-snap") / 3))];
         let mX = [-this.box.width, 0, this.box.width][(this.settings.get_int("default-snap") % 3)];
@@ -586,7 +586,7 @@ class Keyboard extends Dialog {
             this.show();
         }
         if (noPrep == null || noPrep) {
-            let monitor = Main.layoutManager.monitors[currentMonitorId];
+            let monitor = Main.layoutManager.monitors[currentMonitorId] ?? Main.layoutManager.primaryMonitor;
             let posX = [this.settings.get_int("snap-spacing-px"), ((monitor.width * .5) - ((this.width * .5))), monitor.width - this.width - this.settings.get_int("snap-spacing-px")][(this.settings.get_int("default-snap") % 3)];
             let posY = [this.settings.get_int("snap-spacing-px"), ((monitor.height * .5) - ((this.height * .5))), monitor.height - this.height - this.settings.get_int("snap-spacing-px")][Math.floor((this.settings.get_int("default-snap") / 3))];
             if (noPrep == null) {
@@ -627,7 +627,7 @@ class Keyboard extends Dialog {
 
     close(instant = null) {
         this.prevKeyFocus = null;
-        let monitor = Main.layoutManager.monitors[currentMonitorId];
+        let monitor = Main.layoutManager.monitors[currentMonitorId] ?? Main.layoutManager.primaryMonitor;
         let posX = [this.settings.get_int("snap-spacing-px"), ((monitor.width * .5) - ((this.width * .5))), monitor.width - this.width - this.settings.get_int("snap-spacing-px")][(this.settings.get_int("default-snap") % 3)];
         let posY = [this.settings.get_int("snap-spacing-px"), ((monitor.height * .5) - ((this.height * .5))), monitor.height - this.height - this.settings.get_int("snap-spacing-px")][Math.floor((this.settings.get_int("default-snap") / 3))];
         let mX = [-this.box.width, 0, this.box.width][(this.settings.get_int("default-snap") % 3)];
@@ -708,7 +708,7 @@ class Keyboard extends Dialog {
     buildUI() {
         this.box.set_opacity(0);
         this.keys = [];
-        let monitor = Main.layoutManager.monitors[currentMonitorId]
+        let monitor = Main.layoutManager.monitors[currentMonitorId] ?? Main.layoutManager.primaryMonitor
         let layoutName = Object.keys(layouts)[(monitor.width > monitor.height) ? this.settings.get_int("layout-landscape") : this.settings.get_int("layout-portrait")];
         this.box.width = Math.round((monitor.width - this.settings.get_int("snap-spacing-px") * 2) * (layoutName.includes("Split") ? 1 : this.widthPercent))
         this.box.height = Math.round((monitor.height - this.settings.get_int("snap-spacing-px") * 2) * this.heightPercent)
