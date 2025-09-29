@@ -224,14 +224,12 @@ export default class GjsOskPreferences extends ExtensionPreferences {
 		behaviorGroup.add(soundPlayRow);
 		soundPlayRow.enable_expansion = settings.get_boolean('play-sound')
 
-		// Sub-option row: displays the current file and has a button
 		const fileRow = new Adw.ActionRow({
 			title: _('Sound file'),
 			subtitle: settings.get_string('sound-file') || _('No file selected'),
 			activatable: false, // prevent clicking the whole row
 		});
 
-		// Button for picking/clearing the file
 		const fileButton = new Gtk.Button({
 			label: settings.get_string('sound-file') ? _('Clear') : _('Choose'),
 			valign: Gtk.Align.CENTER,
@@ -285,7 +283,6 @@ export default class GjsOskPreferences extends ExtensionPreferences {
 			}
 		});
 
-		// Add this row inside the expander
 		soundPlayRow.add_row(fileRow);
 
 		const appearanceGroup = new Adw.PreferencesGroup({

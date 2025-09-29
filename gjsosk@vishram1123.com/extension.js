@@ -82,12 +82,14 @@ export default class GjsOskExtension extends Extension {
     _openKeyboard(instant) {
         if (this.Keyboard.state == State.CLOSED) {
             this.Keyboard.open(null, !instant ? null : true);
+            this.openBit.set_boolean('keyboard-visible', true);
         }
     }
 
     _closeKeyboard(instant) {
         if (this.Keyboard.state == State.OPENED) {
             this.Keyboard.close(!instant ? null : true);
+            this.openBit.set_boolean('keyboard-visible', false);
         }
     }
 
@@ -357,10 +359,24 @@ export default class GjsOskExtension extends Extension {
         this._quick_settings_indicator.quickSettingsItems.push(this._toggle);
         Main.panel.statusArea.quickSettings.addExternalIndicator(this._quick_settings_indicator);
         this.open_interval();
-        this.openFromCommandHandler = this.openBit.connect("changed", () => {
-            this.openBit.set_boolean("opened", false)
-            this._toggleKeyboard();
-        })
+        
+        this.keyboardVisibilityHandler = this.openBit.connect('changed::keyboard-visible', () => {
+            const shouldBeVisible = this.openBit.get_boolean('keyboard-visible');
+            if (shouldBeVisible !== this.Keyboard?.opened) {
+                this._toggleKeyboard(true);
+            }
+        });
+        
+        this.openFromCommandHandler = this.openBit.connect("changed::opened", () => {
+            if (this.openBit.get_boolean("opened")) {
+                this.openBit.set_boolean("opened", false);
+                this._toggleKeyboard();
+            }
+        });
+        
+        if (this.openBit.get_boolean('keyboard-visible') && this.Keyboard) {
+            this._openKeyboard(true);
+        }
         let settingsChanged = () => {
             let opened;
             if (this.Keyboard != null)
@@ -437,7 +453,14 @@ export default class GjsOskExtension extends Extension {
         this.darkSchemeSettings = null;
         this.inputLanguageSettings = null;
         this.gnomeKeyboardSettings = null;
-        this.openBit.disconnect(this.openFromCommandHandler);
+        if (this.keyboardVisibilityHandler) {
+            this.openBit.disconnect(this.keyboardVisibilityHandler);
+            this.keyboardVisibilityHandler = null;
+        }
+        if (this.openFromCommandHandler) {
+            this.openBit.disconnect(this.openFromCommandHandler);
+            this.openFromCommandHandler = null;
+        }
         this.openBit = null;
         global.stage.disconnect(this.tapConnect)
         if (this.openInterval !== null) {

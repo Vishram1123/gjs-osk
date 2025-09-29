@@ -95,5 +95,8 @@
   <key name="opened" type="b">
 		<default>false</default>
 	</key>
+  <key name="keyboard-visible" type="b">
+    <default>false</default>
+  </key>
 	</schema>
 </schemalist>
