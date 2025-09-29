@@ -178,29 +178,155 @@ export default class GjsOskExtension extends Extension {
             } catch {
                 currentMonitorId = 0;
             }
-            let postExtract = () => {
-                if (this.Keyboard != null) {
-                    this.Keyboard.destroy();
-                    this.Keyboard = null;
+            const fileExists = async (file) => {
+                try {
+                    return await new Promise((resolve) => {
+                        file.query_info_async(
+                            '*',
+                            Gio.FileQueryInfoFlags.NONE,
+                            GLib.PRIORITY_DEFAULT,
+                            null,
+                            (source, res) => {
+                                try {
+                                    source.query_info_finish(res);
+                                    resolve(true);
+                                } catch (e) {
+                                    resolve(false);
+                                }
+                            }
+                        );
+                    });
+                } catch (e) {
+                    return false;
                 }
-                let [ok, contents] = GLib.file_get_contents(extract_dir + "/keycodes/" + (KeyboardManager.getKeyboardManager().currentLayout != null ? KeyboardManager.getKeyboardManager().currentLayout.id : "us") + '.json');
-                if (ok) {
+            };
+
+            const ensureDirectory = async (dir) => {
+                try {
+                    if (!(await fileExists(dir))) {
+                        await new Promise((resolve, reject) => {
+                            dir.make_directory_async(GLib.PRIORITY_DEFAULT, null, (source, res) => {
+                                try {
+                                    source.make_directory_finish(res);
+                                    resolve();
+                                } catch (e) {
+                                    if (!e.matches(Gio.IOErrorEnum, Gio.IOErrorEnum.EXISTS)) {
+                                        reject(e);
+                                    } else {
+                                        resolve();
+                                    }
+                                }
+                            });
+                        });
+                    }
+                    return true;
+                } catch (e) {
+                    console.error(`Failed to create directory ${dir.get_path()}: ${e.message}`);
+                    return false;
+                }
+            };
+
+            const runCommand = (argv) => {
+                return new Promise((resolve) => {
+                    const proc = Gio.Subprocess.new(
+                        argv,
+                        Gio.SubprocessFlags.STDOUT_PIPE | 
+                        Gio.SubprocessFlags.STDERR_PIPE
+                    );
+                    proc.wait_check_async(null, (source, res) => {
+                        try {
+                            const success = source.wait_check_finish(res);
+                            resolve(success);
+                        } catch (e) {
+                            console.error(`Command failed: ${argv.join(' ')}`);
+                            resolve(false);
+                        }
+                    });
+                });
+            };
+
+            const extractKeycodes = async () => {
+                const baseDir = Gio.File.new_for_path(extract_dir);
+                const keycodesDir = Gio.File.new_for_path(extract_dir + "/keycodes");
+                const layoutId = KeyboardManager.getKeyboardManager().currentLayout?.id || "us";
+                const targetFile = Gio.File.new_for_path(`${extract_dir}/keycodes/${layoutId}.json`);
+                
+                if (await fileExists(targetFile)) {
+                    return true;
+                }
+
+                if (!(await ensureDirectory(baseDir))) {
+                    console.error("Failed to create base directory");
+                    return false;
+                }
+
+                if (!(await ensureDirectory(keycodesDir))) {
+                    console.error("Failed to create keycodes directory");
+                    return false;
+                }
+
+                try {
+                    const success = await runCommand([
+                        "tar", 
+                        "-Jxf", 
+                        this.path + "/keycodes.tar.xz", 
+                        "-C", 
+                        keycodesDir.get_path(),
+                        "--strip-components=1"
+                    ]);
+
+                    if (!success) {
+                        throw new Error("Failed to extract keycodes archive");
+                    }
+
+                    if (!(await fileExists(targetFile))) {
+                        throw new Error("Keycodes file not found after extraction");
+                    }
+
+                    return true;
+                } catch (error) {
+                    console.error(`Error extracting keycodes: ${error.message}`);
+                    return false;
+                }
+            };
+
+            const initializeKeyboard = async () => {
+                try {
+                    const layoutId = KeyboardManager.getKeyboardManager().currentLayout?.id || "us";
+                    const keycodesPath = GLib.build_filenamev([
+                        extract_dir, 
+                        "keycodes", 
+                        `${layoutId}.json`
+                    ]);
+                    
+                    const [ok, contents] = GLib.file_get_contents(keycodesPath);
+                    if (!ok) {
+                        throw new Error(`Failed to read keycodes from ${keycodesPath}`);
+                    }
+                    
                     keycodes = JSON.parse(contents);
+                    
+                    if (this.Keyboard) {
+                        this.Keyboard.destroy();
+                        this.Keyboard = null;
+                    }
+                    
+                    this.Keyboard = new Keyboard(this.settings, this);
+                    this.Keyboard.refresh = refresh;
+                    
+                } catch (error) {
+                    console.error(`Error initializing keyboard: ${error.message}`);
                 }
-                this.Keyboard = new Keyboard(this.settings, this);
-                this.Keyboard.refresh = refresh
-            }
-            if (!Gio.File.new_for_path(extract_dir).query_exists(null)
-                || !Gio.File.new_for_path(extract_dir + "/keycodes").query_exists(null)
-                || !Gio.File.new_for_path(extract_dir + "/keycodes/" + (KeyboardManager.getKeyboardManager().currentLayout != null ? KeyboardManager.getKeyboardManager().currentLayout.id : "us") + '.json').query_exists(null)) {
-                Gio.File.new_for_path(extract_dir).make_directory(null);
-                Gio.File.new_for_path(extract_dir + "/keycodes").make_directory(null);
-                Gio.Subprocess.new(["tar", "-Jxf", this.path + "/keycodes.tar.xz", "-C", extract_dir + "/keycodes"], Gio.SubprocessFlags.NONE)
-                    .wait_check_async(null)
-                    .then(postExtract)
-            } else {
-                postExtract();
-            }
+            };
+
+            (async () => {
+                try {
+                    await extractKeycodes();
+                    await initializeKeyboard();
+                } catch (error) {
+                    console.error(`Error in keyboard initialization: ${error.message}`);
+                }
+            })();
         }
         refresh()
 
