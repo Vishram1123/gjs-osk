@@ -56,7 +56,7 @@ class KeyboardMenuToggle extends QuickSettings.QuickMenuToggle {
         this.menu.addMenuItem(this._itemsSection);
         this.settings.bind('indicator-enabled',
             this, 'checked',
-            Gio.SettingsBindFlags.DEFAULT);
+            Gio.SettingsBindFlags.DEFAULT);     
         this.menu.addMenuItem(new PopupMenu.PopupSeparatorMenuItem());
         const settingsItem = this.menu.addAction(_('More Settings'),
             () => this.extensionObject.openPreferences());
@@ -130,7 +130,7 @@ export default class GjsOskExtension extends Extension {
         }, 300);
         this.tapConnect = global.stage.connect("event", (_actor, event) => {
             if (event.type() !== 4 && event.type() !== 5) {
-                this.lastInputMethod = [false, event.type() >= 9 && event.type() <= 12, true][this.settings.get_int("enable-tap-gesture")]
+                this.lastInputMethod = [false, event.type() >= 9 && event.type() <= 12, true][this.settings.get_boolean("indicator-enabled") ? this.settings.get_int("enable-tap-gesture") : 0]
             }
         })
     }
@@ -430,7 +430,7 @@ class Keyboard extends Dialog {
         }
         this._oldMaybeHandleEvent = Main.keyboard.maybeHandleEvent
         Main.keyboard.maybeHandleEvent = (e) => {
-            let lastInputMethod = [e.type() == 11, e.type() == 11, e.type() == 7 || e.type() == 11][this.settings.get_int("enable-tap-gesture")]
+            let lastInputMethod = [e.type() == 11, e.type() == 11, e.type() == 7 || e.type() == 11][this.settings.get_boolean("indicator-enabled") ? this.settings.get_int("enable-tap-gesture") : 0]
             let ac = global.stage.get_event_actor(e)
             if (this.contains(ac)) {
                 ac.event(e, true);
