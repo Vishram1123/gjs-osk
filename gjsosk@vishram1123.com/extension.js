@@ -22,7 +22,7 @@ if (major == 49) {
         Signals: {
             'activated': {}
         },
-    }, class EdgeDragAction extends Clutter.GestureAction {
+    }, class EdgeDragAction extends Shell.EdgeDragGesture {
         constructor(side, allowedModes) {
             super({
                 name: 'GJS-OSK Edge Drag Action',
