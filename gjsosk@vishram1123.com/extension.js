@@ -16,52 +16,8 @@ import * as InputSourceManager from 'resource:///org/gnome/shell/ui/status/keybo
 import * as Config from 'resource:///org/gnome/shell/misc/config.js'
 const [major, minor] = Config.PACKAGE_VERSION.split('.').map(s => Number(s));
 import { Dialog } from 'resource:///org/gnome/shell/ui/dialog.js';
-let EdgeDragAction;
-if (major == 49) {
-    EdgeDragAction = GObject.registerClass({
-        Signals: {
-            'activated': {}, // your custom signal
-        },
-    }, class EdgeDragAction extends GObject.Object {
-        _init(side, allowedModes) {
-            super._init();
-            this._gesture = new Shell.EdgeDragGesture({
-                name: 'GJS-OSK Edge Drag Action',
-                side,
-            });
-            this._gestureSignals = [];
-            this._gestureSignals.push(
-                this._gesture.connect('begin', (g, actor) => this.emit('begin', actor))
-            );
-            this._gestureSignals.push(
-                this._gesture.connect('update', (g, actor) => this.emit('update', actor))
-            );
-            this._gestureSignals.push(
-                this._gesture.connect('end', (g, actor) => {
-                    this.emit('end', actor);
-                    this.emit('activated', actor);
-                })
-            );
-            this._gestureSignals.push(
-                this._gesture.connect('cancel', (g, actor) => this.emit('cancel', actor))
-            );
-
-            this._gesture.connect('may-recognize', () => {
-                return allowedModes & Main.actionMode;
-            });
-        }
-
-        get gesture() {
-            return this._gesture;
-        }
-
-        destroy() {
-            this._gestureSignals.forEach(id => this._gesture.disconnect(id));
-            this._gesture = null;
-        }
-    });
-
-} else {
+let EdgeDragAction = null;
+if (major < 49) {
     EdgeDragAction = await import('resource:///org/gnome/shell/ui/edgeDragAction.js')
 }
 import { Extension, gettext as _ } from 'resource:///org/gnome/shell/extensions/extension.js';
@@ -596,30 +552,57 @@ class Keyboard extends Dialog {
             global.stage.remove_action(this.oldBottomDragAction);
         if (side != null) {
             const mode = Shell.ActionMode.ALL & ~Shell.ActionMode.LOCK_SCREEN;
-            const bottomDragAction = new EdgeDragAction.EdgeDragAction(side, mode);
-            bottomDragAction.connect('activated', () => {
-                this.open(true);
-                this.openedFromButton = true;
-                this.closedFromButton = false;
-                this.gestureInProgress = false;
-            });
-            bottomDragAction.connect('progress', (_action, progress) => {
+            let oskEdgeDragAction;
+            if (EdgeDragAction != null) {
+                oskEdgeDragAction = new EdgeDragAction.EdgeDragAction(side, mode);
+                oskEdgeDragAction.connect('activated', () => {
+                    this.open(true);
+                    this.openedFromButton = true;
+                    this.closedFromButton = false;
+                    this.gestureInProgress = false;
+                });
+                oskEdgeDragAction.connect('gesture-cancel', () => {
+                    if (this.gestureInProgress) {
+                        this.close()
+                        this.openedFromButton = false;
+                        this.closedFromButton = true;
+                    }
+                    this.gestureInProgress = false;
+                    return Clutter.EVENT_PROPAGATE;
+                });
+            } else {
+                oskEdgeDragAction = new Shell.EdgeDragGesture({
+                    name: 'GJS-OSK Edge Drag Action',
+                    side
+                })
+                oskEdgeDragAction.connect('may-recognize', () => {
+                    return Shell.ActionMode.ALL & ~Shell.ActionMode.LOCK_SCREEN & Main.actionMode;
+                })
+                oskEdgeDragAction.connect('end', () => {
+                    this.open(true);
+                    this.openedFromButton = true;
+                    this.closedFromButton = false;
+                    this.gestureInProgress = false;
+                });
+                oskEdgeDragAction.connect('cancel', () => {
+                    if (this.gestureInProgress) {
+                        this.close()
+                        this.openedFromButton = false;
+                        this.closedFromButton = true;
+                    }
+                    this.gestureInProgress = false;
+                    return Clutter.EVENT_PROPAGATE;
+                });
+            }
+            oskEdgeDragAction.connect('progress', (_action, progress) => {
                 if (!this.gestureInProgress)
                     this.open(false)
                 this.setOpenState(Math.min(Math.max(0, (progress / (side % 2 == 0 ? this.box.height : this.box.width)) * 100), 100))
                 this.gestureInProgress = true;
             });
-            bottomDragAction.connect('gesture-cancel', () => {
-                if (this.gestureInProgress) {
-                    this.close()
-                    this.openedFromButton = false;
-                    this.closedFromButton = true;
-                }
-                this.gestureInProgress = false;
-                return Clutter.EVENT_PROPAGATE;
-            });
-            global.stage.add_action_full('osk', Clutter.EventPhase.CAPTURE, bottomDragAction);
-            this.bottomDragAction = bottomDragAction;
+            global.stage.add_action_full('osk', Clutter.EventPhase.CAPTURE, oskEdgeDragAction);
+            this.bottomDragAction = oskEdgeDragAction;
+            
         } else {
             this.bottomDragAction = null;
         }
