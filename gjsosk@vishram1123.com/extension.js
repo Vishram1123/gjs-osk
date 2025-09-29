@@ -56,7 +56,7 @@ class KeyboardMenuToggle extends QuickSettings.QuickMenuToggle {
         this.menu.addMenuItem(this._itemsSection);
         this.settings.bind('indicator-enabled',
             this, 'checked',
-            Gio.SettingsBindFlags.DEFAULT);     
+            Gio.SettingsBindFlags.DEFAULT);
         this.menu.addMenuItem(new PopupMenu.PopupSeparatorMenuItem());
         const settingsItem = this.menu.addAction(_('More Settings'),
             () => this.extensionObject.openPreferences());
@@ -347,7 +347,7 @@ class Keyboard extends Dialog {
         this.inputDevice = Clutter.get_default_backend().get_default_seat().create_virtual_device(Clutter.InputDeviceType.KEYBOARD_DEVICE);
         this.settings = settings;
         let monitor = Main.layoutManager.monitors[currentMonitorId] ?? Main.layoutManager.primaryMonitor;
-        super._init(Main.layoutManager.modalDialogGroup, 'db-keyboard-content');
+        super._init(Main.uiGroup, 'db-keyboard-content');
         this.box = new St.Widget({
             reactive: true,
             layout_manager: new Clutter.GridLayout({
