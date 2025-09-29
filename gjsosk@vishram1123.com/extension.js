@@ -20,23 +20,43 @@ let EdgeDragAction;
 if (major == 49) {
     EdgeDragAction = GObject.registerClass({
         Signals: {
-            'activated': {}
+            'activated': {}, // your custom signal
         },
-    }, class EdgeDragAction extends Shell.EdgeDragGesture {
-        constructor(side, allowedModes) {
-            super({
+    }, class EdgeDragAction extends GObject.Object {
+        _init(side, allowedModes) {
+            super._init();
+            this._gesture = new Shell.EdgeDragGesture({
                 name: 'GJS-OSK Edge Drag Action',
-                side
-            })
-            self.connect('may-recognize', () => {
+                side,
+            });
+            this._gestureSignals = [];
+            const signalNames = GObject.signal_list_names(Shell.EdgeDragGesture.$gtype);
+            for (let sig of signalNames) {
+                if (sig === 'may-recognize') continue;
+
+                const id = this._gesture.connect(sig, (obj, ...args) => {
+                    this.emit(sig, ...args);
+                    if (sig === 'end') {
+                        this.emit('activated', ...args);
+                    }
+                });
+                this._gestureSignals.push(id);
+            }
+            this._gesture.connect('may-recognize', () => {
                 return allowedModes & Main.actionMode;
-            })
-        }
-        vfunc_gesture_end(_actor) {
-            this.emit('activated')
+            });
         }
 
-    })
+        get gesture() {
+            return this._gesture;
+        }
+
+        destroy() {
+            this._gestureSignals.forEach(id => this._gesture.disconnect(id));
+            this._gesture = null;
+        }
+    });
+
 } else {
     EdgeDragAction = await import('resource:///org/gnome/shell/ui/edgeDragAction.js')
 }
