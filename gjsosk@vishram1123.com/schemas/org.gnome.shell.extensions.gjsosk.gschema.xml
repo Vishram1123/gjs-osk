@@ -82,6 +82,9 @@
     <key name="play-sound" type="b">
 		<default>true</default>
     </key>
+    <key name="sound-file" type="s">
+      <default>""</default>
+    </key>
     <key name="show-icons" type="b">
 		  <default>true</default>
     </key>

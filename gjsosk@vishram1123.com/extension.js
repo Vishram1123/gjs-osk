@@ -1077,17 +1077,26 @@ class Keyboard extends Dialog {
                 item.space_motion_handler = null
                 item.set_scale(1.2, 1.2)
                 item.add_style_pseudo_class("pressed")
-                let player
+                let player = global.display.get_sound_player();
                 if (this.settings.get_boolean("play-sound")) {
-                    player = global.display.get_sound_player();
-                    player.play_from_theme("dialog-information", "tap", null)
+                    if (this.settings.get_string("sound-file") != "") {
+                        const sound_file = Gio.File.new_for_path(this.settings.get_string("sound-file"))
+                        player.play_from_file(sound_file, "tap", null)
+                    } else {
+                        player.play_from_theme("dialog-information", "tap", null)
+                    }
                 }
                 if (["delete_btn", "backspace_btn", "up_btn", "down_btn", "left_btn", "right_btn"].some(e => item.has_style_class_name(e))) {
                     item.button_pressed = setTimeout(() => {
                         const oldModBtns = this.modBtns
                         item.button_repeat = setInterval(() => {
                             if (this.settings.get_boolean("play-sound")) {
-                                player.play_from_theme("dialog-information", "tap", null)
+                                if (this.settings.get_string("sound-file") != "") {
+                                    const sound_file = Gio.File.new_for_path(this.settings.get_string("sound-file"))
+                                    player.play_from_file(sound_file, "tap", null)
+                                } else {
+                                    player.play_from_theme("dialog-information", "tap", null)
+                                }
                             }
                             this.decideMod(item.char)
 
