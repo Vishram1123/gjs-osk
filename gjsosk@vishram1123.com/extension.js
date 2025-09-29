@@ -6,7 +6,6 @@ import St from 'gi://St';
 import Shell from 'gi://Shell';
 
 
-import * as EdgeDragAction from 'resource:///org/gnome/shell/ui/edgeDragAction.js';
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 import * as PanelMenu from 'resource:///org/gnome/shell/ui/panelMenu.js';
 import * as PopupMenu from 'resource:///org/gnome/shell/ui/popupMenu.js';
@@ -17,7 +16,30 @@ import * as InputSourceManager from 'resource:///org/gnome/shell/ui/status/keybo
 import * as Config from 'resource:///org/gnome/shell/misc/config.js'
 const [major, minor] = Config.PACKAGE_VERSION.split('.').map(s => Number(s));
 import { Dialog } from 'resource:///org/gnome/shell/ui/dialog.js';
+let EdgeDragAction;
+if (major == 49) {
+    EdgeDragAction = GObject.registerClass({
+        Signals: {
+            'activated': {}
+        },
+    }, class EdgeDragAction extends Clutter.GestureAction {
+        constructor(side, allowedModes) {
+            super({
+                name: 'GJS-OSK Edge Drag Action',
+                side
+            })
+            self.connect('may-recognize', () => {
+                return allowedModes & Main.actionMode;
+            })
+        }
+        vfunc_gesture_end(_actor) {
+            this.emit('activated')
+        }
 
+    })
+} else {
+    EdgeDragAction = await import('resource:///org/gnome/shell/ui/edgeDragAction.js')
+}
 import { Extension, gettext as _ } from 'resource:///org/gnome/shell/extensions/extension.js';
 
 const State = {
@@ -232,7 +254,7 @@ export default class GjsOskExtension extends Extension {
                 return new Promise((resolve) => {
                     const proc = Gio.Subprocess.new(
                         argv,
-                        Gio.SubprocessFlags.STDOUT_PIPE | 
+                        Gio.SubprocessFlags.STDOUT_PIPE |
                         Gio.SubprocessFlags.STDERR_PIPE
                     );
                     proc.wait_check_async(null, (source, res) => {
@@ -252,7 +274,7 @@ export default class GjsOskExtension extends Extension {
                 const keycodesDir = Gio.File.new_for_path(extract_dir + "/keycodes");
                 const layoutId = KeyboardManager.getKeyboardManager().currentLayout?.id || "us";
                 const targetFile = Gio.File.new_for_path(`${extract_dir}/keycodes/${layoutId}.json`);
-                
+
                 if (await fileExists(targetFile)) {
                     return true;
                 }
@@ -269,10 +291,10 @@ export default class GjsOskExtension extends Extension {
 
                 try {
                     const success = await runCommand([
-                        "tar", 
-                        "-Jxf", 
-                        this.path + "/keycodes.tar.xz", 
-                        "-C", 
+                        "tar",
+                        "-Jxf",
+                        this.path + "/keycodes.tar.xz",
+                        "-C",
                         keycodesDir.get_path(),
                         "--strip-components=1"
                     ]);
@@ -296,26 +318,26 @@ export default class GjsOskExtension extends Extension {
                 try {
                     const layoutId = KeyboardManager.getKeyboardManager().currentLayout?.id || "us";
                     const keycodesPath = GLib.build_filenamev([
-                        extract_dir, 
-                        "keycodes", 
+                        extract_dir,
+                        "keycodes",
                         `${layoutId}.json`
                     ]);
-                    
+
                     const [ok, contents] = GLib.file_get_contents(keycodesPath);
                     if (!ok) {
                         throw new Error(`Failed to read keycodes from ${keycodesPath}`);
                     }
-                    
+
                     keycodes = JSON.parse(contents);
-                    
+
                     if (this.Keyboard) {
                         this.Keyboard.destroy();
                         this.Keyboard = null;
                     }
-                    
+
                     this.Keyboard = new Keyboard(this.settings, this);
                     this.Keyboard.refresh = refresh;
-                    
+
                 } catch (error) {
                     console.error(`Error initializing keyboard: ${error.message}`);
                 }
@@ -359,21 +381,21 @@ export default class GjsOskExtension extends Extension {
         this._quick_settings_indicator.quickSettingsItems.push(this._toggle);
         Main.panel.statusArea.quickSettings.addExternalIndicator(this._quick_settings_indicator);
         this.open_interval();
-        
+
         this.keyboardVisibilityHandler = this.openBit.connect('changed::keyboard-visible', () => {
             const shouldBeVisible = this.openBit.get_boolean('keyboard-visible');
             if (shouldBeVisible !== this.Keyboard?.opened) {
                 this._toggleKeyboard(true);
             }
         });
-        
+
         this.openFromCommandHandler = this.openBit.connect("changed::opened", () => {
             if (this.openBit.get_boolean("opened")) {
                 this.openBit.set_boolean("opened", false);
                 this._toggleKeyboard();
             }
         });
-        
+
         if (this.openBit.get_boolean('keyboard-visible') && this.Keyboard) {
             this._openKeyboard(true);
         }
