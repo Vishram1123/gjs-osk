@@ -181,8 +181,13 @@ function fillPreferencesWindow(window) {
     }
     let monitorDrop = Gtk.DropDown.new_from_strings(monitors.map(m => m.get_model()))
     monitorDrop.valign = Gtk.Align.CENTER;
-    let currentMonitors = settings.get_string("default-monitor").split(";")
     let currentMonitorMap = {};
+    let currentMonitors;
+    if (settings.get_string("default-monitor").includes(";")) {
+        currentMonitors = settings.get_string("default-monitor").split(";")
+    } else {
+        currentMonitors = [("1:" + monitors[0].get_connector())]
+    }
 
     for (var i of currentMonitors) {
         let tmp = i.split(":");
@@ -218,18 +223,73 @@ function fillPreferencesWindow(window) {
     defaultPosition.add_suffix(snapDrop);
     defaultPosition.activatable_widget = snapDrop;
 
-    const soundPlayRow = new Adw.ActionRow({
-        title: _('Play sound')
+    const soundPlayRow = new Adw.ExpanderRow({
+        title: _('Play sound'),
+        show_enable_switch: true
     });
     behaviorGroup.add(soundPlayRow);
+    soundPlayRow.enable_expansion = settings.get_boolean('play-sound')
 
-    const soundPlayDT = new Gtk.Switch({
-        active: settings.get_boolean('play-sound'),
+    const fileRow = new Adw.ActionRow({
+        title: _('Sound file'),
+        subtitle: settings.get_string('sound-file') || _('No file selected'),
+        activatable: false, // prevent clicking the whole row
+    });
+
+    const fileButton = new Gtk.Button({
+        label: settings.get_string('sound-file') ? _('Clear') : _('Choose'),
         valign: Gtk.Align.CENTER,
     });
 
-    soundPlayRow.add_suffix(soundPlayDT);
-    soundPlayRow.activatable_widget = soundPlayDT;
+    fileRow.add_suffix(fileButton);
+    fileRow.activatable_widget = fileButton;
+
+    fileButton.connect('clicked', () => {
+        const currentPath = settings.get_string('sound-file');
+        if (currentPath) {
+            settings.set_string('sound-file', '');
+            fileRow.subtitle = _('No file selected');
+            fileButton.label = _('Choose');
+        } else {
+            const fileChooser = new Gtk.FileChooserNative({
+                title: _('Select OGG File'),
+                transient_for: window,
+                action: Gtk.FileChooserAction.OPEN,
+                accept_label: _('Open'),
+                cancel_label: _('Cancel'),
+            });
+
+            const filter = new Gtk.FileFilter();
+            filter.add_mime_type('audio/ogg');
+            filter.set_name(_('OGG files'));
+            fileChooser.add_filter(filter);
+
+            fileChooser.connect('response', (dlg, response) => {
+                if (response === Gtk.ResponseType.ACCEPT) {
+                    const file = dlg.get_file();
+                    if (file) {
+                        const path = file.get_path();
+                        settings.set_string('sound-file', path);
+                        fileRow.subtitle = path;
+                        fileButton.label = _('Clear');
+
+                        // Optionally play the file immediately
+                        try {
+                            let player = global.display.get_sound_player();
+                            player.play_from_file(path, null);
+                        } catch (e) {
+                            logError(e, 'Failed to play sound file');
+                        }
+                    }
+                }
+                dlg.destroy();
+            });
+
+            fileChooser.show();
+        }
+    });
+
+    soundPlayRow.add_row(fileRow);
 
     const appearanceGroup = new Adw.PreferencesGroup({
         title: _("Appearance")
@@ -456,7 +516,7 @@ function fillPreferencesWindow(window) {
     settings.bind("outer-spacing-px", numChanger_outer, "value", 0);
     settings.bind("snap-spacing-px", numChanger_snap, "value", 0)
     settings.bind("round-key-corners", roundKeyCDT, "active", 0);
-    settings.bind("play-sound", soundPlayDT, "active", 0);
+    settings.bind("play-sound", soundPlayRow, "enable-expansion", 0);
     settings.bind("show-icons", showIconDT, "active", 0)
     settings.bind("default-snap", snapDrop, "selected", 0);
     monitorDrop.connect("notify::selected", () => {
@@ -492,7 +552,7 @@ function fillPreferencesWindow(window) {
         settings.set_int("outer-spacing-px", numChanger_outer.value);
         settings.set_int("snap-spacing-px", numChanger_snap.value)
         settings.set_boolean("round-key-corners", roundKeyCDT.active);
-        settings.set_boolean("play-sound", soundPlayDT.active);
+        settings.set_boolean("play-sound", soundPlayRow.enable_expansion);
         settings.set_boolean("show-icons", showIconDT.active)
         settings.set_int("default-snap", snapDrop.selected);
         currentMonitorMap[monitors.length + ""] = monitors.map(m => { return m.get_connector() })[monitorDrop.selected];

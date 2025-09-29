@@ -68,7 +68,7 @@
       <default>7</default>
     </key>
     <key name="default-monitor" type="s">
-      <default>"1:0"</default>
+      <default>""</default>
     </key>
     <key name="enable-tap-gesture" type="i">
 		<default>1</default>
@@ -78,6 +78,9 @@
     </key>   
     <key name="play-sound" type="b">
 		<default>true</default>
+    </key>
+    <key name="sound-file" type="s">
+      <default>""</default>
     </key>
     <key name="show-icons" type="b">
 		  <default>true</default>
@@ -89,5 +92,8 @@
   <key name="opened" type="b">
 		<default>false</default>
 	</key>
+  <key name="keyboard-visible" type="b">
+    <default>false</default>
+  </key>
 	</schema>
 </schemalist>

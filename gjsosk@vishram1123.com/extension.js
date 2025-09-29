@@ -85,12 +85,14 @@ class GjsOskExtension {
     _openKeyboard(instant) {
         if (this.Keyboard.state == State.CLOSED) {
             this.Keyboard.open(null, !instant ? null : true);
+            this.openBit.set_boolean('keyboard-visible', true);
         }
     }
 
     _closeKeyboard(instant) {
         if (this.Keyboard.state == State.OPENED) {
             this.Keyboard.close(!instant ? null : true);
+            this.openBit.set_boolean('keyboard-visible', false);
         }
     }
 
@@ -133,7 +135,7 @@ class GjsOskExtension {
         }, 300);
         this.tapConnect = global.stage.connect("event", (_actor, event) => {
             if (event.type() !== 4 && event.type() !== 5) {
-                this.lastInputMethod = [false, event.type() >= 9 && event.type() <= 12, true][this.settings.get_int("enable-tap-gesture")]
+                this.lastInputMethod = [false, event.type() >= 9 && event.type() <= 12, true][this.settings.get_boolean("indicator-enabled") ? this.settings.get_int("enable-tap-gesture") : 0]
             }
         })
     }
@@ -180,27 +182,155 @@ class GjsOskExtension {
             } catch {
                 currentMonitorId = 0;
             }
-            let postExtract = () => {
-                if (this.Keyboard != null) {
-                    this.Keyboard.destroy();
-                    this.Keyboard = null;
+            const fileExists = async (file) => {
+                try {
+                    return await new Promise((resolve) => {
+                        file.query_info_async(
+                            '*',
+                            Gio.FileQueryInfoFlags.NONE,
+                            GLib.PRIORITY_DEFAULT,
+                            null,
+                            (source, res) => {
+                                try {
+                                    source.query_info_finish(res);
+                                    resolve(true);
+                                } catch (e) {
+                                    resolve(false);
+                                }
+                            }
+                        );
+                    });
+                } catch (e) {
+                    return false;
                 }
-                let [ok, contents] = GLib.file_get_contents(extract_dir + "/keycodes/" + (KeyboardManager.getKeyboardManager().currentLayout != null ? KeyboardManager.getKeyboardManager().currentLayout.id : "us") + '.json');
-                if (ok) {
+            };
+
+            const ensureDirectory = async (dir) => {
+                try {
+                    if (!(await fileExists(dir))) {
+                        await new Promise((resolve, reject) => {
+                            dir.make_directory_async(GLib.PRIORITY_DEFAULT, null, (source, res) => {
+                                try {
+                                    source.make_directory_finish(res);
+                                    resolve();
+                                } catch (e) {
+                                    if (!e.matches(Gio.IOErrorEnum, Gio.IOErrorEnum.EXISTS)) {
+                                        reject(e);
+                                    } else {
+                                        resolve();
+                                    }
+                                }
+                            });
+                        });
+                    }
+                    return true;
+                } catch (e) {
+                    console.error(`Failed to create directory ${dir.get_path()}: ${e.message}`);
+                    return false;
+                }
+            };
+
+            const runCommand = (argv) => {
+                return new Promise((resolve) => {
+                    const proc = Gio.Subprocess.new(
+                        argv,
+                        Gio.SubprocessFlags.STDOUT_PIPE | 
+                        Gio.SubprocessFlags.STDERR_PIPE
+                    );
+                    proc.wait_check_async(null, (source, res) => {
+                        try {
+                            const success = source.wait_check_finish(res);
+                            resolve(success);
+                        } catch (e) {
+                            console.error(`Command failed: ${argv.join(' ')}`);
+                            resolve(false);
+                        }
+                    });
+                });
+            };
+
+            const extractKeycodes = async () => {
+                const baseDir = Gio.File.new_for_path(extract_dir);
+                const keycodesDir = Gio.File.new_for_path(extract_dir + "/keycodes");
+                const layoutId = KeyboardManager.getKeyboardManager().currentLayout?.id || "us";
+                const targetFile = Gio.File.new_for_path(`${extract_dir}/keycodes/${layoutId}.json`);
+                
+                if (await fileExists(targetFile)) {
+                    return true;
+                }
+
+                if (!(await ensureDirectory(baseDir))) {
+                    console.error("Failed to create base directory");
+                    return false;
+                }
+
+                if (!(await ensureDirectory(keycodesDir))) {
+                    console.error("Failed to create keycodes directory");
+                    return false;
+                }
+
+                try {
+                    const success = await runCommand([
+                        "tar", 
+                        "-Jxf", 
+                        this.path + "/keycodes.tar.xz", 
+                        "-C", 
+                        keycodesDir.get_path(),
+                        "--strip-components=1"
+                    ]);
+
+                    if (!success) {
+                        throw new Error("Failed to extract keycodes archive");
+                    }
+
+                    if (!(await fileExists(targetFile))) {
+                        throw new Error("Keycodes file not found after extraction");
+                    }
+
+                    return true;
+                } catch (error) {
+                    console.error(`Error extracting keycodes: ${error.message}`);
+                    return false;
+                }
+            };
+
+            const initializeKeyboard = async () => {
+                try {
+                    const layoutId = KeyboardManager.getKeyboardManager().currentLayout?.id || "us";
+                    const keycodesPath = GLib.build_filenamev([
+                        extract_dir, 
+                        "keycodes", 
+                        `${layoutId}.json`
+                    ]);
+                    
+                    const [ok, contents] = GLib.file_get_contents(keycodesPath);
+                    if (!ok) {
+                        throw new Error(`Failed to read keycodes from ${keycodesPath}`);
+                    }
+                    
                     keycodes = JSON.parse(contents);
+                    
+                    if (this.Keyboard) {
+                        this.Keyboard.destroy();
+                        this.Keyboard = null;
+                    }
+                    
+                    this.Keyboard = new Keyboard(this.settings, this);
+                    this.Keyboard.refresh = refresh;
+                    
+                } catch (error) {
+                    console.error(`Error initializing keyboard: ${error.message}`);
                 }
-                this.Keyboard = new Keyboard(this.settings, this);
-                this.Keyboard.refresh = refresh
-            }
-            if (!Gio.File.new_for_path(extract_dir).query_exists(null)) {
-                Gio.File.new_for_path(extract_dir).make_directory(null);
-                Gio.File.new_for_path(extract_dir + "/keycodes").make_directory(null);
-                Gio.Subprocess.new(["tar", "-Jxf", this.path + "/keycodes.tar.xz", "-C", extract_dir + "/keycodes"], Gio.SubprocessFlags.NONE)
-                    .wait_check_async(null)
-                    .then(postExtract)
-            } else {
-                postExtract();
-            }
+            };
+
+            (async () => {
+                try {
+                    await extractKeycodes();
+                    await initializeKeyboard();
+                } catch (error) {
+                    console.error(`Error in keyboard initialization: ${error.message}`);
+                }
+            })();
         }
         refresh()
 
@@ -228,10 +358,24 @@ class GjsOskExtension {
 
         this._toggle = KeyboardMenuToggle != null ? new KeyboardMenuToggle(this.settings) : null;
         this.open_interval();
-        this.openFromCommandHandler = this.openBit.connect("changed", () => {
-            this.openBit.set_boolean("opened", false)
-            this._toggleKeyboard();
-        })
+        
+        this.keyboardVisibilityHandler = this.openBit.connect('changed::keyboard-visible', () => {
+            const shouldBeVisible = this.openBit.get_boolean('keyboard-visible');
+            if (shouldBeVisible !== this.Keyboard?.opened) {
+                this._toggleKeyboard(true);
+            }
+        });
+        
+        this.openFromCommandHandler = this.openBit.connect("changed::opened", () => {
+            if (this.openBit.get_boolean("opened")) {
+                this.openBit.set_boolean("opened", false);
+                this._toggleKeyboard();
+            }
+        });
+        
+        if (this.openBit.get_boolean('keyboard-visible') && this.Keyboard) {
+            this._openKeyboard(true);
+        }
         let settingsChanged = () => {
             let opened;
             if (this.Keyboard != null)
@@ -306,7 +450,14 @@ class GjsOskExtension {
         this.darkSchemeSettings = null;
         this.inputLanguageSettings = null;
         this.gnomeKeyboardSettings = null;
-        this.openBit.disconnect(this.openFromCommandHandler);
+        if (this.keyboardVisibilityHandler) {
+            this.openBit.disconnect(this.keyboardVisibilityHandler);
+            this.keyboardVisibilityHandler = null;
+        }
+        if (this.openFromCommandHandler) {
+            this.openBit.disconnect(this.openFromCommandHandler);
+            this.openFromCommandHandler = null;
+        }
         this.openBit = null;
         global.stage.disconnect(this.tapConnect)
         if (this.openInterval !== null) {
@@ -342,8 +493,8 @@ class Keyboard extends Dialog {
         this.settingsOpenFunction = extensionObject.openPrefs
         this.inputDevice = Clutter.get_default_backend().get_default_seat().create_virtual_device(Clutter.InputDeviceType.KEYBOARD_DEVICE);
         this.settings = settings;
-        let monitor = Main.layoutManager.monitors[currentMonitorId];
-        super._init(Main.layoutManager.modalDialogGroup, 'db-keyboard-content');
+        let monitor = Main.layoutManager.monitors[currentMonitorId] ?? Main.layoutManager.primaryMonitor;
+        super._init(Main.uiGroup, 'db-keyboard-content');
         this.box = new St.Widget({
             reactive: true,
             layout_manager: new Clutter.GridLayout({
@@ -367,7 +518,9 @@ class Keyboard extends Dialog {
         this.state = State.CLOSED;
         this.delta = [];
         this.monitorChecker = global.backend.get_monitor_manager().connect('monitors-changed', () => {
-            this.refresh()
+            if (Main.layoutManager.monitors.length > 0) {
+                this.refresh();
+            }
         });
         this._dragging = false;
         let side = null;
@@ -423,7 +576,7 @@ class Keyboard extends Dialog {
         }
         this._oldMaybeHandleEvent = Main.keyboard.maybeHandleEvent
         Main.keyboard.maybeHandleEvent = (e) => {
-            let lastInputMethod = [e.type() == 11, e.type() == 11, e.type() == 7 || e.type() == 11][this.settings.get_int("enable-tap-gesture")]
+            let lastInputMethod = [e.type() == 11, e.type() == 11, e.type() == 7 || e.type() == 11][this.settings.get_boolean("indicator-enabled") ? this.settings.get_int("enable-tap-gesture") : 0]
             let ac = global.stage.get_event_actor(e)
             if (this.contains(ac)) {
                 ac.event(e, true);
@@ -532,7 +685,7 @@ class Keyboard extends Dialog {
     }
 
     snapMovement(xPos, yPos) {
-        let monitor = Main.layoutManager.monitors[currentMonitorId]
+        let monitor = Main.layoutManager.monitors[currentMonitorId] ?? Main.layoutManager.primaryMonitor
         if (xPos < monitor.x || yPos < monitor.y || xPos > monitor.x + monitor.width || yPos > monitor.y + monitor.width) {
             this.set_translation(xPos, yPos, 0);
             return;
@@ -558,7 +711,7 @@ class Keyboard extends Dialog {
     }
 
     setOpenState(percent) {
-        let monitor = Main.layoutManager.monitors[currentMonitorId];
+        let monitor = Main.layoutManager.monitors[currentMonitorId] ?? Main.layoutManager.primaryMonitor;
         let posX = [this.settings.get_int("snap-spacing-px"), ((monitor.width * .5) - ((this.width * .5))), monitor.width - this.width - this.settings.get_int("snap-spacing-px")][(this.settings.get_int("default-snap") % 3)];
         let posY = [this.settings.get_int("snap-spacing-px"), ((monitor.height * .5) - ((this.height * .5))), monitor.height - this.height - this.settings.get_int("snap-spacing-px")][Math.floor((this.settings.get_int("default-snap") / 3))];
         let mX = [-this.box.width, 0, this.box.width][(this.settings.get_int("default-snap") % 3)];
@@ -579,7 +732,7 @@ class Keyboard extends Dialog {
             this.show();
         }
         if (noPrep == null || noPrep) {
-            let monitor = Main.layoutManager.monitors[currentMonitorId];
+            let monitor = Main.layoutManager.monitors[currentMonitorId] ?? Main.layoutManager.primaryMonitor;
             let posX = [this.settings.get_int("snap-spacing-px"), ((monitor.width * .5) - ((this.width * .5))), monitor.width - this.width - this.settings.get_int("snap-spacing-px")][(this.settings.get_int("default-snap") % 3)];
             let posY = [this.settings.get_int("snap-spacing-px"), ((monitor.height * .5) - ((this.height * .5))), monitor.height - this.height - this.settings.get_int("snap-spacing-px")][Math.floor((this.settings.get_int("default-snap") / 3))];
             if (noPrep == null) {
@@ -619,7 +772,7 @@ class Keyboard extends Dialog {
 
     close(instant = null) {
         this.prevKeyFocus = null;
-        let monitor = Main.layoutManager.monitors[currentMonitorId];
+        let monitor = Main.layoutManager.monitors[currentMonitorId] ?? Main.layoutManager.primaryMonitor;
         let posX = [this.settings.get_int("snap-spacing-px"), ((monitor.width * .5) - ((this.width * .5))), monitor.width - this.width - this.settings.get_int("snap-spacing-px")][(this.settings.get_int("default-snap") % 3)];
         let posY = [this.settings.get_int("snap-spacing-px"), ((monitor.height * .5) - ((this.height * .5))), monitor.height - this.height - this.settings.get_int("snap-spacing-px")][Math.floor((this.settings.get_int("default-snap") / 3))];
         let mX = [-this.box.width, 0, this.box.width][(this.settings.get_int("default-snap") % 3)];
@@ -699,7 +852,7 @@ class Keyboard extends Dialog {
     buildUI() {
         this.box.set_opacity(0);
         this.keys = [];
-        let monitor = Main.layoutManager.monitors[currentMonitorId]
+        let monitor = Main.layoutManager.monitors[currentMonitorId] ?? Main.layoutManager.primaryMonitor
         let layoutName = Object.keys(layouts)[(monitor.width > monitor.height) ? this.settings.get_int("layout-landscape") : this.settings.get_int("layout-portrait")];
         this.box.width = Math.round((monitor.width - this.settings.get_int("snap-spacing-px") * 2) * (layoutName.includes("Split") ? 1 : this.widthPercent))
         this.box.height = Math.round((monitor.height - this.settings.get_int("snap-spacing-px") * 2) * this.heightPercent)
@@ -1045,17 +1198,26 @@ class Keyboard extends Dialog {
                 item.space_motion_handler = null
                 item.set_scale(1.2, 1.2)
                 item.add_style_pseudo_class("pressed")
-                let player
+                let player = global.display.get_sound_player();
                 if (this.settings.get_boolean("play-sound")) {
-                    player = global.display.get_sound_player();
-                    player.play_from_theme("dialog-information", "tap", null)
+                    if (this.settings.get_string("sound-file") != "") {
+                        const sound_file = Gio.File.new_for_path(this.settings.get_string("sound-file"))
+                        player.play_from_file(sound_file, "tap", null)
+                    } else {
+                        player.play_from_theme("dialog-information", "tap", null)
+                    }
                 }
                 if (["delete_btn", "backspace_btn", "up_btn", "down_btn", "left_btn", "right_btn"].some(e => item.has_style_class_name(e))) {
                     item.button_pressed = setTimeout(() => {
                         const oldModBtns = this.modBtns
                         item.button_repeat = setInterval(() => {
                             if (this.settings.get_boolean("play-sound")) {
-                                player.play_from_theme("dialog-information", "tap", null)
+                                if (this.settings.get_string("sound-file") != "") {
+                                    const sound_file = Gio.File.new_for_path(this.settings.get_string("sound-file"))
+                                    player.play_from_file(sound_file, "tap", null)
+                                } else {
+                                    player.play_from_theme("dialog-information", "tap", null)
+                                }
                             }
                             this.decideMod(item.char)
 
@@ -1297,6 +1459,7 @@ class Keyboard extends Dialog {
                 button.remove_style_class_name("selected");
             this.modBtns.splice(this.modBtns.indexOf(button), this.modBtns.indexOf(button) + 1);
             this.inputDevice.notify_key(Clutter.get_current_event_time(), button.char.code, Clutter.KeyState.RELEASED);
+            this.sendKey([button.char.code])
         } else {
             if (!(button.char.code == 42) && !(button.char.code == 54))
                 button.add_style_class_name("selected");
