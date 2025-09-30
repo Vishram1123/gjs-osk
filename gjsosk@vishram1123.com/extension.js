@@ -163,6 +163,10 @@ export default class GjsOskExtension extends Extension {
 
         let refresh = () => {
             // [insert handwriting 2]
+            let prevOpenState = false;
+            if (this.Keyboard != null) {
+                prevOpenState = this.Keyboard.opened;
+            }
             let currentMonitors = this.settings.get_string("default-monitor").split(";")
             let currentMonitorMap = {};
             let monitors = Main.layoutManager.monitors;
@@ -317,6 +321,9 @@ export default class GjsOskExtension extends Extension {
 
                     this.Keyboard = new Keyboard(this.settings, this);
                     this.Keyboard.refresh = refresh;
+                    if (prevOpenState) {
+                        this._openKeyboard(true);
+                    }
 
                 } catch (error) {
                     console.error(`Error initializing keyboard: ${error.message}`);
@@ -505,6 +512,7 @@ class Keyboard extends Dialog {
                 orientation: Clutter.Orientation.HORIZONTAL,
             })
         });
+        this.box.clear_actions();
         this.widthPercent = (monitor.width > monitor.height) ? settings.get_int("landscape-width-percent") / 100 : settings.get_int("portrait-width-percent") / 100;
         this.heightPercent = (monitor.width > monitor.height) ? settings.get_int("landscape-height-percent") / 100 : settings.get_int("portrait-height-percent") / 100;
         this.nonDragBlocker = new Clutter.Actor();
@@ -547,7 +555,7 @@ class Keyboard extends Dialog {
                 side = St.Side.BOTTOM;
                 break;
         }
-        this.oldBottomDragAction = global.stage.get_action('osk');
+        this.oldBottomDragAction = global.stage.get_action(EdgeDragAction == null ? 'OSK show bottom drag' : 'osk');
         if (this.oldBottomDragAction !== null && this.oldBottomDragAction instanceof Clutter.Action)
             global.stage.remove_action(this.oldBottomDragAction);
         if (side != null) {
@@ -610,9 +618,6 @@ class Keyboard extends Dialog {
                 global.stage.add_action(oskEdgeDragAction);
                 this.bottomDragAction = oskEdgeDragAction;
             }
-            
-            
-            
         } else {
             this.bottomDragAction = null;
         }
@@ -633,11 +638,14 @@ class Keyboard extends Dialog {
 
     destroy() {
         Main.keyboard.maybeHandleEvent = this._oldMaybeHandleEvent
-        global.stage.remove_action_by_name('osk')
-        if (this.oldBottomDragAction !== null && this.oldBottomDragAction instanceof Clutter.Action && EdgeDragAction != null)
+        if (this.oldBottomDragAction !== null && this.oldBottomDragAction instanceof Clutter.Action && EdgeDragAction != null) {
+            global.stage.remove_action_by_name('osk')
             global.stage.add_action_full('osk', Clutter.EventPhase.CAPTURE, this.oldBottomDragAction)
-        else if (this.oldBottomDragAction != null) 
+        }
+        else if (this.oldBottomDragAction != null) {
+            global.stage.remove_action_by_name('GJS-OSK Edge Drag Action')
             global.stage.add_action(this.oldBottomDragAction)
+        }
         if (this.textboxChecker !== null) {
             clearInterval(this.textboxChecker);
             this.textboxChecker = null;
@@ -671,10 +679,8 @@ class Keyboard extends Dialog {
                 mode: Clutter.AnimationMode.EASE_OUT_QUAD,
                 onComplete: () => { }
             });
-            let device = event.get_device();
             let sequence = event.get_event_sequence();
             this._grab = global.stage.grab(this);
-            this._grabbedDevice = device;
             this._grabbedSequence = sequence;
             this.emit('drag-begin');
             let [absX, absY] = event.get_coords();
@@ -705,7 +711,6 @@ class Keyboard extends Dialog {
                     onComplete: () => { }
                 });
                 this._grabbedSequence = null;
-                this._grabbedDevice = null;
                 this._dragging = false;
                 this.delta = [];
                 this.emit('drag-end');
@@ -1110,8 +1115,12 @@ class Keyboard extends Dialog {
             })
             settingsBtn.add_style_class_name("settings_btn")
             settingsBtn.add_style_class_name("key")
-            settingsBtn.connect("clicked", () => {
+            settingsBtn.connect("button-press-event", () => {
                 this.settingsOpenFunction();
+            })
+            settingsBtn.connect("touch-event", () => {
+                if (Clutter.get_current_event().type() == Clutter.EventType.TOUCH_BEGIN)
+                    this.settingsOpenFunction();
             })
             gridLeft.attach(settingsBtn, 0, 0, 2 * topBtnWidth, 3)
             this.keys.push(settingsBtn)
@@ -1122,9 +1131,15 @@ class Keyboard extends Dialog {
             })
             closeBtn.add_style_class_name("close_btn")
             closeBtn.add_style_class_name("key")
-            closeBtn.connect("clicked", () => {
+            closeBtn.connect("button-press-event", () => {
                 this.close();
                 this.closedFromButton = true;
+            })
+            closeBtn.connect("touch-event", () => {
+                if (Clutter.get_current_event().type() == Clutter.EventType.TOUCH_BEGIN) {
+                    this.close();
+                    this.closedFromButton = true;
+                }
             })
             gridRight.attach(closeBtn, (rowSize - 2 * topBtnWidth), 0, 2 * topBtnWidth, 3)
             this.keys.push(closeBtn)
@@ -1193,8 +1208,12 @@ class Keyboard extends Dialog {
             })
             settingsBtn.add_style_class_name("settings_btn")
             settingsBtn.add_style_class_name("key")
-            settingsBtn.connect("clicked", () => {
+            settingsBtn.connect("button-press-event", () => {
                 this.settingsOpenFunction();
+            })
+            settingsBtn.connect("touch-event", () => {
+                if (Clutter.get_current_event().type() == Clutter.EventType.TOUCH_BEGIN)
+                    this.settingsOpenFunction();
             })
             grid.attach(settingsBtn, 0, 0, 2 * topBtnWidth, 3)
             this.keys.push(settingsBtn)
@@ -1205,9 +1224,15 @@ class Keyboard extends Dialog {
             })
             closeBtn.add_style_class_name("close_btn")
             closeBtn.add_style_class_name("key")
-            closeBtn.connect("clicked", () => {
+            closeBtn.connect("button-press-event", () => {
                 this.close();
                 this.closedFromButton = true;
+            })
+            closeBtn.connect("touch-event", () => {
+                if (Clutter.get_current_event().type() == Clutter.EventType.TOUCH_BEGIN) {
+                    this.close();
+                    this.closedFromButton = true;
+                }
             })
             grid.attach(closeBtn, (rowSize - 2 * topBtnWidth), 0, 2 * topBtnWidth, 3)
             this.keys.push(closeBtn)
@@ -1218,6 +1243,7 @@ class Keyboard extends Dialog {
                 x_expand: true,
                 y_expand: true
             })
+            moveHandle.clear_actions();
             moveHandle.add_style_class_name("moveHandle")
             moveHandle.set_style("font-size: " + this.settings.get_int("font-size-px") + "px; border-radius: " + (this.settings.get_boolean("round-key-corners") ? "5px;" : "0;") + "background-size: " + this.settings.get_int("font-size-px") + "px; font-weight: " + (this.settings.get_boolean("font-bold") ? "bold" : "normal") + "; border: " + this.settings.get_int("border-spacing-px") + "px solid transparent;");
             if (this.lightOrDark()) {
@@ -1365,6 +1391,7 @@ class Keyboard extends Dialog {
                 }
                 item.key_pressed = false;
             }
+            item.clear_actions();
             item.connect("button-press-event", () => pressEv("mouse"))
             item.connect("button-release-event", releaseEv)
             item.connect("touch-event", () => {
