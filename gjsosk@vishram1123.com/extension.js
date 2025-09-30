@@ -299,34 +299,29 @@ export default class GjsOskExtension extends Extension {
             };
 
             const initializeKeyboard = async () => {
-                try {
-                    const layoutId = KeyboardManager.getKeyboardManager().currentLayout?.id || "us";
-                    const keycodesPath = GLib.build_filenamev([
-                        extract_dir,
-                        "keycodes",
-                        `${layoutId}.json`
-                    ]);
+                const layoutId = KeyboardManager.getKeyboardManager().currentLayout?.id || "us";
+                const keycodesPath = GLib.build_filenamev([
+                    extract_dir,
+                    "keycodes",
+                    `${layoutId}.json`
+                ]);
 
-                    const [ok, contents] = GLib.file_get_contents(keycodesPath);
-                    if (!ok) {
-                        throw new Error(`Failed to read keycodes from ${keycodesPath}`);
-                    }
+                const [ok, contents] = GLib.file_get_contents(keycodesPath);
+                if (!ok) {
+                    throw new Error(`Failed to read keycodes from ${keycodesPath}`);
+                }
 
-                    keycodes = JSON.parse(contents);
+                keycodes = JSON.parse(contents);
 
-                    if (this.Keyboard) {
-                        this.Keyboard.destroy();
-                        this.Keyboard = null;
-                    }
+                if (this.Keyboard) {
+                    this.Keyboard.destroy();
+                    this.Keyboard = null;
+                }
 
-                    this.Keyboard = new Keyboard(this.settings, this);
-                    this.Keyboard.refresh = refresh;
-                    if (prevOpenState) {
-                        this._openKeyboard(true);
-                    }
-
-                } catch (error) {
-                    console.error(`Error initializing keyboard: ${error.message}`);
+                this.Keyboard = new Keyboard(this.settings, this);
+                this.Keyboard.refresh = refresh;
+                if (prevOpenState) {
+                    this._openKeyboard(true);
                 }
             };
 
@@ -335,7 +330,7 @@ export default class GjsOskExtension extends Extension {
                     await extractKeycodes();
                     await initializeKeyboard();
                 } catch (error) {
-                    console.error(`Error in keyboard initialization: ${error.message}`);
+                    throw new Error(`Error in keyboard initialization: ${error.message}`);
                 }
             })();
         }
