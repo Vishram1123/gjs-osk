@@ -163,6 +163,10 @@ class GjsOskExtension {
         }
 
         let refresh = () => {
+            let prevOpenState = false;
+            if (this.Keyboard != null) {
+                prevOpenState = this.Keyboard.opened;
+            }
             let currentMonitors = this.settings.get_string("default-monitor").split(";")
             let currentMonitorMap = {};
             let monitors = Main.layoutManager.monitors;
@@ -234,7 +238,7 @@ class GjsOskExtension {
                 return new Promise((resolve) => {
                     const proc = Gio.Subprocess.new(
                         argv,
-                        Gio.SubprocessFlags.STDOUT_PIPE | 
+                        Gio.SubprocessFlags.STDOUT_PIPE |
                         Gio.SubprocessFlags.STDERR_PIPE
                     );
                     proc.wait_check_async(null, (source, res) => {
@@ -254,7 +258,7 @@ class GjsOskExtension {
                 const keycodesDir = Gio.File.new_for_path(extract_dir + "/keycodes");
                 const layoutId = KeyboardManager.getKeyboardManager().currentLayout?.id || "us";
                 const targetFile = Gio.File.new_for_path(`${extract_dir}/keycodes/${layoutId}.json`);
-                
+
                 if (await fileExists(targetFile)) {
                     return true;
                 }
@@ -271,10 +275,10 @@ class GjsOskExtension {
 
                 try {
                     const success = await runCommand([
-                        "tar", 
-                        "-Jxf", 
-                        this.path + "/keycodes.tar.xz", 
-                        "-C", 
+                        "tar",
+                        "-Jxf",
+                        this.path + "/keycodes.tar.xz",
+                        "-C",
                         keycodesDir.get_path(),
                         "--strip-components=1"
                     ]);
@@ -295,31 +299,30 @@ class GjsOskExtension {
             };
 
             const initializeKeyboard = async () => {
-                try {
-                    const layoutId = KeyboardManager.getKeyboardManager().currentLayout?.id || "us";
-                    const keycodesPath = GLib.build_filenamev([
-                        extract_dir, 
-                        "keycodes", 
-                        `${layoutId}.json`
-                    ]);
-                    
-                    const [ok, contents] = GLib.file_get_contents(keycodesPath);
-                    if (!ok) {
-                        throw new Error(`Failed to read keycodes from ${keycodesPath}`);
-                    }
-                    
-                    keycodes = JSON.parse(contents);
-                    
-                    if (this.Keyboard) {
-                        this.Keyboard.destroy();
-                        this.Keyboard = null;
-                    }
-                    
-                    this.Keyboard = new Keyboard(this.settings, this);
-                    this.Keyboard.refresh = refresh;
-                    
-                } catch (error) {
-                    console.error(`Error initializing keyboard: ${error.message}`);
+                const layoutId = KeyboardManager.getKeyboardManager().currentLayout?.id || "us";
+                const keycodesPath = GLib.build_filenamev([
+                    extract_dir,
+                    "keycodes",
+                    `${layoutId}.json`
+                ]);
+
+                const [ok, contents] = GLib.file_get_contents(keycodesPath);
+                if (!ok) {
+                    throw new Error(`Failed to read keycodes from ${keycodesPath}`);
+                }
+
+                keycodes = JSON.parse(contents);
+
+                if (this.Keyboard) {
+                    this.Keyboard.destroy();
+                    this.Keyboard = null;
+                }
+
+                this.Keyboard = new Keyboard(this.settings, this);
+                this.Keyboard.refresh = refresh;
+                this.Keyboard.refresh = refresh;
+                if (prevOpenState) {
+                    this._openKeyboard(true);
                 }
             };
 
@@ -328,7 +331,7 @@ class GjsOskExtension {
                     await extractKeycodes();
                     await initializeKeyboard();
                 } catch (error) {
-                    console.error(`Error in keyboard initialization: ${error.message}`);
+                    throw new Error(`Error in keyboard initialization: ${error.message}`);
                 }
             })();
         }
@@ -358,21 +361,21 @@ class GjsOskExtension {
 
         this._toggle = KeyboardMenuToggle != null ? new KeyboardMenuToggle(this.settings) : null;
         this.open_interval();
-        
+
         this.keyboardVisibilityHandler = this.openBit.connect('changed::keyboard-visible', () => {
             const shouldBeVisible = this.openBit.get_boolean('keyboard-visible');
             if (shouldBeVisible !== this.Keyboard?.opened) {
                 this._toggleKeyboard(true);
             }
         });
-        
+
         this.openFromCommandHandler = this.openBit.connect("changed::opened", () => {
             if (this.openBit.get_boolean("opened")) {
                 this.openBit.set_boolean("opened", false);
                 this._toggleKeyboard();
             }
         });
-        
+
         if (this.openBit.get_boolean('keyboard-visible') && this.Keyboard) {
             this._openKeyboard(true);
         }
