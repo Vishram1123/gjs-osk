@@ -139,6 +139,13 @@ export default class GjsOskExtension extends Extension {
         })
     }
 
+    fail(error, method = null, instance = null) {
+        Main.notifyError("Error with extension GJS-OSK:\n"
+            + (instance != null || method != null ? "in " : "")
+            + (instance != null ? instance + "." : "")
+            + (method != null ? method + "\n" : "") + error.message);
+    }
+
     enable() {
         this.settings = this.getSettings();
         this.darkSchemeSettings = this.getSettings("org.gnome.desktop.interface");
@@ -162,177 +169,202 @@ export default class GjsOskExtension extends Extension {
         }
 
         let refresh = () => {
-            // [insert handwriting 2]
-            let prevOpenState = false;
-            if (this.Keyboard != null) {
-                prevOpenState = this.Keyboard.opened;
-            }
-            let currentMonitors = this.settings.get_string("default-monitor").split(";")
-            let currentMonitorMap = {};
-            let monitors = Main.layoutManager.monitors;
-            for (var i of currentMonitors) {
-                let tmp = i.split(":");
-                currentMonitorMap[tmp[0]] = tmp[1] + "";
-            }
-            if (!Object.keys(currentMonitorMap).includes(monitors.length + "")) {
-                let allConfigs = Object.keys(currentMonitorMap).map(Number.parseInt).sort();
-                currentMonitorMap[monitors.length + ""] = allConfigs[allConfigs.length - 1];
-            }
-            try {
-                currentMonitorId = global.backend.get_monitor_manager().get_monitor_for_connector(currentMonitorMap[monitors.length + ""]);
-                if (currentMonitorId == -1) {
+            (async () => {
+                // [insert handwriting 2]
+                let prevOpenState = false;
+                if (this.Keyboard != null) {
+                    prevOpenState = this.Keyboard.opened;
+                }
+                let currentMonitors = this.settings.get_string("default-monitor").split(";")
+                let currentMonitorMap = {};
+                let monitors = Main.layoutManager.monitors;
+                if (Main.layoutManager.primaryMonitor == null) {
+                    this.waitRefresh = setTimeout(refresh, 1000)
+                    return;
+                }
+                for (var i of currentMonitors) {
+                    let tmp = i.split(":");
+                    currentMonitorMap[tmp[0]] = tmp[1] + "";
+                }
+                if (!Object.keys(currentMonitorMap).includes(monitors.length + "")) {
+                    let allConfigs = Object.keys(currentMonitorMap).map(Number.parseInt).sort();
+                    currentMonitorMap[monitors.length + ""] = allConfigs[allConfigs.length - 1];
+                }
+                try {
+                    currentMonitorId = global.backend.get_monitor_manager().get_monitor_for_connector(currentMonitorMap[monitors.length + ""]);
+                    if (currentMonitorId == -1) {
+                        currentMonitorId = 0;
+                    }
+                } catch {
                     currentMonitorId = 0;
                 }
-            } catch {
-                currentMonitorId = 0;
-            }
-            const fileExists = async (file) => {
-                try {
-                    return await new Promise((resolve) => {
-                        file.query_info_async(
-                            '*',
-                            Gio.FileQueryInfoFlags.NONE,
-                            GLib.PRIORITY_DEFAULT,
-                            null,
-                            (source, res) => {
-                                try {
-                                    source.query_info_finish(res);
-                                    resolve(true);
-                                } catch (e) {
-                                    resolve(false);
-                                }
-                            }
-                        );
-                    });
-                } catch (e) {
-                    return false;
-                }
-            };
-
-            const ensureDirectory = async (dir) => {
-                try {
-                    if (!(await fileExists(dir))) {
-                        await new Promise((resolve, reject) => {
-                            dir.make_directory_async(GLib.PRIORITY_DEFAULT, null, (source, res) => {
-                                try {
-                                    source.make_directory_finish(res);
-                                    resolve();
-                                } catch (e) {
-                                    if (!e.matches(Gio.IOErrorEnum, Gio.IOErrorEnum.EXISTS)) {
-                                        reject(e);
-                                    } else {
-                                        resolve();
+                const fileExists = async (file) => {
+                    try {
+                        return await new Promise((resolve) => {
+                            file.query_info_async(
+                                '*',
+                                Gio.FileQueryInfoFlags.NONE,
+                                GLib.PRIORITY_DEFAULT,
+                                null,
+                                (source, res) => {
+                                    try {
+                                        source.query_info_finish(res);
+                                        resolve(true);
+                                    } catch (e) {
+                                        resolve(false);
                                     }
                                 }
-                            });
+                            );
                         });
+                    } catch (e) {
+                        return false;
                     }
-                    return true;
-                } catch (e) {
-                    console.error(`Failed to create directory ${dir.get_path()}: ${e.message}`);
-                    return false;
-                }
-            };
+                };
 
-            const runCommand = (argv) => {
-                return new Promise((resolve) => {
-                    const proc = Gio.Subprocess.new(
-                        argv,
-                        Gio.SubprocessFlags.STDOUT_PIPE |
-                        Gio.SubprocessFlags.STDERR_PIPE
-                    );
-                    proc.wait_check_async(null, (source, res) => {
-                        try {
-                            const success = source.wait_check_finish(res);
-                            resolve(success);
-                        } catch (e) {
-                            console.error(`Command failed: ${argv.join(' ')}`);
-                            resolve(false);
+                const ensureDirectory = async (dir) => {
+                    try {
+                        if (!(await fileExists(dir))) {
+                            await new Promise((resolve, reject) => {
+                                dir.make_directory_async(GLib.PRIORITY_DEFAULT, null, (source, res) => {
+                                    try {
+                                        source.make_directory_finish(res);
+                                        resolve();
+                                    } catch (e) {
+                                        if (!e.matches(Gio.IOErrorEnum, Gio.IOErrorEnum.EXISTS)) {
+                                            reject(e);
+                                        } else {
+                                            resolve();
+                                        }
+                                    }
+                                });
+                            });
                         }
+                        return true;
+                    } catch (e) {
+                        console.error(`Failed to create directory ${dir.get_path()}: ${e.message}`);
+                        return false;
+                    }
+                };
+
+                const runCommand = (argv) => {
+                    return new Promise((resolve) => {
+                        const proc = Gio.Subprocess.new(
+                            argv,
+                            Gio.SubprocessFlags.STDOUT_PIPE |
+                            Gio.SubprocessFlags.STDERR_PIPE
+                        );
+                        proc.wait_check_async(null, (source, res) => {
+                            try {
+                                const success = source.wait_check_finish(res);
+                                resolve(success);
+                            } catch (e) {
+                                console.error(`Command failed: ${argv.join(' ')}`);
+                                resolve(false);
+                            }
+                        });
                     });
-                });
-            };
+                };
 
-            const extractKeycodes = async () => {
-                const baseDir = Gio.File.new_for_path(extract_dir);
-                const keycodesDir = Gio.File.new_for_path(extract_dir + "/keycodes");
-                const layoutId = KeyboardManager.getKeyboardManager().currentLayout?.id || "us";
-                const targetFile = Gio.File.new_for_path(`${extract_dir}/keycodes/${layoutId}.json`);
+                const extractKeycodes = async () => {
+                    const baseDir = Gio.File.new_for_path(extract_dir);
+                    const keycodesDir = Gio.File.new_for_path(extract_dir + "/keycodes");
+                    const layoutId = KeyboardManager.getKeyboardManager().currentLayout?.id || "us";
+                    const targetFile = Gio.File.new_for_path(`${extract_dir}/keycodes/${layoutId}.json`);
 
-                if (await fileExists(targetFile)) {
-                    return true;
-                }
+                    if (await fileExists(targetFile)) {
+                        return true;
+                    }
 
-                if (!(await ensureDirectory(baseDir))) {
-                    console.error("Failed to create base directory");
-                    return false;
-                }
+                    if (!(await ensureDirectory(baseDir))) {
+                        console.error("Failed to create base directory");
+                        return false;
+                    }
 
-                if (!(await ensureDirectory(keycodesDir))) {
-                    console.error("Failed to create keycodes directory");
-                    return false;
-                }
+                    if (!(await ensureDirectory(keycodesDir))) {
+                        console.error("Failed to create keycodes directory");
+                        return false;
+                    }
 
-                try {
-                    const success = await runCommand([
-                        "tar",
-                        "-Jxf",
-                        this.path + "/keycodes.tar.xz",
-                        "-C",
-                        keycodesDir.get_path(),
-                        "--strip-components=1"
+                    try {
+                        const success = await runCommand([
+                            "tar",
+                            "-Jxf",
+                            this.path + "/keycodes.tar.xz",
+                            "-C",
+                            keycodesDir.get_path(),
+                            "--strip-components=1"
+                        ]);
+
+                        if (!success) {
+                            throw new Error("Failed to extract keycodes archive");
+                        }
+
+                        if (!(await fileExists(targetFile))) {
+                            throw new Error("Keycodes file not found after extraction");
+                        }
+
+                        return true;
+                    } catch (error) {
+                        console.error(`Error extracting keycodes: ${error.message}`);
+                        return false;
+                    }
+                };
+
+                const initializeKeyboard = async () => {
+                    const layoutId = KeyboardManager.getKeyboardManager().currentLayout?.id || "us";
+                    const keycodesPath = GLib.build_filenamev([
+                        extract_dir,
+                        "keycodes",
+                        `${layoutId}.json`
                     ]);
 
-                    if (!success) {
-                        throw new Error("Failed to extract keycodes archive");
+                    const [ok, contents] = GLib.file_get_contents(keycodesPath);
+                    if (!ok) {
+                        throw new Error(`Failed to read keycodes from ${keycodesPath}`);
                     }
 
-                    if (!(await fileExists(targetFile))) {
-                        throw new Error("Keycodes file not found after extraction");
+                    keycodes = JSON.parse(contents);
+
+                    if (this.Keyboard) {
+                        this.Keyboard.destroy();
+                        this.Keyboard = null;
                     }
 
-                    return true;
-                } catch (error) {
-                    console.error(`Error extracting keycodes: ${error.message}`);
-                    return false;
-                }
-            };
+                    function withErrorHandler(TargetClass, handler) {
+                        return new Proxy(TargetClass, {
+                            construct(Target, args) {
+                                // Construct the class with whatever args were passed in
+                                const instance = new Target(...args);
 
-            const initializeKeyboard = async () => {
-                const layoutId = KeyboardManager.getKeyboardManager().currentLayout?.id || "us";
-                const keycodesPath = GLib.build_filenamev([
-                    extract_dir,
-                    "keycodes",
-                    `${layoutId}.json`
-                ]);
+                                // Wrap each method
+                                for (const key of Object.getOwnPropertyNames(Target.prototype)) {
+                                    const fn = instance[key];
+                                    if (typeof fn === "function" && key !== "constructor") {
+                                        instance[key] = async (...fnArgs) => {
+                                            try {
+                                                return await fn.apply(instance, fnArgs);
+                                            } catch (err) {
+                                                handler(err, key, instance);
+                                            }
+                                        };
+                                    }
+                                }
 
-                const [ok, contents] = GLib.file_get_contents(keycodesPath);
-                if (!ok) {
-                    throw new Error(`Failed to read keycodes from ${keycodesPath}`);
-                }
+                                return instance;
+                            }
+                        });
+                    }
 
-                keycodes = JSON.parse(contents);
-
-                if (this.Keyboard) {
-                    this.Keyboard.destroy();
-                    this.Keyboard = null;
-                }
-
-                this.Keyboard = new Keyboard(this.settings, this);
-                this.Keyboard.refresh = refresh;
-                if (prevOpenState) {
-                    this._openKeyboard(true);
-                }
-            };
-
-            (async () => {
-                try {
-                    await extractKeycodes();
-                    await initializeKeyboard();
-                } catch (error) {
-                    throw new Error(`Error in keyboard initialization: ${error.message}`);
-                }
-            })();
+                    const SafeKeyboard = withErrorHandler(Keyboard, this.fail);
+                    this.Keyboard = new SafeKeyboard(this.settings, this);
+                    this.Keyboard.refresh = refresh;
+                    if (prevOpenState) {
+                        this._openKeyboard(true);
+                    }
+                };
+                await extractKeycodes();
+                await initializeKeyboard();
+            })().catch(this.fail)
         }
         refresh()
 
@@ -382,16 +414,10 @@ export default class GjsOskExtension extends Extension {
             this._openKeyboard(true);
         }
         let settingsChanged = () => {
-            let opened;
-            if (this.Keyboard != null)
-                opened = this.Keyboard.opened
-            else
-                opened = false
             if (this.darkSchemeSettings.get_string("color-scheme") == "prefer-dark")
                 this.settings.scheme = "-dark"
             else
                 this.settings.scheme = ""
-            this.Keyboard.openedFromButton = false;
             refresh()
             this._toggle._refresh();
             if (this.settings.get_boolean("indicator-enabled")) {
@@ -425,9 +451,6 @@ export default class GjsOskExtension extends Extension {
                 this.openInterval = null;
             }
             this.open_interval();
-            if (opened) {
-                this._toggleKeyboard(true);
-            }
         }
         this.settingsHandlers = [
             this.settings.connect("changed", settingsChanged),
