@@ -109,7 +109,8 @@ class GjsOskExtension {
     }
 
     open_interval() {
-        global.stage.disconnect(this.tapConnect)
+        if (this.tapConnect && GObject.signal_handler_is_connected(global.stage, this.tapConnect))
+            global.stage.disconnect(this.tapConnect)
         if (this.openInterval !== null) {
             clearInterval(this.openInterval);
             this.openInterval = null;
@@ -140,6 +141,13 @@ class GjsOskExtension {
         })
     }
 
+    fail(error, method = null, instance = null) {
+        Main.notifyError("Error with extension GJS-OSK:\n"
+            + (instance != null || method != null ? "in " : "")
+            + (instance != null ? instance + "." : "")
+            + (method != null ? method + "\n" : "") + error.message);
+    }
+
     enable() {
         this.settings = ExtensionUtils.getSettings("org.gnome.shell.extensions.gjsosk");
         this.darkSchemeSettings = ExtensionUtils.getSettings("org.gnome.desktop.interface");
@@ -163,177 +171,199 @@ class GjsOskExtension {
         }
 
         let refresh = () => {
-            let prevOpenState = false;
-            if (this.Keyboard != null) {
-                prevOpenState = this.Keyboard.opened;
-            }
-            let currentMonitors = this.settings.get_string("default-monitor").split(";")
-            let currentMonitorMap = {};
-            let monitors = Main.layoutManager.monitors;
-            for (var i of currentMonitors) {
-                let tmp = i.split(":");
-                currentMonitorMap[tmp[0]] = tmp[1] + "";
-            }
-            if (!Object.keys(currentMonitorMap).includes(monitors.length + "")) {
-                let allConfigs = Object.keys(currentMonitorMap).map(Number.parseInt).sort();
-                currentMonitorMap[monitors.length + ""] = allConfigs[allConfigs.length - 1];
-            }
-            try {
-                currentMonitorId = global.backend.get_monitor_manager().get_monitor_for_connector(currentMonitorMap[monitors.length + ""]);
-                if (currentMonitorId == -1) {
+            (async () => {
+                let prevOpenState = false;
+                if (this.Keyboard != null) {
+                    prevOpenState = this.Keyboard.opened;
+                }
+                let currentMonitors = this.settings.get_string("default-monitor").split(";")
+                let currentMonitorMap = {};
+                let monitors = Main.layoutManager.monitors;
+                if (Main.layoutManager.primaryMonitor == null) {
+                    this.waitRefresh = setTimeout(refresh, 1000)
+                    return;
+                }
+                for (var i of currentMonitors) {
+                    let tmp = i.split(":");
+                    currentMonitorMap[tmp[0]] = tmp[1] + "";
+                }
+                if (!Object.keys(currentMonitorMap).includes(monitors.length + "")) {
+                    let allConfigs = Object.keys(currentMonitorMap).map(Number.parseInt).sort();
+                    currentMonitorMap[monitors.length + ""] = allConfigs[allConfigs.length - 1];
+                }
+                try {
+                    currentMonitorId = global.backend.get_monitor_manager().get_monitor_for_connector(currentMonitorMap[monitors.length + ""]);
+                    if (currentMonitorId == -1) {
+                        currentMonitorId = 0;
+                    }
+                } catch {
                     currentMonitorId = 0;
                 }
-            } catch {
-                currentMonitorId = 0;
-            }
-            const fileExists = async (file) => {
-                try {
-                    return await new Promise((resolve) => {
-                        file.query_info_async(
-                            '*',
-                            Gio.FileQueryInfoFlags.NONE,
-                            GLib.PRIORITY_DEFAULT,
-                            null,
-                            (source, res) => {
-                                try {
-                                    source.query_info_finish(res);
-                                    resolve(true);
-                                } catch (e) {
-                                    resolve(false);
-                                }
-                            }
-                        );
-                    });
-                } catch (e) {
-                    return false;
-                }
-            };
-
-            const ensureDirectory = async (dir) => {
-                try {
-                    if (!(await fileExists(dir))) {
-                        await new Promise((resolve, reject) => {
-                            dir.make_directory_async(GLib.PRIORITY_DEFAULT, null, (source, res) => {
-                                try {
-                                    source.make_directory_finish(res);
-                                    resolve();
-                                } catch (e) {
-                                    if (!e.matches(Gio.IOErrorEnum, Gio.IOErrorEnum.EXISTS)) {
-                                        reject(e);
-                                    } else {
-                                        resolve();
+                const fileExists = async (file) => {
+                    try {
+                        return await new Promise((resolve) => {
+                            file.query_info_async(
+                                '*',
+                                Gio.FileQueryInfoFlags.NONE,
+                                GLib.PRIORITY_DEFAULT,
+                                null,
+                                (source, res) => {
+                                    try {
+                                        source.query_info_finish(res);
+                                        resolve(true);
+                                    } catch (e) {
+                                        resolve(false);
                                     }
                                 }
-                            });
+                            );
                         });
+                    } catch (e) {
+                        return false;
                     }
-                    return true;
-                } catch (e) {
-                    console.error(`Failed to create directory ${dir.get_path()}: ${e.message}`);
-                    return false;
-                }
-            };
+                };
 
-            const runCommand = (argv) => {
-                return new Promise((resolve) => {
-                    const proc = Gio.Subprocess.new(
-                        argv,
-                        Gio.SubprocessFlags.STDOUT_PIPE |
-                        Gio.SubprocessFlags.STDERR_PIPE
-                    );
-                    proc.wait_check_async(null, (source, res) => {
-                        try {
-                            const success = source.wait_check_finish(res);
-                            resolve(success);
-                        } catch (e) {
-                            console.error(`Command failed: ${argv.join(' ')}`);
-                            resolve(false);
+                const ensureDirectory = async (dir) => {
+                    try {
+                        if (!(await fileExists(dir))) {
+                            await new Promise((resolve, reject) => {
+                                dir.make_directory_async(GLib.PRIORITY_DEFAULT, null, (source, res) => {
+                                    try {
+                                        source.make_directory_finish(res);
+                                        resolve();
+                                    } catch (e) {
+                                        if (!e.matches(Gio.IOErrorEnum, Gio.IOErrorEnum.EXISTS)) {
+                                            reject(e);
+                                        } else {
+                                            resolve();
+                                        }
+                                    }
+                                });
+                            });
                         }
+                        return true;
+                    } catch (e) {
+                        console.error(`Failed to create directory ${dir.get_path()}: ${e.message}`);
+                        return false;
+                    }
+                };
+
+                const runCommand = (argv) => {
+                    return new Promise((resolve) => {
+                        const proc = Gio.Subprocess.new(
+                            argv,
+                            Gio.SubprocessFlags.STDOUT_PIPE |
+                            Gio.SubprocessFlags.STDERR_PIPE
+                        );
+                        proc.wait_check_async(null, (source, res) => {
+                            try {
+                                const success = source.wait_check_finish(res);
+                                resolve(success);
+                            } catch (e) {
+                                console.error(`Command failed: ${argv.join(' ')}`);
+                                resolve(false);
+                            }
+                        });
                     });
-                });
-            };
+                };
 
-            const extractKeycodes = async () => {
-                const baseDir = Gio.File.new_for_path(extract_dir);
-                const keycodesDir = Gio.File.new_for_path(extract_dir + "/keycodes");
-                const layoutId = KeyboardManager.getKeyboardManager().currentLayout?.id || "us";
-                const targetFile = Gio.File.new_for_path(`${extract_dir}/keycodes/${layoutId}.json`);
+                const extractKeycodes = async () => {
+                    const baseDir = Gio.File.new_for_path(extract_dir);
+                    const keycodesDir = Gio.File.new_for_path(extract_dir + "/keycodes");
+                    const layoutId = KeyboardManager.getKeyboardManager().currentLayout?.id || "us";
+                    const targetFile = Gio.File.new_for_path(`${extract_dir}/keycodes/${layoutId}.json`);
 
-                if (await fileExists(targetFile)) {
-                    return true;
-                }
+                    if (await fileExists(targetFile)) {
+                        return true;
+                    }
 
-                if (!(await ensureDirectory(baseDir))) {
-                    console.error("Failed to create base directory");
-                    return false;
-                }
+                    if (!(await ensureDirectory(baseDir))) {
+                        console.error("Failed to create base directory");
+                        return false;
+                    }
 
-                if (!(await ensureDirectory(keycodesDir))) {
-                    console.error("Failed to create keycodes directory");
-                    return false;
-                }
+                    if (!(await ensureDirectory(keycodesDir))) {
+                        console.error("Failed to create keycodes directory");
+                        return false;
+                    }
 
-                try {
-                    const success = await runCommand([
-                        "tar",
-                        "-Jxf",
-                        this.path + "/keycodes.tar.xz",
-                        "-C",
-                        keycodesDir.get_path(),
-                        "--strip-components=1"
+                    try {
+                        const success = await runCommand([
+                            "tar",
+                            "-Jxf",
+                            this.path + "/keycodes.tar.xz",
+                            "-C",
+                            keycodesDir.get_path(),
+                            "--strip-components=1"
+                        ]);
+
+                        if (!success) {
+                            throw new Error("Failed to extract keycodes archive");
+                        }
+
+                        if (!(await fileExists(targetFile))) {
+                            throw new Error("Keycodes file not found after extraction");
+                        }
+
+                        return true;
+                    } catch (error) {
+                        console.error(`Error extracting keycodes: ${error.message}`);
+                        return false;
+                    }
+                };
+
+                const initializeKeyboard = async () => {
+                    const layoutId = KeyboardManager.getKeyboardManager().currentLayout?.id || "us";
+                    const keycodesPath = GLib.build_filenamev([
+                        extract_dir,
+                        "keycodes",
+                        `${layoutId}.json`
                     ]);
 
-                    if (!success) {
-                        throw new Error("Failed to extract keycodes archive");
+                    const [ok, contents] = GLib.file_get_contents(keycodesPath);
+                    if (!ok) {
+                        throw new Error(`Failed to read keycodes from ${keycodesPath}`);
                     }
 
-                    if (!(await fileExists(targetFile))) {
-                        throw new Error("Keycodes file not found after extraction");
+                    keycodes = JSON.parse(contents);
+
+                    if (this.Keyboard) {
+                        this.Keyboard.destroy();
+                        this.Keyboard = null;
                     }
 
-                    return true;
-                } catch (error) {
-                    console.error(`Error extracting keycodes: ${error.message}`);
-                    return false;
-                }
-            };
+                    function withErrorHandler(TargetClass, handler) {
+                        return new Proxy(TargetClass, {
+                            construct(Target, args) {
+                                const instance = new Target(...args);
+                                for (const key of Object.getOwnPropertyNames(Target.prototype)) {
+                                    const fn = instance[key];
+                                    if (typeof fn === "function" && key !== "constructor") {
+                                        instance[key] = async (...fnArgs) => {
+                                            try {
+                                                return await fn.apply(instance, fnArgs);
+                                            } catch (err) {
+                                                handler(err, key, instance);
+                                            }
+                                        };
+                                    }
+                                }
 
-            const initializeKeyboard = async () => {
-                const layoutId = KeyboardManager.getKeyboardManager().currentLayout?.id || "us";
-                const keycodesPath = GLib.build_filenamev([
-                    extract_dir,
-                    "keycodes",
-                    `${layoutId}.json`
-                ]);
+                                return instance;
+                            }
+                        });
+                    }
 
-                const [ok, contents] = GLib.file_get_contents(keycodesPath);
-                if (!ok) {
-                    throw new Error(`Failed to read keycodes from ${keycodesPath}`);
-                }
-
-                keycodes = JSON.parse(contents);
-
-                if (this.Keyboard) {
-                    this.Keyboard.destroy();
-                    this.Keyboard = null;
-                }
-
-                this.Keyboard = new Keyboard(this.settings, this);
-                this.Keyboard.refresh = refresh;
-                this.Keyboard.refresh = refresh;
-                if (prevOpenState) {
-                    this._openKeyboard(true);
-                }
-            };
-
-            (async () => {
-                try {
-                    await extractKeycodes();
-                    await initializeKeyboard();
-                } catch (error) {
-                    throw new Error(`Error in keyboard initialization: ${error.message}`);
-                }
-            })();
+                    const SafeKeyboard = withErrorHandler(Keyboard, this.fail);
+                    this.Keyboard = new SafeKeyboard(this.settings, this);
+                    this.Keyboard.refresh = refresh;
+                    if (prevOpenState) {
+                        this.Keyboard.open(null, true);
+                        this.openBit.set_boolean('keyboard-visible', true);
+                    }
+                };
+                await extractKeycodes();
+                await initializeKeyboard();
+            })().catch(this.fail)
         }
         refresh()
 
@@ -380,16 +410,10 @@ class GjsOskExtension {
             this._openKeyboard(true);
         }
         let settingsChanged = () => {
-            let opened;
-            if (this.Keyboard != null)
-                opened = this.Keyboard.opened
-            else
-                opened = false
             if (this.darkSchemeSettings.get_string("color-scheme") == "prefer-dark")
                 this.settings.scheme = "-dark"
             else
                 this.settings.scheme = ""
-            this.Keyboard.openedFromButton = false;
             refresh()
             try {
                 this._toggle._refresh();
@@ -425,9 +449,6 @@ class GjsOskExtension {
                 this.openInterval = null;
             }
             this.open_interval();
-            if (opened) {
-                this._toggleKeyboard(true);
-            }
         }
         this.settingsHandlers = [
             this.settings.connect("changed", settingsChanged),
@@ -609,8 +630,10 @@ class Keyboard extends Dialog {
             clearTimeout(this.keyTimeout);
             this.keyTimeout = null;
         }
-        this.keymap.disconnect(this.capslockConnect);
-        this.keymap.disconnect(this.numLockConnect);
+        if (this.capsLockConnect && GObject.signal_handler_is_connected(this.keymap, this.capsLockConnect))
+            this.keymap.disconnect(this.capsLockConnect);
+        if (this.numLockConnect && GObject.signal_handler_is_connected(this.keymap, this.numLockConnect))
+            this.keymap.disconnect(this.numLockConnect);
         global.backend.get_monitor_manager().disconnect(this.monitorChecker)
         super.destroy();
         if (this.nonDragBlocker !== null) {
@@ -630,10 +653,8 @@ class Keyboard extends Dialog {
                 mode: Clutter.AnimationMode.EASE_OUT_QUAD,
                 onComplete: () => { }
             });
-            let device = event.get_device();
             let sequence = event.get_event_sequence();
             this._grab = global.stage.grab(this);
-            this._grabbedDevice = device;
             this._grabbedSequence = sequence;
             this.emit('drag-begin');
             let [absX, absY] = event.get_coords();
@@ -664,7 +685,6 @@ class Keyboard extends Dialog {
                     onComplete: () => { }
                 });
                 this._grabbedSequence = null;
-                this._grabbedDevice = null;
                 this._dragging = false;
                 this.delta = [];
                 this.emit('drag-end');
@@ -989,7 +1009,7 @@ class Keyboard extends Dialog {
                 keyBtn.char = i
                 if (i.code == 58) {
                     this.keymap = Clutter.get_default_backend().get_default_seat().get_keymap()
-                    this.capslockConnect = this.keymap.connect("state-changed", (a, e) => {
+                    this.capsLockConnect = this.keymap.connect("state-changed", (a, e) => {
                         this.setCapsLock(keyBtn, this.keymap.get_caps_lock_state())
                     })
                     this.updateCapsLock = () => this.setCapsLock(keyBtn, this.keymap.get_caps_lock_state())
@@ -1078,7 +1098,7 @@ class Keyboard extends Dialog {
                 y_expand: true
             })
             moveHandleLeft.add_style_class_name("moveHandle")
-            moveHandleLeft.set_style("font-size: " + this.settings.get_int("font-size-px") + "px; border-radius: " + (this.settings.get_boolean("round-key-corners") ? "5px;" : "0;") + "background-size: " + this.settings.get_int("font-size-px") + "px; font-weight: " + (this.settings.get_boolean("font-bold") ? "bold" : "normal") + "; border: " + this.settings.get_int("border-spacing-px") + "px solid transparent;");
+            moveHandleLeft.set_style("font-size: " + this.settings.get_int("font-size-px") + "px; border-radius: " + (this.settings.get_boolean("round-key-corners") ? "5px" : "0") + "; background-size: " + this.settings.get_int("font-size-px") + "px; font-weight: " + (this.settings.get_boolean("font-bold") ? "bold" : "normal") + "; border: " + this.settings.get_int("border-spacing-px") + "px solid transparent;");
             if (this.lightOrDark(this.settings.get_double("background-r" + this.settings.scheme), this.settings.get_double("background-g" + this.settings.scheme), this.settings.get_double("background-b" + this.settings.scheme))) {
                 moveHandleLeft.add_style_class_name("inverted");
             } else {
@@ -1098,7 +1118,7 @@ class Keyboard extends Dialog {
                 y_expand: true
             })
             moveHandleRight.add_style_class_name("moveHandle")
-            moveHandleRight.set_style("font-size: " + this.settings.get_int("font-size-px") + "px; border-radius: " + (this.settings.get_boolean("round-key-corners") ? "5px;" : "0;") + "background-size: " + this.settings.get_int("font-size-px") + "px; font-weight: " + (this.settings.get_boolean("font-bold") ? "bold" : "normal") + "; border: " + this.settings.get_int("border-spacing-px") + "px solid transparent;");
+            moveHandleRight.set_style("font-size: " + this.settings.get_int("font-size-px") + "px; border-radius: " + (this.settings.get_boolean("round-key-corners") ? "5px" : "0") + "; background-size: " + this.settings.get_int("font-size-px") + "px; font-weight: " + (this.settings.get_boolean("font-bold") ? "bold" : "normal") + "; border: " + this.settings.get_int("border-spacing-px") + "px solid transparent;");
             if (this.lightOrDark(this.settings.get_double("background-r" + this.settings.scheme), this.settings.get_double("background-g" + this.settings.scheme), this.settings.get_double("background-b" + this.settings.scheme))) {
                 moveHandleRight.add_style_class_name("inverted");
             } else {
@@ -1153,7 +1173,7 @@ class Keyboard extends Dialog {
                 y_expand: true
             })
             moveHandle.add_style_class_name("moveHandle")
-            moveHandle.set_style("font-size: " + this.settings.get_int("font-size-px") + "px; border-radius: " + (this.settings.get_boolean("round-key-corners") ? "5px;" : "0;") + "background-size: " + this.settings.get_int("font-size-px") + "px; font-weight: " + (this.settings.get_boolean("font-bold") ? "bold" : "normal") + "; border: " + this.settings.get_int("border-spacing-px") + "px solid transparent;");
+            moveHandle.set_style("font-size: " + this.settings.get_int("font-size-px") + "px; border-radius: " + (this.settings.get_boolean("round-key-corners") ? "5px" : "0") + "; background-size: " + this.settings.get_int("font-size-px") + "px; font-weight: " + (this.settings.get_boolean("font-bold") ? "bold" : "normal") + "; border: " + this.settings.get_int("border-spacing-px") + "px solid transparent;");
             if (this.lightOrDark(this.settings.get_double("background-r" + this.settings.scheme), this.settings.get_double("background-g" + this.settings.scheme), this.settings.get_double("background-b" + this.settings.scheme))) {
                 moveHandle.add_style_class_name("inverted");
             } else {
@@ -1171,7 +1191,7 @@ class Keyboard extends Dialog {
         }
 
         this.keys.forEach(item => {
-            item.set_style("font-size: " + this.settings.get_int("font-size-px") + "px; border-radius: " + (this.settings.get_boolean("round-key-corners") ? (this.settings.get_int("border-spacing-px") + 5) + "px;" : "0;") + "background-size: " + this.settings.get_int("font-size-px") + "px; font-weight: " + (this.settings.get_boolean("font-bold") ? "bold" : "normal") + "; border: " + this.settings.get_int("border-spacing-px") + "px solid transparent;");
+            item.set_style("font-size: " + this.settings.get_int("font-size-px") + "px; border-radius: " + (this.settings.get_boolean("round-key-corners") ? (this.settings.get_int("border-spacing-px") + 5) + "px" : "0") + "; background-size: " + this.settings.get_int("font-size-px") + "px; font-weight: " + (this.settings.get_boolean("font-bold") ? "bold" : "normal") + "; border: " + this.settings.get_int("border-spacing-px") + "px solid transparent;");
             if (this.lightOrDark(this.settings.get_double("background-r" + this.settings.scheme), this.settings.get_double("background-g" + this.settings.scheme), this.settings.get_double("background-b" + this.settings.scheme))) {
                 item.add_style_class_name("inverted");
             } else {
@@ -1325,25 +1345,6 @@ class Keyboard extends Dialog {
         }
     }
     releaseAllKeys() {
-        let instances = [];
-
-        function traverse(obj) {
-            for (let key in obj) {
-                if (obj.hasOwnProperty(key)) {
-                    if (key === "code") {
-                        instances.push(obj[key]);
-                    } else if (typeof obj[key] === 'object' && obj[key] !== null) {
-                        traverse(obj[key]);
-                    }
-                }
-            }
-        }
-
-        traverse(keycodes);
-        instances.forEach(i => {
-            this.inputDevice.notify_key(Clutter.get_current_event_time(), i, Clutter.KeyState.RELEASED);
-        })
-
         this.keys.forEach(item => {
             item.key_pressed = false;
             if (item.button_pressed !== null) {
@@ -1354,7 +1355,7 @@ class Keyboard extends Dialog {
                 clearInterval(item.button_repeat)
                 item.button_repeat == null
             }
-            if (item.space_motion_handler !== null) {
+            if (item.space_motion_handler !== null && GObject.signal_handler_is_connected(item, item.space_motion_handler)) {
                 item.disconnect(item.space_motion_handler)
                 item.space_motion_handler = null;
             }
@@ -1362,6 +1363,11 @@ class Keyboard extends Dialog {
     }
     sendKey(keys) {
         try {
+            if (this.keyInProgress) {
+                return;
+            }
+            this.keyInProgress = true;
+
             for (var i = 0; i < keys.length; i++) {
                 this.inputDevice.notify_key(Clutter.get_current_event_time(), keys[i], Clutter.KeyState.PRESSED);
             }
@@ -1373,8 +1379,10 @@ class Keyboard extends Dialog {
                 for (var j = keys.length - 1; j >= 0; j--) {
                     this.inputDevice.notify_key(Clutter.get_current_event_time(), keys[j], Clutter.KeyState.RELEASED);
                 }
+                this.keyInProgress = false;
             }, 100);
         } catch (err) {
+            this.keyInProgress = false;
             throw new Error("GJS-OSK: An unknown error occured. Please report this bug to the Issues page (https://github.com/Vishram1123/gjs-osk/issues):\n\n" + err + "\n\nKeys Pressed: " + keys);
         }
     }

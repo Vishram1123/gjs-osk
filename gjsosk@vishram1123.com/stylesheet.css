@@ -28,7 +28,6 @@
      box-sizing: border-box;
      background-image: url(ui/icons/hicolor/scalable/actions/transparent.svg);
      background-repeat: no-repeat;
-     background-position: center;
 }
 
 .dr-b {
@@ -54,7 +53,6 @@
 .down_btn,
 .right_btn {
      background-repeat: no-repeat;
-     background-position: center;
 }
 
 .close_btn.regular,
