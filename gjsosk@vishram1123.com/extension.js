@@ -1167,7 +1167,7 @@ class Keyboard extends Dialog {
                 y_expand: true
             })
             moveHandleLeft.add_style_class_name("moveHandle")
-            moveHandleLeft.set_style("font-size: " + this.settings.get_int("font-size-px") + "px; border-radius: " + (this.settings.get_boolean("round-key-corners") ? "5px;" : "0;") + "background-size: " + this.settings.get_int("font-size-px") + "px; font-weight: " + (this.settings.get_boolean("font-bold") ? "bold" : "normal") + "; border: " + this.settings.get_int("border-spacing-px") + "px solid transparent;");
+            moveHandleLeft.set_style("font-size: " + this.settings.get_int("font-size-px") + "px; border-radius: " + (this.settings.get_boolean("round-key-corners") ? "5px" : "0") + "; background-size: " + this.settings.get_int("font-size-px") + "px; font-weight: " + (this.settings.get_boolean("font-bold") ? "bold" : "normal") + "; border: " + this.settings.get_int("border-spacing-px") + "px solid transparent;");
             if (this.lightOrDark()) {
                 moveHandleLeft.add_style_class_name("inverted");
             } else {
@@ -1187,7 +1187,7 @@ class Keyboard extends Dialog {
                 y_expand: true
             })
             moveHandleRight.add_style_class_name("moveHandle")
-            moveHandleRight.set_style("font-size: " + this.settings.get_int("font-size-px") + "px; border-radius: " + (this.settings.get_boolean("round-key-corners") ? "5px;" : "0;") + "background-size: " + this.settings.get_int("font-size-px") + "px; font-weight: " + (this.settings.get_boolean("font-bold") ? "bold" : "normal") + "; border: " + this.settings.get_int("border-spacing-px") + "px solid transparent;");
+            moveHandleRight.set_style("font-size: " + this.settings.get_int("font-size-px") + "px; border-radius: " + (this.settings.get_boolean("round-key-corners") ? "5px" : "0") + "; background-size: " + this.settings.get_int("font-size-px") + "px; font-weight: " + (this.settings.get_boolean("font-bold") ? "bold" : "normal") + "; border: " + this.settings.get_int("border-spacing-px") + "px solid transparent;");
             if (this.lightOrDark()) {
                 moveHandleRight.add_style_class_name("inverted");
             } else {
@@ -1263,7 +1263,7 @@ class Keyboard extends Dialog {
             })
             moveHandle.clear_actions();
             moveHandle.add_style_class_name("moveHandle")
-            moveHandle.set_style("font-size: " + this.settings.get_int("font-size-px") + "px; border-radius: " + (this.settings.get_boolean("round-key-corners") ? "5px;" : "0;") + "background-size: " + this.settings.get_int("font-size-px") + "px; font-weight: " + (this.settings.get_boolean("font-bold") ? "bold" : "normal") + "; border: " + this.settings.get_int("border-spacing-px") + "px solid transparent;");
+            moveHandle.set_style("font-size: " + this.settings.get_int("font-size-px") + "px; border-radius: " + (this.settings.get_boolean("round-key-corners") ? "5px" : "0") + "; background-size: " + this.settings.get_int("font-size-px") + "px; font-weight: " + (this.settings.get_boolean("font-bold") ? "bold" : "normal") + "; border: " + this.settings.get_int("border-spacing-px") + "px solid transparent;");
             if (this.lightOrDark()) {
                 moveHandle.add_style_class_name("inverted");
             } else {
@@ -1281,7 +1281,7 @@ class Keyboard extends Dialog {
         }
 
         this.keys.forEach(item => {
-            item.set_style("font-size: " + this.settings.get_int("font-size-px") + "px; border-radius: " + (this.settings.get_boolean("round-key-corners") ? (this.settings.get_int("border-spacing-px") + 5) + "px;" : "0;") + "background-size: " + this.settings.get_int("font-size-px") + "px; font-weight: " + (this.settings.get_boolean("font-bold") ? "bold" : "normal") + "; border: " + this.settings.get_int("border-spacing-px") + "px solid transparent;");
+            item.set_style("font-size: " + this.settings.get_int("font-size-px") + "px; border-radius: " + (this.settings.get_boolean("round-key-corners") ? (this.settings.get_int("border-spacing-px") + 5) + "px" : "0") + "; background-size: " + this.settings.get_int("font-size-px") + "px; font-weight: " + (this.settings.get_boolean("font-bold") ? "bold" : "normal") + "; border: " + this.settings.get_int("border-spacing-px") + "px solid transparent;");
             if (this.lightOrDark()) {
                 item.add_style_class_name("inverted");
             } else {
@@ -1440,25 +1440,6 @@ class Keyboard extends Dialog {
         return hsp > 127.5
     }
     releaseAllKeys() {
-        let instances = [];
-
-        function traverse(obj) {
-            for (let key in obj) {
-                if (obj.hasOwnProperty(key)) {
-                    if (key === "code") {
-                        instances.push(obj[key]);
-                    } else if (typeof obj[key] === 'object' && obj[key] !== null) {
-                        traverse(obj[key]);
-                    }
-                }
-            }
-        }
-
-        traverse(keycodes);
-        instances.forEach(i => {
-            this.inputDevice.notify_key(Clutter.get_current_event_time(), i, Clutter.KeyState.RELEASED);
-        })
-
         this.keys.forEach(item => {
             item.key_pressed = false;
             if (item.button_pressed !== null) {
@@ -1477,6 +1458,11 @@ class Keyboard extends Dialog {
     }
     sendKey(keys) {
         try {
+            if (this.keyInProgress) {
+                return;
+            }
+            this.keyInProgress = true;
+            
             for (var i = 0; i < keys.length; i++) {
                 this.inputDevice.notify_key(Clutter.get_current_event_time(), keys[i], Clutter.KeyState.PRESSED);
             }
@@ -1488,8 +1474,10 @@ class Keyboard extends Dialog {
                 for (var j = keys.length - 1; j >= 0; j--) {
                     this.inputDevice.notify_key(Clutter.get_current_event_time(), keys[j], Clutter.KeyState.RELEASED);
                 }
+                this.keyInProgress = false;
             }, 100);
         } catch (err) {
+            this.keyInProgress = false;
             throw new Error("GJS-OSK: An unknown error occured. Please report this bug to the Issues page (https://github.com/Vishram1123/gjs-osk/issues):\n\n" + err + "\n\nKeys Pressed: " + keys);
         }
     }
