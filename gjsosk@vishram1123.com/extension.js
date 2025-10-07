@@ -108,7 +108,8 @@ export default class GjsOskExtension extends Extension {
     }
 
     open_interval() {
-        global.stage.disconnect(this.tapConnect)
+        if (this.tapConnect && GObject.signal_handler_is_connected(this, this.tapConnect))
+            global.stage.disconnect(this.tapConnect)
         if (this.openInterval !== null) {
             clearInterval(this.openInterval);
             this.openInterval = null;
@@ -333,10 +334,7 @@ export default class GjsOskExtension extends Extension {
                     function withErrorHandler(TargetClass, handler) {
                         return new Proxy(TargetClass, {
                             construct(Target, args) {
-                                // Construct the class with whatever args were passed in
                                 const instance = new Target(...args);
-
-                                // Wrap each method
                                 for (const key of Object.getOwnPropertyNames(Target.prototype)) {
                                     const fn = instance[key];
                                     if (typeof fn === "function" && key !== "constructor") {
@@ -359,7 +357,8 @@ export default class GjsOskExtension extends Extension {
                     this.Keyboard = new SafeKeyboard(this.settings, this);
                     this.Keyboard.refresh = refresh;
                     if (prevOpenState) {
-                        this._openKeyboard(true);
+                        this.Keyboard.open(null, true);
+                        this.openBit.set_boolean('keyboard-visible', true);
                     }
                 };
                 await extractKeycodes();
@@ -1450,7 +1449,7 @@ class Keyboard extends Dialog {
                 clearInterval(item.button_repeat)
                 item.button_repeat == null
             }
-            if (item.space_motion_handler !== null) {
+            if (item.space_motion_handler !== null && GObject.signal_handler_is_connected(item, item.space_motion_handler)) {
                 item.disconnect(item.space_motion_handler)
                 item.space_motion_handler = null;
             }
@@ -1462,7 +1461,7 @@ class Keyboard extends Dialog {
                 return;
             }
             this.keyInProgress = true;
-            
+
             for (var i = 0; i < keys.length; i++) {
                 this.inputDevice.notify_key(Clutter.get_current_event_time(), keys[i], Clutter.KeyState.PRESSED);
             }
