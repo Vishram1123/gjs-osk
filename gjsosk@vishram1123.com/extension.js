@@ -108,7 +108,7 @@ export default class GjsOskExtension extends Extension {
     }
 
     open_interval() {
-        if (this.tapConnect && GObject.signal_handler_is_connected(this, this.tapConnect))
+        if (this.tapConnect && GObject.signal_handler_is_connected(global.stage, this.tapConnect))
             global.stage.disconnect(this.tapConnect)
         if (this.openInterval !== null) {
             clearInterval(this.openInterval);
@@ -675,8 +675,10 @@ class Keyboard extends Dialog {
             clearTimeout(this.keyTimeout);
             this.keyTimeout = null;
         }
-        this.keymap.disconnect(this.capslockConnect);
-        this.keymap.disconnect(this.numLockConnect);
+        if (this.capsLockConnect && GObject.signal_handler_is_connected(this.keymap, this.capsLockConnect))
+            this.keymap.disconnect(this.capsLockConnect);
+        if (this.numLockConnect && GObject.signal_handler_is_connected(this.keymap, this.numLockConnect))
+            this.keymap.disconnect(this.numLockConnect);
         global.backend.get_monitor_manager().disconnect(this.monitorChecker)
         super.destroy();
         if (this.nonDragBlocker !== null) {
@@ -1056,7 +1058,7 @@ class Keyboard extends Dialog {
                 keyBtn.char = i
                 if (i.code == 58) {
                     this.keymap = Clutter.get_default_backend().get_default_seat().get_keymap()
-                    this.capslockConnect = this.keymap.connect("state-changed", (a, e) => {
+                    this.capsLockConnect = this.keymap.connect("state-changed", (a, e) => {
                         this.setCapsLock(keyBtn, this.keymap.get_caps_lock_state())
                     })
                     this.updateCapsLock = () => this.setCapsLock(keyBtn, this.keymap.get_caps_lock_state())
