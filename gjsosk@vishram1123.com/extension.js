@@ -142,14 +142,19 @@ class GjsOskExtension {
     }
 
     fail(error, method = null, instance = null) {
-        Main.notifyError("Error with extension GJS-OSK:\n"
-            + (instance != null || method != null ? "in " : "")
+        Main.notifyError("Error with extension GJS-OSK"
+            + (instance != null || method != null ? " in " : "")
             + (instance != null ? instance + "." : "")
-            + (method != null ? method + "\n" : "") + error.message);
+            + (method != null ? method + "\n" : ""),
+            error.message
+            + "\n" + error.stack);
     }
 
     enable() {
         this.settings = ExtensionUtils.getSettings("org.gnome.shell.extensions.gjsosk");
+        if (this.settings == null) {
+            return;
+        }
         this.darkSchemeSettings = ExtensionUtils.getSettings("org.gnome.desktop.interface");
         this.inputLanguageSettings = InputSourceManager.getInputSourceManager();
         this.gnomeKeyboardSettings = ExtensionUtils.getSettings('org.gnome.desktop.a11y.applications');
@@ -352,7 +357,6 @@ class GjsOskExtension {
                             }
                         });
                     }
-
                     const SafeKeyboard = withErrorHandler(Keyboard, this.fail);
                     this.Keyboard = new SafeKeyboard(this.settings, this);
                     this.Keyboard.refresh = refresh;
@@ -877,7 +881,8 @@ class Keyboard extends Dialog {
         this.keys = [];
         let monitor = Main.layoutManager.monitors[currentMonitorId] ?? Main.layoutManager.primaryMonitor
         let layoutName = Object.keys(layouts)[(monitor.width > monitor.height) ? this.settings.get_int("layout-landscape") : this.settings.get_int("layout-portrait")];
-        this.box.width = Math.round((monitor.width - this.settings.get_int("snap-spacing-px") * 2) * (layoutName.includes("Split") ? 1 : this.widthPercent))
+        let currentLayout = layouts[layoutName];
+        this.box.width = Math.round((monitor.width - this.settings.get_int("snap-spacing-px") * 2) * (currentLayout[currentLayout.length - 1].split ? 1 : this.widthPercent))
         this.box.height = Math.round((monitor.height - this.settings.get_int("snap-spacing-px") * 2) * this.heightPercent)
 
         if (!this.settings.get_boolean("enable-drag")) {
@@ -923,7 +928,7 @@ class Keyboard extends Dialog {
 
         const grid = this.box.layout_manager
         grid.set_row_homogeneous(true)
-        grid.set_column_homogeneous(!layoutName.includes("Split"))
+        grid.set_column_homogeneous(!currentLayout[currentLayout.length - 1].split)
 
         let gridLeft;
         let gridRight;
@@ -932,7 +937,7 @@ class Keyboard extends Dialog {
         let right;
         let topBtnWidth;
 
-        if (layoutName.includes("Split")) {
+        if (currentLayout[currentLayout.length - 1].split) {
             this.box.reactive = false;
             left = new St.Widget({
                 reactive: true,
@@ -965,7 +970,6 @@ class Keyboard extends Dialog {
 
         this.shiftButtons = [];
 
-        let currentLayout = layouts[layoutName];
         let width = 0;
         for (const c of currentLayout[0]) {
             width += (("width" in c) ? c.width : 1)
@@ -1035,9 +1039,9 @@ class Keyboard extends Dialog {
             }
         }
 
-        for (const kRow of currentLayout) {
+        for (const kRow of currentLayout.slice(0, -1)) {
             c = 0;
-            if (layoutName.includes("Split")) {
+            if (currentLayout[currentLayout.length - 1].split) {
                 currentGrid = gridLeft;
             }
             for (const keydef of kRow) {
@@ -1068,30 +1072,52 @@ class Keyboard extends Dialog {
                 left.add_style_class_name("regular");
                 right.add_style_class_name("regular");
             }
-            const settingsBtn = new St.Button({
-                x_expand: true,
-                y_expand: true
-            })
-            settingsBtn.add_style_class_name("settings_btn")
-            settingsBtn.add_style_class_name("key")
-            settingsBtn.connect("clicked", () => {
-                this.settingsOpenFunction();
-            })
-            gridLeft.attach(settingsBtn, 0, 0, 2 * topBtnWidth, 3)
-            this.keys.push(settingsBtn)
 
-            const closeBtn = new St.Button({
-                x_expand: true,
-                y_expand: true
-            })
-            closeBtn.add_style_class_name("close_btn")
-            closeBtn.add_style_class_name("key")
-            closeBtn.connect("clicked", () => {
-                this.close();
-                this.closedFromButton = true;
-            })
-            gridRight.attach(closeBtn, (rowSize - 2 * topBtnWidth), 0, 2 * topBtnWidth, 3)
-            this.keys.push(closeBtn)
+            let mvBtnStartLeft = 2 * topBtnWidth
+            let mvBtnEndRight = 2 * topBtnWidth
+
+            if (currentLayout[currentLayout.length - 1].settings) {
+                const settingsBtn = new St.Button({
+                    x_expand: true,
+                    y_expand: true
+                })
+                settingsBtn.add_style_class_name("settings_btn")
+                settingsBtn.add_style_class_name("key")
+                settingsBtn.connect("button-press-event", () => {
+                    this.settingsOpenFunction();
+                })
+                settingsBtn.connect("touch-event", () => {
+                    if (Clutter.get_current_event().type() == Clutter.EventType.TOUCH_BEGIN)
+                        this.settingsOpenFunction();
+                })
+                this.keys.push(settingsBtn)
+                gridLeft.attach(settingsBtn, 0, 0, 2 * topBtnWidth, 3)
+            } else {
+                mvBtnStartLeft = 0
+            }
+
+            if (currentLayout[currentLayout.length - 1].close) {
+                const closeBtn = new St.Button({
+                    x_expand: true,
+                    y_expand: true
+                })
+                closeBtn.add_style_class_name("close_btn")
+                closeBtn.add_style_class_name("key")
+                closeBtn.connect("button-press-event", () => {
+                    this.close();
+                    this.closedFromButton = true;
+                })
+                closeBtn.connect("touch-event", () => {
+                    if (Clutter.get_current_event().type() == Clutter.EventType.TOUCH_BEGIN) {
+                        this.close();
+                        this.closedFromButton = true;
+                    }
+                })
+                gridRight.attach(closeBtn, (rowSize - 2 * topBtnWidth), 0, 2 * topBtnWidth, 3)
+                this.keys.push(closeBtn)
+            } else {
+                mvBtnEndRight = 0
+            }
 
             let moveHandleLeft = new St.Button({
                 x_expand: true,
@@ -1111,7 +1137,7 @@ class Keyboard extends Dialog {
                 }
                 this.event(event, false)
             })
-            gridLeft.attach(moveHandleLeft, 2 * topBtnWidth, 0, (halfSize - 2 * topBtnWidth), 3)
+            gridLeft.attach(moveHandleLeft, mvBtnStartLeft, 0, (halfSize - mvBtnStartLeft), 3)
 
             let moveHandleRight = new St.Button({
                 x_expand: true,
@@ -1131,7 +1157,7 @@ class Keyboard extends Dialog {
                 }
                 this.event(event, false)
             })
-            gridRight.attach(moveHandleRight, halfSize, 0, (rowSize - halfSize - 2 * topBtnWidth), 3)
+            gridRight.attach(moveHandleRight, halfSize, 0, (rowSize - halfSize - mvBtnEndRight), 3)
             gridLeft.attach(new St.Widget({ x_expand: true, y_expand: true }), 0, 3, halfSize, 1)
             gridRight.attach(new St.Widget({ x_expand: true, y_expand: true }), halfSize, 3, (rowSize - halfSize), 1)
         } else {
@@ -1143,30 +1169,52 @@ class Keyboard extends Dialog {
                 this.box.add_style_class_name("regular");
             }
 
-            const settingsBtn = new St.Button({
-                x_expand: true,
-                y_expand: true
-            })
-            settingsBtn.add_style_class_name("settings_btn")
-            settingsBtn.add_style_class_name("key")
-            settingsBtn.connect("clicked", () => {
-                this.settingsOpenFunction();
-            })
-            grid.attach(settingsBtn, 0, 0, 2 * topBtnWidth, 3)
-            this.keys.push(settingsBtn)
+            let mvBtnStartLeft = 2 * topBtnWidth
+            let mvBtnEndRight = 2 * topBtnWidth
 
-            const closeBtn = new St.Button({
-                x_expand: true,
-                y_expand: true
-            })
-            closeBtn.add_style_class_name("close_btn")
-            closeBtn.add_style_class_name("key")
-            closeBtn.connect("clicked", () => {
-                this.close();
-                this.closedFromButton = true;
-            })
-            grid.attach(closeBtn, (rowSize - 2 * topBtnWidth), 0, 2 * topBtnWidth, 3)
-            this.keys.push(closeBtn)
+            if (currentLayout[currentLayout.length - 1].settings) {
+                const settingsBtn = new St.Button({
+                    x_expand: true,
+                    y_expand: true
+                })
+                settingsBtn.add_style_class_name("settings_btn")
+                settingsBtn.add_style_class_name("key")
+                settingsBtn.connect("button-press-event", () => {
+                    this.settingsOpenFunction();
+                })
+                settingsBtn.connect("touch-event", () => {
+                    if (Clutter.get_current_event().type() == Clutter.EventType.TOUCH_BEGIN)
+                        this.settingsOpenFunction();
+                })
+                this.keys.push(settingsBtn)
+                grid.attach(settingsBtn, 0, 0, 2 * topBtnWidth, 3)
+            } else {
+                mvBtnStartLeft = 0
+            }
+            if (currentLayout[currentLayout.length - 1].close) {
+                const closeBtn = new St.Button({
+                    x_expand: true,
+                    y_expand: true
+                })
+                closeBtn.add_style_class_name("close_btn")
+                closeBtn.add_style_class_name("key")
+                closeBtn.connect("button-press-event", () => {
+                    this.close();
+                    this.closedFromButton = true;
+                })
+                closeBtn.connect("touch-event", () => {
+                    if (Clutter.get_current_event().type() == Clutter.EventType.TOUCH_BEGIN) {
+                        this.close();
+                        this.closedFromButton = true;
+                    }
+                })
+                grid.attach(closeBtn, (rowSize - 2 * topBtnWidth), 0, 2 * topBtnWidth, 3)
+                this.keys.push(closeBtn)
+            } else {
+                mvBtnEndRight = 0;
+            }
+
+            // [insert handwriting 10]
 
             let moveHandle = new St.Button({
                 x_expand: true,
@@ -1186,7 +1234,7 @@ class Keyboard extends Dialog {
                 }
                 this.event(event, false)
             })
-            grid.attach(moveHandle, 2 * topBtnWidth, 0, (rowSize - 4 * topBtnWidth), 3)
+            grid.attach(moveHandle, mvBtnStartLeft, 0, (rowSize - mvBtnStartLeft - mvBtnEndRight), 3)
             grid.attach(new St.Widget({ x_expand: true, y_expand: true }), 0, 3, rowSize, 1)
         }
 
