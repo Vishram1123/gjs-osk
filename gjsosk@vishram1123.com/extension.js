@@ -930,7 +930,8 @@ class Keyboard extends Dialog {
         this.keys = [];
         let monitor = Main.layoutManager.monitors[currentMonitorId] ?? Main.layoutManager.primaryMonitor
         let layoutName = Object.keys(layouts)[(monitor.width > monitor.height) ? this.settings.get_int("layout-landscape") : this.settings.get_int("layout-portrait")];
-        this.box.width = Math.round((monitor.width - this.settings.get_int("snap-spacing-px") * 2) * (layoutName.includes("Split") ? 1 : this.widthPercent))
+        let currentLayout = layouts[layoutName];
+        this.box.width = Math.round((monitor.width - this.settings.get_int("snap-spacing-px") * 2) * (currentLayout[currentLayout.length - 1].split ? 1 : this.widthPercent))
         this.box.height = Math.round((monitor.height - this.settings.get_int("snap-spacing-px") * 2) * this.heightPercent)
 
         if (!this.settings.get_boolean("enable-drag")) {
@@ -976,7 +977,7 @@ class Keyboard extends Dialog {
 
         const grid = this.box.layout_manager
         grid.set_row_homogeneous(true)
-        grid.set_column_homogeneous(!layoutName.includes("Split"))
+        grid.set_column_homogeneous(!currentLayout[currentLayout.length - 1].split)
 
         let gridLeft;
         let gridRight;
@@ -984,7 +985,6 @@ class Keyboard extends Dialog {
         let left;
         let right;
         let topBtnWidth;
-        let currentLayout = layouts[layoutName];
 
         if (currentLayout[currentLayout.length - 1].split) {
             this.box.reactive = false;
