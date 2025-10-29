@@ -141,14 +141,19 @@ export default class GjsOskExtension extends Extension {
     }
 
     fail(error, method = null, instance = null) {
-        Main.notifyError("Error with extension GJS-OSK:\n"
-            + (instance != null || method != null ? "in " : "")
+        Main.notifyError("Error with extension GJS-OSK"
+            + (instance != null || method != null ? " in " : "")
             + (instance != null ? instance + "." : "")
-            + (method != null ? method + "\n" : "") + error.message);
+            + (method != null ? method + "\n" : ""),
+            error.message
+            + "\n" + error.stack);
     }
 
     enable() {
         this.settings = this.getSettings();
+        if (this.settings == null) {
+            return;
+        }
         this.darkSchemeSettings = this.getSettings("org.gnome.desktop.interface");
         this.inputLanguageSettings = InputSourceManager.getInputSourceManager();
         this.gnomeKeyboardSettings = this.getSettings('org.gnome.desktop.a11y.applications');
@@ -352,7 +357,6 @@ export default class GjsOskExtension extends Extension {
                             }
                         });
                     }
-
                     const SafeKeyboard = withErrorHandler(Keyboard, this.fail);
                     this.Keyboard = new SafeKeyboard(this.settings, this);
                     this.Keyboard.refresh = refresh;
@@ -493,8 +497,10 @@ export default class GjsOskExtension extends Extension {
             clearInterval(this.openInterval);
             this.openInterval = null;
         }
-        this._toggle.destroy()
-        this._toggle = null
+        if (this._toggle !== null) {
+            this._toggle.destroy()
+            this._toggle = null
+        }
         this.settings = null
         this.Keyboard = null
         keycodes = null
