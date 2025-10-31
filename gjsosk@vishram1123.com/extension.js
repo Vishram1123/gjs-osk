@@ -1185,6 +1185,7 @@ class Keyboard extends Dialog {
                 x_expand: true,
                 y_expand: true
             })
+            moveHandleLeft.clear_actions()
             moveHandleLeft.add_style_class_name("moveHandle")
             moveHandleLeft.set_style("font-size: " + this.settings.get_int("font-size-px") + "px; border-radius: " + (this.settings.get_boolean("round-key-corners") ? "5px" : "0") + "; background-size: " + this.settings.get_int("font-size-px") + "px; font-weight: " + (this.settings.get_boolean("font-bold") ? "bold" : "normal") + "; border: " + this.settings.get_int("border-spacing-px") + "px solid transparent;");
             if (this.lightOrDark()) {
@@ -1205,6 +1206,7 @@ class Keyboard extends Dialog {
                 x_expand: true,
                 y_expand: true
             })
+            moveHandleRight.clear_actions()
             moveHandleRight.add_style_class_name("moveHandle")
             moveHandleRight.set_style("font-size: " + this.settings.get_int("font-size-px") + "px; border-radius: " + (this.settings.get_boolean("round-key-corners") ? "5px" : "0") + "; background-size: " + this.settings.get_int("font-size-px") + "px; font-weight: " + (this.settings.get_boolean("font-bold") ? "bold" : "normal") + "; border: " + this.settings.get_int("border-spacing-px") + "px solid transparent;");
             if (this.lightOrDark()) {
