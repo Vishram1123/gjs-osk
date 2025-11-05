@@ -13,11 +13,25 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-
     - name: Checkout main branch
       uses: actions/checkout@v2
       with:
         ref: 'main'
+
+    - name: Install GitHub CLI
+      run: sudo apt-get update && sudo apt-get install gh -y
+
+    - name: Delete all releases and tags
+      env:
+        GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
+      run: |
+        # List all releases and delete them
+        for rel in $(gh release list --limit 1000 --json tagName --jq '.[].tagName'); do
+          echo "Deleting release and tag: $rel"
+          gh release delete "$rel" -y || true
+          git tag -d "$rel" || true
+          git push origin --delete "$rel" || true
+        done
 
     - name: Get Hash
       run: |
@@ -27,6 +41,11 @@ jobs:
       run: |
         sed -i gjsosk@vishram1123.com/prefs.js -e 's|{{VERSION}}|${{ env.hash }}|g'
     
+    - name: Create new tag for release
+      run: |
+        git tag ${{ env.hash }}
+        git push origin ${{ env.hash }}
+
     - name: Create Release
       id: create_release
       uses: actions/create-release@v1
@@ -39,7 +58,7 @@ jobs:
         prerelease: false
         body: |
           ## To install:
-          1. Download `gjsosk@vishram1123_[version].zip` (`main` for GNOME version >= 45, `pre-45` for GNOME verison <= 44)
+          1. Download `gjsosk@vishram1123_[version].zip` (`main` for GNOME version >= 45, `pre-45` for GNOME version <= 44)
           2. Run `gnome-extensions install /path/to/gjsosk@vishram1123_[version].zip` (replace with appropriate path)
           3. Log out of GNOME and log back in. 
           4. Click on the keyboard button in the dash bar
