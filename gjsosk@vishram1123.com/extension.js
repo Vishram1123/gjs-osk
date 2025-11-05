@@ -336,6 +336,10 @@ export default class GjsOskExtension extends Extension {
                         this.Keyboard = null;
                     }
 
+                    if (this.settings == null) {
+                        return;
+                    }
+
                     function withErrorHandler(TargetClass, handler) {
                         return new Proxy(TargetClass, {
                             construct(Target, args) {
