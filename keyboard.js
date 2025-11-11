@@ -37,18 +37,16 @@ class KeyEditor {
             <h3>Key Editor</h3>
             <div class="key-editor-row">
                 <span class="key-editor-label"><a title="Use one of the keycodes here, or blank for spacer" target="_blank" rel="noopener noreferrer" class='key_help' href="https://kb.aseri.net/kbd/xkb.png"></a> Keycode:</span>
-                <input type="text" class="key-editor-input" id="keycode-input">
+                <input type="text" class="key-editor-input" id="keycode-input" placeholder="Blank for Spacer">
             </div>
             <div class="key-editor-split-container" id="split-container" style="display: none;">
                 <div class="key-editor-row">
-                    <a title="Valid Keycodes and Where they Are" target="_blank" rel="noopener noreferrer" class='key_help' href="https://kb.aseri.net/kbd/xkb.png"></a>
                     <span class="key-editor-label">Top Keycode:</span>
-                    <input type="text" class="key-editor-input" id="keycode-input-top">
+                    <input type="text" class="key-editor-input" id="keycode-input-top" placeholder="Cannnot be blank">
                 </div>
                 <div class="key-editor-row">
-                    <a title="Valid Keycodes and Where they Are" target="_blank" rel="noopener noreferrer" class='key_help' href="https://kb.aseri.net/kbd/xkb.png"></a>
                     <span class="key-editor-label">Bottom Keycode:</span>
-                    <input type="text" class="key-editor-input" id="keycode-input-bottom">
+                    <input type="text" class="key-editor-input" id="keycode-input-bottom" placeholder="Cannot be blank">
                 </div>
             </div>
             <div class="key-editor-row">
