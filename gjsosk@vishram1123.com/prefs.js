@@ -50,6 +50,7 @@ function fillPreferencesWindow(window) {
     }
 
     let layoutList = Object.keys(layouts);
+    layoutList.push("Custom")
     let layoutLandscapeDrop = Gtk.DropDown.new_from_strings(layoutList);
     layoutLandscapeDrop.valign = Gtk.Align.CENTER;
     layoutLandscapeDrop.selected = settings.get_int("layout-landscape");
@@ -68,6 +69,27 @@ function fillPreferencesWindow(window) {
 
     layoutPortraitRow.add_suffix(layoutPortraitDrop);
     layoutPortraitRow.activatable_widget = layoutPortraitDrop;
+
+    const customLayoutRow = new Adw.EntryRow({
+        title: _('Custom Layout')
+    });
+    layoutRow.add_row(customLayoutRow);
+
+    customLayoutRow.set_text(settings.get_string("custom-layout"));
+    customLayoutRow.set_show_apply_button(true);
+
+    const createKeyboardLayoutRow = new Adw.ActionRow({
+        title: _('Create/edit a custom keyboard layout')
+    })
+    layoutRow.add_row(createKeyboardLayoutRow)
+
+    const layoutLink = new Gtk.LinkButton({
+        label: 'Keyboard Layout Editor',
+        uri: 'https://vishram1123.github.io/gjs-osk'
+    })
+
+    createKeyboardLayoutRow.add_suffix(layoutLink)
+    createKeyboardLayoutRow.activatable_widget = layoutLink
 
     const enableDragRow = new Adw.ActionRow({
         title: _('Enable Dragging')
@@ -491,6 +513,9 @@ function fillPreferencesWindow(window) {
 
     settings.bind("layout-landscape", layoutLandscapeDrop, "selected", 0);
     settings.bind("layout-portrait", layoutPortraitDrop, "selected", 0);
+    customLayoutRow.connect("apply", () => {
+        settings.set_string("custom-layout", customLayoutRow.get_text());
+    });
     settings.bind("enable-drag", dragEnableDT, "active", 0);
     settings.bind("enable-tap-gesture", dragOpt, "selected", 0);
     settings.bind("indicator-enabled", indEnabled, "active", 0);
@@ -531,6 +556,7 @@ function fillPreferencesWindow(window) {
     window.connect("close-request", () => {
         settings.set_int("layout-landscape", layoutLandscapeDrop.selected);
         settings.set_int("layout-portrait", layoutPortraitDrop.selected);
+        settings.set_string("custom-layout", customLayoutRow.get_text());
         settings.set_boolean("enable-drag", dragEnableDT.active);
         settings.set_int("enable-tap-gesture", dragOpt.selected);
         settings.set_boolean("indicator-enabled", indEnabled.active);
