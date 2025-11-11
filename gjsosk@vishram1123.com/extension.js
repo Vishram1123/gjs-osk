@@ -1067,7 +1067,7 @@ class Keyboard extends Dialog {
                     params.label = i.layers.default
                 }
                 i.isMod = false
-                if ([42, 54, 29, 125, 56, 100, 97, 58, 69].some(j => { return i.code == j })) {
+                if ([42, 54, 29, 125, 126, 56, 100, 97, 58, 69].some(j => { return i.code == j })) {
                     i.isMod = true;
                 }
                 const keyBtn = new St.Button(params)
