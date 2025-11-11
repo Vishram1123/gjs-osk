@@ -236,7 +236,7 @@ class KeyEditor {
             !Array.isArray(currentLayout) ||
             this.currentRow < 0 ||
             this.currentCol < 0 ||
-            this.currentRow >= currentLayout.length - 1 || 
+            this.currentRow >= currentLayout.length - 1 ||
             !Array.isArray(currentLayout[this.currentRow]) ||
             this.currentCol >= currentLayout[this.currentRow].length
         ) {
@@ -437,6 +437,8 @@ class KeyboardSettingsEditor {
         const layoutCopy = JSON.parse(JSON.stringify(currentLayout));
         const jsonString = JSON.stringify(layoutCopy, null, 2);
         this.element.querySelector('#layout-json').value = jsonString;
+        const ta = document.querySelector("textarea");
+        ta.addEventListener("focus", e => e.target.select());
     }
 
     setupEventListeners() {

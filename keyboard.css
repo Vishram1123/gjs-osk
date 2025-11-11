@@ -306,13 +306,25 @@ body {
     display: flex;
 }
 
-.key-editor-input, .key-editor textarea {
+.key-editor-input,
+.key-editor textarea {
     flex: 2;
     padding: 5px;
     background: #2d2d2d;
     border: 1px solid #444;
     color: white;
     border-radius: 4px;
+}
+
+.key-editor textarea {
+    overflow: auto;
+    scrollbar-width: none;
+    /* Firefox */
+}
+
+.key-editor textarea::-webkit-scrollbar {
+    display: none;
+    /* Chrome, Safari */
 }
 
 .key-editor-buttons {
