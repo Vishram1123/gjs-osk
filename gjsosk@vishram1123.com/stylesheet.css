@@ -156,6 +156,16 @@
      background-image: url(ui/icons/hicolor/scalable/actions/alt-dark.svg);
 }
 
+.menu_btn.regular,
+.menu_btn.selected.inverted {
+     background-image: url(ui/icons/hicolor/scalable/actions/menu.svg);
+}
+
+.menu_btn.inverted,
+.menu_btn.selected.regular {
+     background-image: url(ui/icons/hicolor/scalable/actions/menu-dark.svg);
+}
+
 .space_btn.regular,
 .space_btn.selected.inverted {
      background-image: url(ui/icons/hicolor/scalable/actions/space.svg);

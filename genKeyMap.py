@@ -30,7 +30,7 @@ keysToTest = [
     "TAB", "AD01", "AD02", "AD03", "AD04", "AD05", "AD06", "AD07", "AD08", "AD09", "AD10", "AD11", "AD12", "BKSL", "DELE", "END", "PGDN", "KP7", "KP8", "KP9", "KPAD",
     "CAPS", "AC01", "AC02", "AC03", "AC04", "AC05", "AC06", "AC07", "AC08", "AC09", "AC10", "AC11", "RTRN", "KP4", "KP5", "KP6", 
     "LFSH", "LSGT", "AB01", "AB02", "AB03", "AB04", "AB05", "AB06", "AB07", "AB08", "AB09", "AB10", "RTSH", "UP", "KP1", "KP2", "KP3", "KPEN", 
-    "LCTL", "LWIN", "LALT", "SPCE", "RALT", "RCTL", "LEFT", "DOWN", "RGHT", "KP0", "KPDL", "KPEQ", 
+    "LCTL", "LWIN", "LALT", "SPCE", "RALT", "RWIN", "MENU", "RCTL", "LEFT", "DOWN", "RGHT", "KP0", "KPDL", "KPEQ", 
 ]
 
 def getKeyOutput(keyval, modifier = 0, locked = 0):
@@ -328,7 +328,7 @@ def convertKeySymToString(sym):
             label = "Alt"
 
         case Gdk.KEY_Menu:
-            label = "☰"
+            label = "Menu"
 
         case Gdk.KEY_VoidSymbol:
             label = ""

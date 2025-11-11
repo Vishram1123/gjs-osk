@@ -933,8 +933,15 @@ class Keyboard extends Dialog {
         this.box.set_opacity(0);
         this.keys = [];
         let monitor = Main.layoutManager.monitors[currentMonitorId] ?? Main.layoutManager.primaryMonitor
-        let layoutName = Object.keys(layouts)[(monitor.width > monitor.height) ? this.settings.get_int("layout-landscape") : this.settings.get_int("layout-portrait")];
-        let currentLayout = layouts[layoutName];
+        let layoutIdx = (monitor.width > monitor.height) ? this.settings.get_int("layout-landscape") : this.settings.get_int("layout-portrait")
+        let currentLayout;
+        if (layoutIdx < 10) {
+            let layoutName = Object.keys(layouts)[layoutIdx];
+            currentLayout = layouts[layoutName];
+        }
+        else {
+            currentLayout = JSON.parse(this.settings.get_string("custom-layout"))
+        }
         this.box.width = Math.round((monitor.width - this.settings.get_int("snap-spacing-px") * 2) * (currentLayout[currentLayout.length - 1].split ? 1 : this.widthPercent))
         this.box.height = Math.round((monitor.height - this.settings.get_int("snap-spacing-px") * 2) * this.heightPercent)
 
@@ -1047,7 +1054,7 @@ class Keyboard extends Dialog {
 
                 let iconKeys = ["left", "up", "right", "down", "space"]
                 if (this.settings.get_boolean("show-icons")) {
-                    iconKeys = ["left", "up", "right", "down", "backspace", "tab", "capslock", "shift", "enter", "ctrl", "super", "alt", "space"]
+                    iconKeys = ["left", "up", "right", "down", "backspace", "tab", "capslock", "shift", "enter", "ctrl", "super", "alt", "space", "menu"]
                 }
                 // [insert handwriting 8]
                 if (iconKeys.some(j => { return i.layers.default.toLowerCase() == j })) {

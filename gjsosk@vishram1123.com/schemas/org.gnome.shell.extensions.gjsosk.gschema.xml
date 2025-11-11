@@ -7,6 +7,9 @@
     <key name="layout-portrait" type="i">
       <default>0</default>
     </key>
+    <key name="custom-layout" type="s">
+      <default>""</default>
+    </key>
     <key name="portrait-width-percent" type="i">
       <default>100</default>
     </key>
@@ -86,7 +89,7 @@
       <default>""</default>
     </key>
     <key name="show-icons" type="b">
-		  <default>true</default>
+	    <default>true</default>
     </key>
     <child name="indicator" schema="org.gnome.shell.extensions.gjsosk.indicator"/>
 	
