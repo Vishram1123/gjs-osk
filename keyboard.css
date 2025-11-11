@@ -39,6 +39,35 @@ body {
     transform: translate(-50%, -50%);
 }
 
+#readme-holder {
+    left: 50%;
+    right: unset;
+    transform: translateX(-50%);
+    width: 800px;
+    max-width: 800px;
+    height: 300px;
+    overflow: auto;
+}
+
+#readme-holder code {
+    font-family: monospace !important;
+}
+
+#readme-holder a {
+    color: lightblue;
+}
+
+#readme-holder {
+    overflow: auto;
+    scrollbar-width: none;
+    /* Firefox */
+}
+
+#readme-holder::-webkit-scrollbar {
+    display: none;
+    /* Chrome, Safari */
+}
+
 .regular.pressed {
     background-color: rgba(255, 255, 255, 0.2);
     color: white;

@@ -337,12 +337,13 @@ class KeyEditor {
         for (var key of document.querySelectorAll('.selectable')) {
             const row = Number.parseInt(key.dataset.keyRow);
             const col = Number.parseInt(key.dataset.keyCol);
-            if (row === this.currentRow && col === (position === 'left' ? this.currentCol - 1 : this.currentCol + 1)) {
+            if (row === this.currentRow && col === (position === 'left' ? this.currentCol : this.currentCol + 1)) {
                 newKeyElement = key
                 break
             }
         }
         if (newKeyElement) {
+            currentKeyElement = null
             newKeyElement.onclick()
         }
     }
@@ -929,3 +930,5 @@ let rebuild = () => {
     });
 }
 rebuild()
+
+fetch('./README.md').then(data => data.text()).then(text => {document.querySelector("#readme-holder").innerHTML = marked.parse(text); document.querySelector("#readme-holder").scrollTo()}).catch(() => document.querySelector("#readme-holder").remove())
