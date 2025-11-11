@@ -1525,7 +1525,7 @@ class Keyboard extends Dialog {
     }
 
     decideMod(i, mBtn) {
-        if (i.code == 29 || i.code == 56 || i.code == 97 || i.code == 125) {
+        if (i.code == 29 || i.code == 56 || i.code == 97 || i.code == 125 || i.code == 126) {
             this.setNormMod(mBtn);
         } else if (i.code == 100) {
             this.setAlt(mBtn);
