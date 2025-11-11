@@ -295,7 +295,7 @@ class GjsOskExtension {
                         const success = await runCommand([
                             "tar",
                             "-Jxf",
-                            this.path + "/keycodes.tar.xz",
+                            Me.path + "/keycodes.tar.xz",
                             "-C",
                             keycodesDir.get_path(),
                             "--strip-components=1"
@@ -1004,7 +1004,7 @@ class Keyboard extends Dialog {
 
                 let iconKeys = ["left", "up", "right", "down", "space"]
                 if (this.settings.get_boolean("show-icons")) {
-                    iconKeys = ["left", "up", "right", "down", "backspace", "tab", "capslock", "shift", "enter", "ctrl", "super", "alt", "space"]
+                    iconKeys = ["left", "up", "right", "down", "backspace", "tab", "capslock", "shift", "enter", "ctrl", "super", "alt", "space", "menu"]
                 }
                 if (iconKeys.some(j => { return i.layers.default.toLowerCase() == j })) {
                     params.style_class = i.layers.default.toLowerCase() + "_btn"
