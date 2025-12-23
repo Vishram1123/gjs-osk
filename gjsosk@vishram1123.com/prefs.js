@@ -85,6 +85,19 @@ export default class GjsOskPreferences extends ExtensionPreferences {
 		createKeyboardLayoutRow.add_suffix(layoutLink)
 		createKeyboardLayoutRow.activatable_widget = layoutLink
 
+                const disableEdgeSwipeRow = new Adw.ActionRow({
+			title: _('Disable Edge Swipe')
+		});
+		behaviorGroup.add(disableEdgeSwipeRow);
+
+		const disableEdgeSwipeDT = new Gtk.Switch({
+			active: settings.get_boolean('disable-edge-swipe'),
+			valign: Gtk.Align.CENTER,
+		});
+
+		disableEdgeSwipeRow.add_suffix(disableEdgeSwipeDT);
+		disableEdgeSwipeRow.activatable_widget = disableEdgeSwipeDT;
+
 		const enableDragRow = new Adw.ActionRow({
 			title: _('Enable Dragging')
 		});
@@ -527,6 +540,7 @@ export default class GjsOskPreferences extends ExtensionPreferences {
 		customLayoutRow.connect("apply", () => {
 			settings.set_string("custom-layout", customLayoutRow.get_text());
 		});
+		settings.bind("disable-edge-swipe", disableEdgeSwipeDT, "active", 0);
 		settings.bind("enable-drag", dragEnableDT, "active", 0);
 		settings.bind("enable-tap-gesture", dragOpt, "selected", 0);
 		settings.bind("indicator-enabled", indEnabled, "active", 0);
@@ -573,6 +587,7 @@ export default class GjsOskPreferences extends ExtensionPreferences {
 			settings.set_int("layout-landscape", layoutLandscapeDrop.selected);
 			settings.set_int("layout-portrait", layoutPortraitDrop.selected);
 			settings.set_string("custom-layout", customLayoutRow.get_text());
+			settings.set_boolean("disable-edge-swipe", disableEdgeSwipeDT.active);
 			settings.set_boolean("enable-drag", dragEnableDT.active);
 			settings.set_int("enable-tap-gesture", dragOpt.selected);
 			settings.set_boolean("indicator-enabled", indEnabled.active);
