@@ -154,6 +154,7 @@ export default class GjsOskExtension extends Extension {
         if (this.settings == null) {
             return;
         }
+        this.disableEdgeSwipeSettings = this.settings.get_boolean("disable-edge-swipe");
         this.darkSchemeSettings = this.getSettings("org.gnome.desktop.interface");
         this.inputLanguageSettings = InputSourceManager.getInputSourceManager();
         this.gnomeKeyboardSettings = this.getSettings('org.gnome.desktop.a11y.applications');
@@ -458,6 +459,25 @@ export default class GjsOskExtension extends Extension {
                 this.openInterval = null;
             }
             this.open_interval();
+            let disableEdgeSwipe = this.settings.get_boolean("disable-edge-swipe");
+            if (this.disableEdgeSwipeSettings !== disableEdgeSwipe) {
+                this.disableEdgeSwipeSettings = disableEdgeSwipe;
+                if (disableEdgeSwipe) {
+                   if (EdgeDragAction != null) {
+                       global.stage.remove_action_by_name('osk');
+                   } else {
+                       global.stage.remove_action_by_name('GJS-OSK Edge Drag Action');
+                   }
+                } else {
+                   if (this.keyboard != null && this.keyboard.bottomDragAction != null) {
+                       if (EdgeDragAction != null) {
+                           global.stage.add_action_full('osk', Clutter.EventPhase.CAPTURE, this.keyboard.bottomDragAction);
+                       } else {
+                           global.stage.add_action(this.keyboard.bottomDragAction);
+                       }
+                   }
+                }
+            }
         }
         this.settingsHandlers = [
             this.settings.connect("changed", settingsChanged),
@@ -611,7 +631,9 @@ class Keyboard extends Dialog {
                     this.setOpenState(Math.min(Math.max(0, (progress / (side % 2 == 0 ? this.box.height : this.box.width)) * 100), 100))
                     this.gestureInProgress = true;
                 });
-                global.stage.add_action_full('osk', Clutter.EventPhase.CAPTURE, oskEdgeDragAction);
+                if (!this.settings.get_boolean("disable-edge-swipe")) {
+                    global.stage.add_action_full('osk', Clutter.EventPhase.CAPTURE, oskEdgeDragAction);
+                }
                 this.bottomDragAction = oskEdgeDragAction;
             } else {
                 oskEdgeDragAction = new Shell.EdgeDragGesture({
@@ -642,7 +664,9 @@ class Keyboard extends Dialog {
                     this.setOpenState(Math.min(Math.max(0, (progress / (side % 2 == 0 ? this.box.height : this.box.width)) * 100), 100))
                     this.gestureInProgress = true;
                 });
-                global.stage.add_action(oskEdgeDragAction);
+                if (!this.settings.get_boolean("disable-edge-swipe")) {
+                    global.stage.add_action(oskEdgeDragAction);
+                }
                 this.bottomDragAction = oskEdgeDragAction;
             }
         } else {

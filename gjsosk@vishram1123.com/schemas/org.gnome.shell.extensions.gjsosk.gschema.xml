@@ -22,6 +22,9 @@
     <key name="landscape-height-percent" type="i">
       <default>30</default>
     </key>
+    <key name="disable-edge-swipe" type="b">
+      <default>false</default>
+    </key>
     <key name="enable-drag" type="b">
       <default>true</default>
     </key>
