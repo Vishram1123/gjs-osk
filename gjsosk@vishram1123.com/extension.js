@@ -155,6 +155,7 @@ class GjsOskExtension {
         if (this.settings == null) {
             return;
         }
+        this.disableEdgeSwipeSettings = this.settings.get_boolean("disable-edge-swipe");
         this.darkSchemeSettings = ExtensionUtils.getSettings("org.gnome.desktop.interface");
         this.inputLanguageSettings = InputSourceManager.getInputSourceManager();
         this.gnomeKeyboardSettings = ExtensionUtils.getSettings('org.gnome.desktop.a11y.applications');
@@ -457,6 +458,25 @@ class GjsOskExtension {
                 this.openInterval = null;
             }
             this.open_interval();
+            let disableEdgeSwipe = this.settings.get_boolean("disable-edge-swipe");
+            if (this.disableEdgeSwipeSettings !== disableEdgeSwipe) {
+                this.disableEdgeSwipeSettings = disableEdgeSwipe;
+                if (disableEdgeSwipe) {
+                   if (EdgeDragAction != null) {
+                       global.stage.remove_action_by_name('osk');
+                   } else {
+                       global.stage.remove_action_by_name('GJS-OSK Edge Drag Action');
+                   }
+                } else {
+                   if (this.keyboard != null && this.keyboard.bottomDragAction != null) {
+                       if (EdgeDragAction != null) {
+                           global.stage.add_action_full('osk', Clutter.EventPhase.CAPTURE, this.keyboard.bottomDragAction);
+                       } else {
+                           global.stage.add_action(this.keyboard.bottomDragAction);
+                       }
+                   }
+                }
+            }
         }
         this.settingsHandlers = [
             this.settings.connect("changed", settingsChanged),
@@ -601,7 +621,9 @@ class Keyboard extends Dialog {
                 this.gestureInProgress = false;
                 return Clutter.EVENT_PROPAGATE;
             });
-            global.stage.add_action_full('osk', Clutter.EventPhase.CAPTURE, bottomDragAction);
+            if (!this.settings.get_boolean("disable-edge-swipe")) {
+                global.stage.add_action_full('osk', Clutter.EventPhase.CAPTURE, bottomDragAction);
+            }
             this.bottomDragAction = bottomDragAction;
         } else {
             this.bottomDragAction = null;

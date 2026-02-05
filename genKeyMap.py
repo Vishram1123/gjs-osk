@@ -328,7 +328,7 @@ def convertKeySymToString(sym):
             label = "Alt"
 
         case Gdk.KEY_Menu:
-            label = "☰"
+            label = "Menu"
 
         case Gdk.KEY_VoidSymbol:
             label = ""

@@ -22,6 +22,9 @@
     <key name="landscape-height-percent" type="i">
       <default>30</default>
     </key>
+    <key name="disable-edge-swipe" type="b">
+      <default>false</default>
+    </key>
     <key name="enable-drag" type="b">
       <default>true</default>
     </key>
@@ -48,6 +51,9 @@
     </key>
     <key name="background-a-dark" type="d">
       <default>1</default>
+    </key>
+    <key name="system-accent-col" type="b">
+      <default>false</default>
     </key>
     <key name="font-size-px" type="i">
       <default>14</default>
@@ -83,7 +89,7 @@
 		<default>true</default>
     </key>
     <key name="sound-file" type="s">
-        <default>""</default>
+      <default>""</default>
     </key>
     <key name="show-icons" type="b">
 	    <default>true</default>
