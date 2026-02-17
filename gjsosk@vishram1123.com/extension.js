@@ -18,7 +18,10 @@ const [major, minor] = Config.PACKAGE_VERSION.split('.').map(s => Number(s));
 import { Dialog } from 'resource:///org/gnome/shell/ui/dialog.js';
 let EdgeDragAction = null;
 if (major < 49) {
-    EdgeDragAction = await import('resource:///org/gnome/shell/ui/edgeDragAction.js')
+    try {
+        const edgedragimport = await import('resource:///org/gnome/shell/ui/edgeDragAction.js')
+        EdgeDragAction = edgedragimport ?? null
+    } catch {}
 }
 import { Extension, gettext as _ } from 'resource:///org/gnome/shell/extensions/extension.js';
 
