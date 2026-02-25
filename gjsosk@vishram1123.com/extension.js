@@ -21,7 +21,7 @@ if (major < 49) {
     try {
         const edgedragimport = await import('resource:///org/gnome/shell/ui/edgeDragAction.js')
         EdgeDragAction = edgedragimport ?? null
-    } catch {}
+    } catch { }
 }
 import { Extension, gettext as _ } from 'resource:///org/gnome/shell/extensions/extension.js';
 
@@ -466,19 +466,19 @@ export default class GjsOskExtension extends Extension {
             if (this.disableEdgeSwipeSettings !== disableEdgeSwipe) {
                 this.disableEdgeSwipeSettings = disableEdgeSwipe;
                 if (disableEdgeSwipe) {
-                   if (EdgeDragAction != null) {
-                       global.stage.remove_action_by_name('osk');
-                   } else {
-                       global.stage.remove_action_by_name('GJS-OSK Edge Drag Action');
-                   }
+                    if (EdgeDragAction != null) {
+                        global.stage.remove_action_by_name('osk');
+                    } else {
+                        global.stage.remove_action_by_name('GJS-OSK Edge Drag Action');
+                    }
                 } else {
-                   if (this.keyboard != null && this.keyboard.bottomDragAction != null) {
-                       if (EdgeDragAction != null) {
-                           global.stage.add_action_full('osk', Clutter.EventPhase.CAPTURE, this.keyboard.bottomDragAction);
-                       } else {
-                           global.stage.add_action(this.keyboard.bottomDragAction);
-                       }
-                   }
+                    if (this.keyboard != null && this.keyboard.bottomDragAction != null) {
+                        if (EdgeDragAction != null) {
+                            global.stage.add_action_full('osk', Clutter.EventPhase.CAPTURE, this.keyboard.bottomDragAction);
+                        } else {
+                            global.stage.add_action(this.keyboard.bottomDragAction);
+                        }
+                    }
                 }
             }
         }
@@ -710,7 +710,11 @@ class Keyboard extends Dialog {
         }
         if (this.keyTimeout !== null) {
             clearTimeout(this.keyTimeout);
+            if (typeof this.keyTimeoutFunc === 'function') {
+                this.keyTimeoutFunc();
+            }
             this.keyTimeout = null;
+            this.keyTimeoutFunc = null;
         }
         if (this.capsLockConnect && GObject.signal_handler_is_connected(this.keymap, this.capsLockConnect))
             this.keymap.disconnect(this.capsLockConnect);
@@ -934,6 +938,14 @@ class Keyboard extends Dialog {
         if (this._dragging && !this._grabbedSequence) {
             this.motionEvent(event);
         }
+        return Clutter.EVENT_PROPAGATE;
+    }
+
+    vfunc_key_press_event() {
+        return Clutter.EVENT_PROPAGATE;
+    }
+
+    vfunc_key_release_event() {
         return Clutter.EVENT_PROPAGATE;
     }
 
@@ -1531,20 +1543,26 @@ class Keyboard extends Dialog {
                 return;
             }
             this.keyInProgress = true;
-
+            let event_time = Clutter.get_current_event_time() * 1000;
             for (var i = 0; i < keys.length; i++) {
-                this.inputDevice.notify_key(Clutter.get_current_event_time(), keys[i], Clutter.KeyState.PRESSED);
+                this.inputDevice.notify_key(event_time, keys[i], Clutter.KeyState.PRESSED);
             }
             if (this.keyTimeout !== null) {
                 clearTimeout(this.keyTimeout);
+                if (typeof this.keyTimeoutFunc === 'function') {
+                    this.keyTimeoutFunc();
+                }
                 this.keyTimeout = null;
+                this.keyTimeoutFunc = null;
             }
-            this.keyTimeout = setTimeout(() => {
-                for (var j = keys.length - 1; j >= 0; j--) {
-                    this.inputDevice.notify_key(Clutter.get_current_event_time(), keys[j], Clutter.KeyState.RELEASED);
+            this.keyTimeoutFunc = () => {
+                const currKeys = keys
+                for (var j = currKeys.length - 1; j >= 0; j--) {
+                    this.inputDevice.notify_key(event_time, currKeys[j], Clutter.KeyState.RELEASED);
                 }
                 this.keyInProgress = false;
-            }, 100);
+            }
+            this.keyTimeout = setTimeout(this.keyTimeoutFunc, 100);
         } catch (err) {
             this.keyInProgress = false;
             throw new Error("GJS-OSK: An unknown error occured. Please report this bug to the Issues page (https://github.com/Vishram1123/gjs-osk/issues):\n\n" + err + "\n\nKeys Pressed: " + keys);
