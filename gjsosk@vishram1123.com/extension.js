@@ -393,7 +393,7 @@ export default class GjsOskExtension extends Extension {
                 style_class: 'system-status-icon'
             });
             this._indicator.add_child(icon);
-
+            this._indicator.clear_actions();
             this._indicator.connect("button-press-event", () => this._toggleKeyboard());
             this._indicator.connect("touch-event", (_actor, event) => {
                 if (event.type() == Clutter.EventType.TOUCH_END) this._toggleKeyboard()
