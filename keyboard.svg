@@ -1,0 +1,318 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="350" viewBox="0 0 800 350">
+<defs>
+  <style>
+    text { font-family: Cantarell, Arial, sans-serif; }
+  </style>
+</defs>
+<rect width="800" height="350" fill="#00000000"/>
+<g id="kb"/>
+<script type="text/javascript"><![CDATA[
+(function() {
+// ── shims ─────────────────────────────────────────────────
+function VEl() {
+  this.classes = []; this.children = []; this._gc = [];
+  this.dataset = {}; this._label = null; this._styleStr = '';
+  this._gC = 0; this._gR = 0; this._gCS = 1; this._gRS = 1;
+  var self = this;
+  this.classList = { add: function(c){ if(self.classes.indexOf(c)<0) self.classes.push(c); } };
+}
+VEl.prototype.getAttribute = function() { return null; };
+VEl.prototype.setAttribute = function(k,v) { if(k==='style') this._styleStr=v; };
+VEl.prototype.appendChild = function(c) { this.children.push(c); };
+
+function Grid(cont) {
+  this.cont = cont;
+  cont._gc = [];
+}
+Grid.prototype.set_row_homogeneous = Grid.prototype.set_column_homogeneous = function(){};
+Grid.prototype.attach = function(w, col, row, cs, rs) {
+  var el = (w && w.el) ? w.el : w;
+  el._gC=col; el._gR=row; el._gCS=cs; el._gRS=rs; el._w=w;
+  this.cont._gc.push(el);
+};
+
+var St = {
+  Widget: function(o){ o=o||{}; this.el=new VEl(); this.layout_manager=new Grid(this.el); this.el.lm=this.layout_manager; },
+  Button: function(o){ o=o||{}; this.el=new VEl(); if(o.style_class) this.el.classes.push(o.style_class); if(o.label!=null) this.el._label=o.label; }
+};
+function proto(cls) {
+  cls.prototype.add_style_class_name = function(c){ this.el.classList.add(c); };
+  cls.prototype.set_style = function(){};
+}
+proto(St.Widget); proto(St.Button);
+St.Button.prototype.clear_actions = function(){};
+St.Widget.prototype.layout_manager = null; // overridden per instance
+
+// ── Keyboard class (constructor + buildUI) ─────────────────
+function Keyboard(box, layout, W, H) {
+  this.box = box;
+  this.layout = layout;
+  this.W = W; this.H = H;
+  box._gc = [];
+  box.lm = new Grid(box);
+  box.add_style_class_name = function(c){ box.classList.add(c); };
+  box.set_style = function(){};
+  box.add_child = function(ch){ var el=(ch.el||ch); box.children.push(el); };
+  this.snap_spacing_px = 8;
+  this.border_spacing_px = 2;
+  this.show_icons = true;
+  this.outer_spacing_px = 8;
+  this.background_r = 0; this.background_g = 0; this.background_b = 0; this.background_a = 0;
+  this.font_size_px = 11;
+  this.round_key_corners = true;
+  this.font_bold = false;
+  this.enable_drag = false;
+}
+Keyboard.prototype.lightOrDark = function(){ return false; };
+Keyboard.prototype.set_reactive = function(){};
+
+Keyboard.prototype.buildUI = function() {
+  var currentLayout = this.layout;
+  var self = this;
+  this.keys = [];
+  this.box.width = this.W;
+  this.box.height = this.H;
+  this.box.style = {};
+  var grid = this.box.lm;
+  grid.set_row_homogeneous(true);
+  grid.set_column_homogeneous(!currentLayout[currentLayout.length - 1].split);
+
+  var gridLeft, gridRight, currentGrid = grid;
+  var left, right, topBtnWidth;
+  var isSplit = currentLayout[currentLayout.length - 1].split;
+
+  if (isSplit) {
+    left = new St.Widget({ reactive: true, width: this.W / 2 });
+    gridLeft = left.el.lm;
+    var middle = new St.Widget({ reactive: false, width: this.W - 10 + this.border_spacing_px });
+    right = new St.Widget({ reactive: true, width: this.W / 2 });
+    gridRight = right.el.lm;
+    this.box.add_child(left);
+    this.box.add_child(middle);
+    this.box.add_child(right);
+  }
+
+  this.shiftButtons = [];
+  var rowSize, halfSize, r = 0, c;
+
+  var doAddKey = function(keydef, row, col) {
+    var i = ("key" in keydef) ? "key" : ("split" in keydef) ? "split" : "empty space";
+    if (i === "key") {
+      var params = { x_expand: true, y_expand: true };
+      var iconKeys = self.show_icons
+        ? ["left","up","right","down","backspace","tab","capslock","shift","enter","ctrl","super","alt","space","menu"]
+        : ["left","up","right","down","space"];
+      var keyBtn = new St.Button(params);
+      keyBtn.add_style_class_name('key');
+      keyBtn.add_style_class_name('selectable');
+      var w = ("width" in keydef) ? keydef.width : 1;
+      var h = ("height" in keydef) ? keydef.height : 1;
+      currentGrid.attach(keyBtn, currentGrid == gridRight ? c - halfSize + 1: c, 5+r, w*2, r===0 ? 3 : h*4);
+      c += w*2;
+      keyBtn.el.dataset.keyRow = row;
+      keyBtn.el.dataset.keyCol = col;
+      self.keys.push(keyBtn);
+    } else if (i === "empty space") {
+      var kb2 = new St.Button({ x_expand:true, y_expand:true });
+      var w2 = ("width" in keydef) ? keydef.width : 1;
+      var h2 = ("height" in keydef) ? keydef.height : 1;
+      currentGrid.attach(kb2, currentGrid == gridRight ? c - halfSize + 1 : c, 5+r, w2*2, r===0 ? 3 : h2*4);
+      c += w2*2;
+    } else if (i === "split") {
+      currentGrid = gridRight;
+      if (!halfSize) halfSize = c;
+    }
+  };
+
+  for (var rowIdx = 0; rowIdx < currentLayout.length - 1; rowIdx++) {
+    var kRow = currentLayout[rowIdx];
+    c = 0;
+    if (isSplit) currentGrid = gridLeft;
+    for (var colIdx = 0; colIdx < kRow.length; colIdx++) {
+      var keydef = kRow[colIdx];
+      if (Array.isArray(keydef)) {
+        keydef.forEach(function(item) { doAddKey(item, rowIdx, colIdx); r += 2; c -= (("width" in item)?item.width:1)*2; });
+        c += (("width" in keydef[0])?keydef[0].width:1)*2;
+        r -= 4;
+      } else {
+        doAddKey(keydef, rowIdx, colIdx);
+      }
+    }
+    if (!topBtnWidth) topBtnWidth = (("width" in kRow[kRow.length-1]) && ("key" in kRow[kRow.length-1])) ? kRow[kRow.length-1].width : 1;
+    if (!rowSize) rowSize = c;
+    r += r === 0 ? 3 : 4;
+  }
+
+  var lastRow = currentLayout[currentLayout.length - 1];
+  if (left != null) {
+    left.add_style_class_name("boxLay");
+    right.add_style_class_name("boxLay");
+    var mvL = 2*topBtnWidth, mvR = 2*topBtnWidth;
+    if (lastRow.settings) {
+      var sb = new St.Button({x_expand:true,y_expand:true}); sb.add_style_class_name("key");
+      gridLeft.attach(sb, 0, 0, 2*topBtnWidth, 3); self.keys.push(sb);
+    } else mvL = 0;
+    if (lastRow.close) {
+      var cb = new St.Button({x_expand:true,y_expand:true}); cb.add_style_class_name("key");
+      gridRight.attach(cb, rowSize-2*topBtnWidth - halfSize + 1, 0, 2*topBtnWidth, 3); self.keys.push(cb);
+    } else mvR = 0;
+    var mhL = new St.Button({x_expand:true,y_expand:true}); mhL.add_style_class_name("key");
+    gridLeft.attach(mhL, mvL, 0, halfSize-mvL, 3);
+    var mhR = new St.Button({x_expand:true,y_expand:true}); mhR.add_style_class_name("key");
+    gridRight.attach(mhR, 1, 0, rowSize-halfSize-mvR, 3);
+  } else {
+    this.box.add_style_class_name("boxLay");
+    var mvL2 = 2*topBtnWidth, mvR2 = 2*topBtnWidth;
+    if (lastRow.settings) {
+      var sb2 = new St.Button({x_expand:true,y_expand:true}); sb2.add_style_class_name("key");
+      grid.attach(sb2, 0, 0, 2*topBtnWidth, 3); self.keys.push(sb2);
+    } else mvL2 = 0;
+    if (lastRow.close) {
+      var cb2 = new St.Button({x_expand:true,y_expand:true}); cb2.add_style_class_name("key");
+      grid.attach(cb2, rowSize-2*topBtnWidth, 0, 2*topBtnWidth, 3); self.keys.push(cb2);
+    } else mvR2 = 0;
+    var mhM = new St.Button({x_expand:true,y_expand:true}); mhM.add_style_class_name("key");
+    grid.attach(mhM, mvL2, 0, rowSize-mvL2-mvR2, 3);
+  }
+};
+
+// ── SVG renderer ──────────────────────────────────────────
+var ICON_SYM = {
+  backspace:'⌫', tab:'⇥', capslock:'⇪', shift:'⇧', enter:'↵',
+  ctrl:'Ctrl', super:'❖', alt:'Alt', space:'', left:'◀',
+  up:'▲', down:'▼', right:'▶', menu:'☰', settings:'⚙', close:'✕'
+};
+
+function renderGrid(svgG, gc, x, y, w, h, outerPad, borderGap, roundR) {
+  if (!gc || gc.length === 0) return;
+  var maxC = 0, maxR = 0;
+  gc.forEach(function(el){
+    var ec = el._gC + el._gCS; var er = el._gR + el._gRS;
+    if(ec>maxC) maxC=ec; if(er>maxR) maxR=er;
+  });
+  var colW = (w - outerPad*2) / maxC;
+  var rowH = (h - outerPad*2) / maxR;
+
+  gc.forEach(function(el) {
+    var isKey = el.classes.indexOf('key') >= 0;
+    var isSel = el.classes.indexOf('selectable') >= 0;
+    var isMH  = el.classes.indexOf('moveHandle') >= 0;
+    if (!isKey && !isSel && !isMH) return;
+
+    var kx = x + outerPad + el._gC * colW;
+    var ky = y + outerPad + el._gR * rowH;
+    var kw = el._gCS * colW;
+    var kh = el._gRS * rowH;
+    var gx = kx + borderGap, gy = ky + borderGap;
+    var gw = kw - borderGap*2, gh = kh - borderGap*2;
+    if (gw < 1 || gh < 1) return;
+
+    var fill = isKey ? 'rgba(255,255,255,0.08)' : isSel ? 'rgba(0,0,0,0.15)' : 'rgba(255,255,255,0.03)';
+
+    var rect = document.createElementNS("http://www.w3.org/2000/svg","rect");
+    rect.setAttribute("x", gx.toFixed(2));
+    rect.setAttribute("y", gy.toFixed(2));
+    rect.setAttribute("width", gw.toFixed(2));
+    rect.setAttribute("height", gh.toFixed(2));
+    rect.setAttribute("rx", roundR);
+    rect.setAttribute("fill", fill);
+    svgG.appendChild(rect);
+
+    if (isMH) return;
+
+    // label
+    var label = el._label;
+    var iconCls = null;
+    var cls = el.classes;
+    for (var ic in ICON_SYM) {
+      if (cls.indexOf(ic+'_btn') >= 0) { iconCls = ic; break; }
+    }
+
+    var txt = label || (iconCls ? ICON_SYM[iconCls] : null);
+    if (!txt) return;
+
+    var fs = Math.max(6, Math.min(11, Math.min(gw*0.5, gh*0.6)));
+    var tEl = document.createElementNS("http://www.w3.org/2000/svg","text");
+    tEl.setAttribute("x", (gx+gw/2).toFixed(2));
+    tEl.setAttribute("y", (gy+gh/2+0.5).toFixed(2));
+    tEl.setAttribute("font-size", fs.toFixed(1));
+    tEl.setAttribute("fill", "white");
+    tEl.setAttribute("text-anchor", "middle");
+    tEl.setAttribute("dominant-baseline", "middle");
+    tEl.setAttribute("font-family", "Cantarell, Arial, sans-serif");
+    tEl.textContent = txt;
+    svgG.appendChild(tEl);
+  });
+}
+
+function render(layout) {
+  var W = 800, H = 350;
+  var svgG = document.getElementById('kb');
+  while(svgG.firstChild) svgG.removeChild(svgG.firstChild);
+
+  var box = new VEl();
+  var kbd = new Keyboard(box, layout, W, H);
+  kbd.buildUI();
+
+  var isSplit = layout[layout.length-1].split;
+  var rr = kbd.round_key_corners ? 5 : 0;
+  var op = kbd.outer_spacing_px, bg2 = kbd.border_spacing_px;
+  var br = kbd.background_r, bg3 = kbd.background_g, bb = kbd.background_b, ba = kbd.background_a;
+  var bgC = 'rgba('+br+','+bg3+','+bb+','+ba+')';
+
+  var ns = "http://www.w3.org/2000/svg";
+
+  if (isSplit) {
+    var hw = W/2;
+    // left half
+    var children = box.children;
+    var leftEl = children[0]; // VEl of left St.Widget
+    var rightEl = children[2];
+    // bg rects
+    function mkBg(x,w) {
+      var r2 = document.createElementNS(ns,"rect");
+      r2.setAttribute("x",x); r2.setAttribute("y",0);
+      r2.setAttribute("width",w); r2.setAttribute("height",H);
+      r2.setAttribute("rx",10); r2.setAttribute("fill",bgC);
+      svgG.appendChild(r2);
+    }
+    mkBg(0, hw-5); mkBg(hw+5, hw-5);
+    renderGrid(svgG, leftEl._gc,  0,    0, hw-5, H, op, bg2, rr);
+    renderGrid(svgG, rightEl._gc, hw+5, 0, hw-5, H, op, bg2, rr);
+  } else {
+    var bgR = document.createElementNS(ns,"rect");
+    bgR.setAttribute("x",0); bgR.setAttribute("y",0);
+    bgR.setAttribute("width",W); bgR.setAttribute("height",H);
+    bgR.setAttribute("rx",10); bgR.setAttribute("fill",bgC);
+    svgG.insertBefore(bgR, svgG.firstChild);
+    renderGrid(svgG, box._gc, 0, 0, W, H, op, bg2, rr);
+  }
+}
+
+// ── boot ─────────────────────────────────────────────────
+var params = new URLSearchParams(location.search);
+var jp = params.get('keyboard_json');
+var layout;
+if (jp) { try { layout = JSON.parse(decodeURIComponent(jp)); } catch(e){} }
+if (!layout) {
+  layout = [
+    [{"key":"ESC","width":0.5},{"key":"FK01"},{"key":"FK02"},{"key":"FK03"},{"key":"FK04"},{"key":"FK05"},{"key":"FK06"},{"key":"FK07"},{"split":true},{"key":"FK08"},{"key":"FK09"},{"key":"FK10"},{"key":"FK11"},{"key":"FK12"},{"key":"PRSC"},{"key":"DELE"}],
+    [{"key":"TLDE","width":1},{"key":"AE01"},{"key":"AE02"},{"key":"AE03"},{"key":"AE04"},{"key":"AE05"},{"key":"AE06"},{"split":true},{"key":"AE07"},{"key":"AE08"},{"key":"AE09"},{"key":"AE10"},{"key":"AE11"},{"key":"AE12"},{"key":"BKSP","width":1.5}],
+    [{"key":"TAB","width":1.5},{"key":"AD01"},{"key":"AD02"},{"key":"AD03"},{"key":"AD04"},{"key":"AD05"},{"key":"AD06"},{"split":true},{"key":"AD07"},{"key":"AD08"},{"key":"AD09"},{"key":"AD10"},{"key":"AD11"},{"key":"AD12"},{"key":"RTRN","height":2}],
+    [{"key":"CAPS","width":2},{"key":"AC01"},{"key":"AC02"},{"key":"AC03"},{"key":"AC04"},{"key":"AC05"},{"split":true},{"key":"AC06"},{"key":"AC07"},{"key":"AC08"},{"key":"AC09"},{"key":"AC10"},{"key":"AC11"},{"key":"BKSL","width":0.5},{"width":1}],
+    [{"key":"LFSH","width":2},{"key":"LSGT"},{"key":"AB01"},{"key":"AB02"},{"key":"AB03"},{"key":"AB04"},{"split":true},{"key":"AB05"},{"key":"AB06"},{"key":"AB07"},{"key":"AB08"},{"key":"AB09"},{"key":"AB10"},{"key":"RTSH","width":1.5}],
+    [{"key":"LCTL"},{"key":"LWIN"},{"key":"LALT"},{"key":"SPCE","width":4},{"split":true},{"key":"SPCE","width":2.5},{"key":"RALT"},{"key":"RCTL"},{"key":"LEFT"},[{"key":"UP","height":0.5},{"key":"DOWN","height":0.5}],{"key":"RGHT"}],
+    {"split":true,"settings":true,"close":true}
+  ];
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', function(){ render(layout); });
+} else {
+  render(layout);
+}
+
+})();
+]]></script>
+</svg>
