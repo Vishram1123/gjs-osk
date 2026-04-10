@@ -81,6 +81,20 @@ let keycodes;
 let layouts;
 let currentMonitorId = 0;
 let extract_dir = GLib.get_user_cache_dir() + "/gjs-osk";
+
+function normalizeCustomLayouts(rawValue) {
+    try {
+        const parsed = JSON.parse(rawValue || "[]");
+        if (Array.isArray(parsed) && parsed.length > 0 && Array.isArray(parsed[0]) && typeof parsed[parsed.length - 1] === 'object' && !Array.isArray(parsed[parsed.length - 1])) {
+            return [JSON.stringify(parsed)];
+        }
+        return Array.isArray(parsed) ? parsed : [];
+    } catch (e) {
+        logError(e);
+        return [];
+    }
+}
+
 // [insert handwriting 1]
 
 export default class GjsOskExtension extends Extension {
@@ -178,9 +192,34 @@ export default class GjsOskExtension extends Extension {
             layouts = JSON.parse(contentsL);
         }
 
+        let rawCustomLayouts = this.settings.get_string("custom-layout") || "[]";
+        this.customLayouts = normalizeCustomLayouts(rawCustomLayouts);
+        if (this.customLayouts.length > 0) {
+            try {
+                const parsed = JSON.parse(rawCustomLayouts);
+                if (!(Array.isArray(parsed) && parsed.length > 0 && Array.isArray(parsed[0]) && typeof parsed[parsed.length - 1] === 'object' && !Array.isArray(parsed[parsed.length - 1]))) {
+                    this.settings.set_string("custom-layout", JSON.stringify(this.customLayouts));
+                }
+            } catch (_e) {
+                this.settings.set_string("custom-layout", JSON.stringify(this.customLayouts));
+            }
+        }
+
         let refresh = () => {
             (async () => {
                 // [insert handwriting 2]
+                let rawCustomLayouts = this.settings.get_string("custom-layout") || "[]";
+                this.customLayouts = normalizeCustomLayouts(rawCustomLayouts);
+                if (this.customLayouts.length > 0) {
+                    try {
+                        const parsed = JSON.parse(rawCustomLayouts);
+                        if (!(Array.isArray(parsed) && parsed.length > 0 && Array.isArray(parsed[0]) && typeof parsed[parsed.length - 1] === 'object' && !Array.isArray(parsed[parsed.length - 1]))) {
+                            this.settings.set_string("custom-layout", JSON.stringify(this.customLayouts));
+                        }
+                    } catch (_e) {
+                        this.settings.set_string("custom-layout", JSON.stringify(this.customLayouts));
+                    }
+                }
                 let prevOpenState = false;
                 if (this.Keyboard != null) {
                     prevOpenState = this.Keyboard.opened;
@@ -385,7 +424,7 @@ export default class GjsOskExtension extends Extension {
         this._indicator = null;
         this.openInterval = null;
         if (this.settings.get_boolean("indicator-enabled")) {
-            this._indicator = new PanelMenu.Button(0.0, "GJS OSK Indicator", false);
+            this._indicator = new PanelMenu.Button(0, "GJS OSK Indicator", false);
             let icon = new St.Icon({
                 gicon: new Gio.ThemedIcon({
                     name: 'input-keyboard-symbolic'
@@ -394,9 +433,16 @@ export default class GjsOskExtension extends Extension {
             });
             this._indicator.add_child(icon);
             this._indicator.clear_actions();
-            this._indicator.connect("button-press-event", () => this._toggleKeyboard());
+            this._indicator.connect("button-press-event", () => {
+                this._toggleKeyboard();
+                return Clutter.EVENT_STOP;
+            });
             this._indicator.connect("touch-event", (_actor, event) => {
-                if (event.type() == Clutter.EventType.TOUCH_END) this._toggleKeyboard()
+                if (event.type() == Clutter.EventType.TOUCH_END) {
+                    this._toggleKeyboard();
+                    return Clutter.EVENT_STOP;
+                }
+                return Clutter.EVENT_PROPAGATE;
             });
             Main.panel.addToStatusArea("GJS OSK Indicator", this._indicator);
         }
@@ -554,6 +600,7 @@ class Keyboard extends Dialog {
         this.settingsOpenFunction = extensionObject.openPrefs
         this.inputDevice = Clutter.get_default_backend().get_default_seat().create_virtual_device(Clutter.InputDeviceType.KEYBOARD_DEVICE);
         this.settings = settings;
+        this.customLayouts = extensionObject.customLayouts;
         let monitor = Main.layoutManager.monitors[currentMonitorId] ?? Main.layoutManager.primaryMonitor;
         super._init(Main.uiGroup, 'db-keyboard-content');
         this.box = new St.Widget({
@@ -974,12 +1021,17 @@ class Keyboard extends Dialog {
         let monitor = Main.layoutManager.monitors[currentMonitorId] ?? Main.layoutManager.primaryMonitor
         let layoutIdx = (monitor.width > monitor.height) ? this.settings.get_int("layout-landscape") : this.settings.get_int("layout-portrait")
         let currentLayout;
-        if (layoutIdx < 10) {
+        let numBuiltIn = Object.keys(layouts).length;
+        if (layoutIdx < numBuiltIn) {
             let layoutName = Object.keys(layouts)[layoutIdx];
             currentLayout = layouts[layoutName];
-        }
-        else {
-            currentLayout = JSON.parse(this.settings.get_string("custom-layout"))
+        } else {
+            let customIdx = layoutIdx - numBuiltIn;
+            if (customIdx < this.customLayouts.length) {
+                currentLayout = JSON.parse(this.customLayouts[customIdx]);
+            } else {
+                currentLayout = layouts[Object.keys(layouts)[0]];
+            }
         }
         this.box.width = Math.round((monitor.width - this.settings.get_int("snap-spacing-px") * 2) * (currentLayout[currentLayout.length - 1].split ? 1 : this.widthPercent))
         this.box.height = Math.round((monitor.height - this.settings.get_int("snap-spacing-px") * 2) * this.heightPercent)
@@ -1401,7 +1453,8 @@ class Keyboard extends Dialog {
                         player.play_from_theme("dialog-information", "tap", null)
                     }
                 }
-                if (["delete_btn", "backspace_btn", "up_btn", "down_btn", "left_btn", "right_btn"].some(e => item.has_style_class_name(e))) {
+                if ((this.settings.get_boolean('enable-key-repeat') && item.char != null) ||
+                    ["delete_btn", "backspace_btn", "up_btn", "down_btn", "left_btn", "right_btn"].some(e => item.has_style_class_name(e))) {
                     item.button_pressed = setTimeout(() => {
                         const oldModBtns = this.modBtns
                         item.button_repeat = setInterval(() => {
@@ -1418,7 +1471,7 @@ class Keyboard extends Dialog {
                             for (var i of oldModBtns) {
                                 this.decideMod(i.char, i)
                             }
-                        }, 100);
+                        }, this.settings.get_int("key-repeat-rate"));
                     }, 750);
                 } else if (item.has_style_class_name("space_btn")) {
                     item.button_pressed = setTimeout(() => {
