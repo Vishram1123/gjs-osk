@@ -925,7 +925,7 @@ export default class GjsOskPreferences extends ExtensionPreferences {
             const clickHandler = new Gtk.GestureClick();
             vbox.add_controller(clickHandler);
             clickHandler.connect('pressed', () => {
-                customLayoutRowTextEntry.get_buffer().set_text(json, json.length)
+                addRow.set_text(json, json.length)
             });
 
             const image = new Gtk.Picture({
