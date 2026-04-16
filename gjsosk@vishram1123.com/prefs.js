@@ -5,9 +5,9 @@ const {
     Gtk,
     Gdk,
     GLib,
-    Rsvg
+    Gio,
+    GdkPixbuf
 } = imports.gi;
-const Cairo = imports.cairo;
 
 const Gettext = imports.gettext;
 const ExtensionUtils = imports.misc.extensionUtils;
