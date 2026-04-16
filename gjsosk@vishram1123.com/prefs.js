@@ -144,9 +144,6 @@ function generateStaticSVG(layoutData) {
             var i = ("key" in keydef) ? "key" : ("split" in keydef) ? "split" : "empty space";
             if (i === "key") {
                 var params = { x_expand: true, y_expand: true };
-                var iconKeys = self.show_icons
-                    ? ["left", "up", "right", "down", "backspace", "tab", "capslock", "shift", "enter", "ctrl", "super", "alt", "space", "menu"]
-                    : ["left", "up", "right", "down", "space"];
                 var keyBtn = new St.Button(params);
                 keyBtn.add_style_class_name('key');
                 keyBtn.add_style_class_name('selectable');
@@ -253,6 +250,7 @@ function generateStaticSVG(layoutData) {
             if (gw < 1 || gh < 1) return;
 
             var fill = isKey ? 'rgba(255,255,255,0.08)' : isSel ? 'rgba(0,0,0,0.15)' : 'rgba(255,255,255,0.03)';
+            var stroke = isKey ? 'rgba(0, 0, 0, 0.45)' : isSel ? 'rgba(0, 0, 0, 0.55)' : 'rgba(0, 0, 0,0.3)';
 
             var rect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
             rect.setAttribute("x", gx.toFixed(2));
@@ -261,6 +259,7 @@ function generateStaticSVG(layoutData) {
             rect.setAttribute("height", gh.toFixed(2));
             rect.setAttribute("rx", roundR);
             rect.setAttribute("fill", fill);
+            rect.setAttribute("stroke", stroke);
             svgG.appendChild(rect);
 
             if (isMH) return;
