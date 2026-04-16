@@ -4,8 +4,8 @@ import Adw from 'gi://Adw';
 import Gtk from 'gi://Gtk';
 import Gdk from 'gi://Gdk';
 import GLib from 'gi://GLib';
-import Rsvg from 'gi://Rsvg?version=2.0';
-import Cairo from 'cairo';
+import Gio from 'gi://Gio';
+import GdkPixbuf from 'gi://GdkPixbuf';
 
 import { ExtensionPreferences, gettext as _ } from 'resource:///org/gnome/Shell/Extensions/js/extensions/prefs.js';
 import * as Config from 'resource:///org/gnome/Shell/Extensions/js/misc/config.js'
@@ -935,28 +935,12 @@ export default class GjsOskPreferences extends ExtensionPreferences {
                 margin_start: 10,
                 margin_end: 10
             });
-
             vbox.append(image);
-            // SVG preview (GTK4-native)
             try {
-                const svg = generateStaticSVG(json)
-
-                const handle = Rsvg.Handle.new_from_data(svg);
-
-                const surface = new Cairo.ImageSurface(
-                    Cairo.Format.ARGB32,
-                    800,
-                    350
-                );
-
-                const cr = new Cairo.Context(surface);
-
-                const dim = handle.get_dimensions();
-
-                handle.render_cairo(cr);
-
-                image.set_pixbuf(handle.get_pixbuf());
-
+                const svgString = generateStaticSVG(json)
+                const stream = Gio.MemoryInputStream.new_from_bytes(GLib.Bytes.new(svgString))
+                const pixbuf = GdkPixbuf.Pixbuf.new_from_stream(stream, null)
+                image.set_pixbuf(pixbuf);
             } catch (e) {
                 logError(e);
             }
