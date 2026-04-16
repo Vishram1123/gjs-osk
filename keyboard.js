@@ -14,6 +14,107 @@ let currentKeyElement = null;
 let currentKeyRow = -1;
 let currentKeyCol = -1;
 
+class Toast {
+    constructor() {
+        this.overlay = null;
+        this.toastElement = null;
+    }
+
+    show(message, title = '', buttons = null) {
+        return new Promise((resolve) => {
+            // Remove old toast if exists
+            if (this.overlay) {
+                this.overlay.remove();
+            }
+            if (this.toastElement) {
+                this.toastElement.remove();
+            }
+
+            // Create overlay
+            this.overlay = document.createElement('div');
+            this.overlay.className = 'toast-overlay';
+            document.body.appendChild(this.overlay);
+
+            // Create toast
+            this.toastElement = document.createElement('div');
+            this.toastElement.className = 'toast';
+
+            if (title) {
+                const titleElem = document.createElement('h3');
+                titleElem.textContent = title;
+                this.toastElement.appendChild(titleElem);
+            }
+
+            const messageElem = document.createElement('div');
+            messageElem.className = 'toast-message';
+            messageElem.textContent = message;
+            this.toastElement.appendChild(messageElem);
+
+            // Add buttons
+            const buttonsContainer = document.createElement('div');
+            buttonsContainer.className = 'toast-buttons';
+
+            if (buttons && Array.isArray(buttons)) {
+                buttons.forEach(btn => {
+                    const button = document.createElement('button');
+                    button.className = 'key-editor-button';
+                    if (btn.class) {
+                        button.classList.add(btn.class);
+                    }
+                    button.textContent = btn.text;
+                    button.onclick = () => {
+                        this.hide();
+                        resolve(btn.value);
+                    };
+                    buttonsContainer.appendChild(button);
+                });
+            } else {
+                const okButton = document.createElement('button');
+                okButton.className = 'key-editor-button';
+                okButton.textContent = 'OK';
+                okButton.onclick = () => {
+                    this.hide();
+                    resolve(true);
+                };
+                buttonsContainer.appendChild(okButton);
+            }
+
+            this.toastElement.appendChild(buttonsContainer);
+            document.body.appendChild(this.toastElement);
+
+            // Close on overlay click
+            this.overlay.onclick = () => {
+                this.hide();
+                resolve(false);
+            };
+        });
+    }
+
+    alert(message) {
+        return this.show(message, 'Alert', [
+            { text: 'OK', value: true }
+        ]);
+    }
+
+    confirm(message) {
+        return this.show(message, 'Confirm', [
+            { text: 'Cancel', value: false, class: 'secondary' },
+            { text: 'OK', value: true }
+        ]);
+    }
+
+    hide() {
+        if (this.overlay) {
+            this.overlay.remove();
+            this.overlay = null;
+        }
+        if (this.toastElement) {
+            this.toastElement.remove();
+            this.toastElement = null;
+        }
+    }
+}
+
 class KeyEditor {
     constructor() {
         this.element = document.createElement('div');
@@ -420,6 +521,14 @@ class KeyboardSettingsEditor {
                 </label>
             </div>
 
+            <div class="form-group">
+                <label class="toggle-switch">
+                    <span class="toggle-label">Template</span>
+                    <select id="template-selection"></select>
+                    <span class="slider"></span>
+                </label>
+            </div>
+
             <label for="layout-json" style='margin-top: 15px'>Layout JSON:</label>
 
             <textarea id="layout-json" class="form-control" rows="8" style="font-family: monospace !important; resize: none; width: 100%; box-sizing: border-box; padding: 0; margin: 0;"></textarea>
@@ -429,6 +538,119 @@ class KeyboardSettingsEditor {
                 <button class="key-editor-button secondary" id="export-layout">Export</button>
             </div>
         `;
+
+        const templateSelect = this.element.querySelector('#template-selection');
+        this.templates = {
+            "Full Sized International": [
+                [{ "key": "ESC" }, { "width": 1 }, { "key": "FK01" }, { "key": "FK02" }, { "key": "FK03" }, { "key": "FK04" }, { "width": 0.5 }, { "key": "FK05" }, { "key": "FK06" }, { "key": "FK07" }, { "key": "FK08" }, { "width": 0.5 }, { "key": "FK09" }, { "key": "FK10" }, { "key": "FK11" }, { "key": "FK12" }, { "key": "PRSC" }, { "key": "SCLK" }, { "key": "PAUS" }, { "width": 4 }],
+                [{ "key": "TLDE" }, { "key": "AE01" }, { "key": "AE02" }, { "key": "AE03" }, { "key": "AE04" }, { "key": "AE05" }, { "key": "AE06" }, { "key": "AE07" }, { "key": "AE08" }, { "key": "AE09" }, { "key": "AE10" }, { "key": "AE11" }, { "key": "AE12" }, { "key": "BKSP", "width": 2 }, { "key": "INS" }, { "key": "HOME" }, { "key": "PGUP" }, { "key": "NMLK" }, { "key": "KPDV" }, { "key": "KPMU" }, { "key": "KPSU" }],
+                [{ "key": "TAB", "width": 1.5 }, { "key": "AD01" }, { "key": "AD02" }, { "key": "AD03" }, { "key": "AD04" }, { "key": "AD05" }, { "key": "AD06" }, { "key": "AD07" }, { "key": "AD08" }, { "key": "AD09" }, { "key": "AD10" }, { "key": "AD11" }, { "key": "AD12" }, { "key": "RTRN", "width": 1.5, "height": 2 }, { "key": "DELE" }, { "key": "END" }, { "key": "PGDN" }, { "key": "KP7" }, { "key": "KP8" }, { "key": "KP9" }, { "key": "KPAD", "width": 1, "height": 2 }],
+                [{ "key": "CAPS", "width": 2 }, { "key": "AC01" }, { "key": "AC02" }, { "key": "AC03" }, { "key": "AC04" }, { "key": "AC05" }, { "key": "AC06" }, { "key": "AC07" }, { "key": "AC08" }, { "key": "AC09" }, { "key": "AC10" }, { "key": "AC11" }, { "key": "BKSL", "width": 0.5 }, { "width": 1.5 }, { "width": 3 }, { "key": "KP4" }, { "key": "KP5" }, { "key": "KP6" }, { "width": 1 }],
+                [{ "key": "LFSH", "width": 2 }, { "key": "LSGT" }, { "key": "AB01" }, { "key": "AB02" }, { "key": "AB03" }, { "key": "AB04" }, { "key": "AB05" }, { "key": "AB06" }, { "key": "AB07" }, { "key": "AB08" }, { "key": "AB09" }, { "key": "AB10" }, { "key": "RTSH", "width": 2 }, { "width": 1 }, { "key": "UP" }, { "width": 1 }, { "key": "KP1" }, { "key": "KP2" }, { "key": "KP3" }, { "key": "KPEN", "height": 2 }],
+                [{ "key": "LCTL" }, { "key": "LWIN" }, { "key": "LALT" }, { "key": "SPCE", "width": 10 }, { "key": "RALT" }, { "key": "RCTL" }, { "key": "LEFT" }, { "key": "DOWN" }, { "key": "RGHT" }, { "key": "KP0", "width": 2 }, { "key": "KPDL" }, { "width": 1 }],
+                { "split": false, "settings": true, "close": true }
+            ],
+
+            "Full Sized US": [
+                [{ "key": "ESC" }, { "width": 1 }, { "key": "FK01" }, { "key": "FK02" }, { "key": "FK03" }, { "key": "FK04" }, { "width": 0.5 }, { "key": "FK05" }, { "key": "FK06" }, { "key": "FK07" }, { "key": "FK08" }, { "width": 0.5 }, { "key": "FK09" }, { "key": "FK10" }, { "key": "FK11" }, { "key": "FK12" }, { "key": "PRSC" }, { "key": "SCLK" }, { "key": "PAUS" }, { "width": 4 }],
+                [{ "key": "TLDE" }, { "key": "AE01" }, { "key": "AE02" }, { "key": "AE03" }, { "key": "AE04" }, { "key": "AE05" }, { "key": "AE06" }, { "key": "AE07" }, { "key": "AE08" }, { "key": "AE09" }, { "key": "AE10" }, { "key": "AE11" }, { "key": "AE12" }, { "key": "BKSP", "width": 2 }, { "key": "INS" }, { "key": "HOME" }, { "key": "PGUP" }, { "key": "NMLK" }, { "key": "KPDV" }, { "key": "KPMU" }, { "key": "KPSU" }],
+                [{ "key": "TAB", "width": 1.5 }, { "key": "AD01" }, { "key": "AD02" }, { "key": "AD03" }, { "key": "AD04" }, { "key": "AD05" }, { "key": "AD06" }, { "key": "AD07" }, { "key": "AD08" }, { "key": "AD09" }, { "key": "AD10" }, { "key": "AD11" }, { "key": "AD12" }, { "key": "BKSL", "width": 1.5 }, { "key": "DELE" }, { "key": "END" }, { "key": "PGDN" }, { "key": "KP7" }, { "key": "KP8" }, { "key": "KP9" }, { "key": "KPAD", "width": 1, "height": 2 }],
+                [{ "key": "CAPS", "width": 2 }, { "key": "AC01" }, { "key": "AC02" }, { "key": "AC03" }, { "key": "AC04" }, { "key": "AC05" }, { "key": "AC06" }, { "key": "AC07" }, { "key": "AC08" }, { "key": "AC09" }, { "key": "AC10" }, { "key": "AC11" }, { "key": "RTRN", "width": 2 }, { "width": 3 }, { "key": "KP4" }, { "key": "KP5" }, { "key": "KP6" }, { "width": 1 }],
+                [{ "key": "LFSH", "width": 2 }, { "key": "LSGT" }, { "key": "AB01" }, { "key": "AB02" }, { "key": "AB03" }, { "key": "AB04" }, { "key": "AB05" }, { "key": "AB06" }, { "key": "AB07" }, { "key": "AB08" }, { "key": "AB09" }, { "key": "AB10" }, { "key": "RTSH", "width": 2 }, { "width": 1 }, { "key": "UP" }, { "width": 1 }, { "key": "KP1" }, { "key": "KP2" }, { "key": "KP3" }, { "key": "KPEN", "height": 2 }],
+                [{ "key": "LCTL" }, { "key": "LWIN" }, { "key": "LALT" }, { "key": "SPCE", "width": 10 }, { "key": "RALT" }, { "key": "RCTL" }, { "key": "LEFT" }, { "key": "DOWN" }, { "key": "RGHT" }, { "key": "KP0", "width": 2 }, { "key": "KPDL" }, { "width": 1 }],
+                { "split": false, "settings": true, "close": true }
+            ],
+
+            "Tenkeyless International": [
+                [{ "key": "ESC" }, { "width": 1 }, { "key": "FK01" }, { "key": "FK02" }, { "key": "FK03" }, { "key": "FK04" }, { "width": 0.5 }, { "key": "FK05" }, { "key": "FK06" }, { "key": "FK07" }, { "key": "FK08" }, { "width": 0.5 }, { "key": "FK09" }, { "key": "FK10" }, { "key": "FK11" }, { "key": "FK12" }, { "key": "PRSC" }, { "key": "SCLK" }, { "key": "PAUS" }],
+                [{ "key": "TLDE" }, { "key": "AE01" }, { "key": "AE02" }, { "key": "AE03" }, { "key": "AE04" }, { "key": "AE05" }, { "key": "AE06" }, { "key": "AE07" }, { "key": "AE08" }, { "key": "AE09" }, { "key": "AE10" }, { "key": "AE11" }, { "key": "AE12" }, { "key": "BKSP", "width": 2 }, { "key": "INS" }, { "key": "HOME" }, { "key": "PGUP" }],
+                [{ "key": "TAB", "width": 1.5 }, { "key": "AD01" }, { "key": "AD02" }, { "key": "AD03" }, { "key": "AD04" }, { "key": "AD05" }, { "key": "AD06" }, { "key": "AD07" }, { "key": "AD08" }, { "key": "AD09" }, { "key": "AD10" }, { "key": "AD11" }, { "key": "AD12" }, { "key": "RTRN", "width": 1.5, "height": 2 }, { "key": "DELE" }, { "key": "END" }, { "key": "PGDN" }],
+                [{ "key": "CAPS", "width": 2 }, { "key": "AC01" }, { "key": "AC02" }, { "key": "AC03" }, { "key": "AC04" }, { "key": "AC05" }, { "key": "AC06" }, { "key": "AC07" }, { "key": "AC08" }, { "key": "AC09" }, { "key": "AC10" }, { "key": "AC11" }, { "key": "BKSL", "width": 0.5 }, { "width": 1.5 }, { "width": 3 }],
+                [{ "key": "LFSH", "width": 2 }, { "key": "LSGT" }, { "key": "AB01" }, { "key": "AB02" }, { "key": "AB03" }, { "key": "AB04" }, { "key": "AB05" }, { "key": "AB06" }, { "key": "AB07" }, { "key": "AB08" }, { "key": "AB09" }, { "key": "AB10" }, { "key": "RTSH", "width": 2 }, { "width": 1 }, { "key": "UP" }, { "width": 1 }],
+                [{ "key": "LCTL" }, { "key": "LWIN" }, { "key": "LALT" }, { "key": "SPCE", "width": 10 }, { "key": "RALT" }, { "key": "RCTL" }, { "key": "LEFT" }, { "key": "DOWN" }, { "key": "RGHT" }],
+                { "split": false, "settings": true, "close": true }
+            ],
+
+            "Tenkeyless US": [
+                [{ "key": "ESC" }, { "width": 1 }, { "key": "FK01" }, { "key": "FK02" }, { "key": "FK03" }, { "key": "FK04" }, { "width": 0.5 }, { "key": "FK05" }, { "key": "FK06" }, { "key": "FK07" }, { "key": "FK08" }, { "width": 0.5 }, { "key": "FK09" }, { "key": "FK10" }, { "key": "FK11" }, { "key": "FK12" }, { "key": "PRSC" }, { "key": "SCLK" }, { "key": "PAUS" }],
+                [{ "key": "TLDE" }, { "key": "AE01" }, { "key": "AE02" }, { "key": "AE03" }, { "key": "AE04" }, { "key": "AE05" }, { "key": "AE06" }, { "key": "AE07" }, { "key": "AE08" }, { "key": "AE09" }, { "key": "AE10" }, { "key": "AE11" }, { "key": "AE12" }, { "key": "BKSP", "width": 2 }, { "key": "INS" }, { "key": "HOME" }, { "key": "PGUP" }],
+                [{ "key": "TAB", "width": 1.5 }, { "key": "AD01" }, { "key": "AD02" }, { "key": "AD03" }, { "key": "AD04" }, { "key": "AD05" }, { "key": "AD06" }, { "key": "AD07" }, { "key": "AD08" }, { "key": "AD09" }, { "key": "AD10" }, { "key": "AD11" }, { "key": "AD12" }, { "key": "BKSL", "width": 1.5 }, { "key": "DELE" }, { "key": "END" }, { "key": "PGDN" }],
+                [{ "key": "CAPS", "width": 2 }, { "key": "AC01" }, { "key": "AC02" }, { "key": "AC03" }, { "key": "AC04" }, { "key": "AC05" }, { "key": "AC06" }, { "key": "AC07" }, { "key": "AC08" }, { "key": "AC09" }, { "key": "AC10" }, { "key": "AC11" }, { "key": "RTRN", "width": 2 }, { "width": 3 }],
+                [{ "key": "LFSH", "width": 2 }, { "key": "LSGT" }, { "key": "AB01" }, { "key": "AB02" }, { "key": "AB03" }, { "key": "AB04" }, { "key": "AB05" }, { "key": "AB06" }, { "key": "AB07" }, { "key": "AB08" }, { "key": "AB09" }, { "key": "AB10" }, { "key": "RTSH", "width": 2 }, { "width": 1 }, { "key": "UP" }, { "width": 1 }],
+                [{ "key": "LCTL" }, { "key": "LWIN" }, { "key": "LALT" }, { "key": "SPCE", "width": 10 }, { "key": "RALT" }, { "key": "RCTL" }, { "key": "LEFT" }, { "key": "DOWN" }, { "key": "RGHT" }],
+                { "split": false, "settings": true, "close": true }
+            ],
+
+            "Compact International": [
+                [{ "key": "ESC" }, { "key": "FK01" }, { "key": "FK02" }, { "key": "FK03" }, { "key": "FK04" }, { "key": "FK05" }, { "key": "FK06" }, { "key": "FK07" }, { "key": "FK08" }, { "key": "FK09" }, { "key": "FK10" }, { "key": "FK11" }, { "key": "FK12" }, { "key": "PRSC" }, { "key": "DELE" }],
+                [{ "key": "TLDE" }, { "key": "AE01" }, { "key": "AE02" }, { "key": "AE03" }, { "key": "AE04" }, { "key": "AE05" }, { "key": "AE06" }, { "key": "AE07" }, { "key": "AE08" }, { "key": "AE09" }, { "key": "AE10" }, { "key": "AE11" }, { "key": "AE12" }, { "key": "BKSP", "width": 2 }],
+                [{ "key": "TAB", "width": 1.5 }, { "key": "AD01" }, { "key": "AD02" }, { "key": "AD03" }, { "key": "AD04" }, { "key": "AD05" }, { "key": "AD06" }, { "key": "AD07" }, { "key": "AD08" }, { "key": "AD09" }, { "key": "AD10" }, { "key": "AD11" }, { "key": "AD12" }, { "key": "RTRN", "width": 1.5, "height": 2 }],
+                [{ "key": "CAPS", "width": 2 }, { "key": "AC01" }, { "key": "AC02" }, { "key": "AC03" }, { "key": "AC04" }, { "key": "AC05" }, { "key": "AC06" }, { "key": "AC07" }, { "key": "AC08" }, { "key": "AC09" }, { "key": "AC10" }, { "key": "AC11" }, { "key": "BKSL", "width": 0.5 }, { "width": 1.5 }],
+                [{ "key": "LFSH", "width": 2 }, { "key": "LSGT" }, { "key": "AB01" }, { "key": "AB02" }, { "key": "AB03" }, { "key": "AB04" }, { "key": "AB05" }, { "key": "AB06" }, { "key": "AB07" }, { "key": "AB08" }, { "key": "AB09" }, { "key": "AB10" }, { "key": "RTSH", "width": 2 }],
+                [{ "key": "LCTL" }, { "key": "LWIN" }, { "key": "LALT" }, { "key": "SPCE", "width": 7 }, { "key": "RALT" }, { "key": "RCTL" }, { "key": "LEFT" }, [{ "key": "UP", "height": 0.5 }, { "key": "DOWN", "height": 0.5 }], { "key": "RGHT" }],
+                { "split": false, "settings": true, "close": true }
+            ],
+
+            "Compact US": [
+                [{ "key": "ESC" }, { "key": "FK01" }, { "key": "FK02" }, { "key": "FK03" }, { "key": "FK04" }, { "key": "FK05" }, { "key": "FK06" }, { "key": "FK07" }, { "key": "FK08" }, { "key": "FK09" }, { "key": "FK10" }, { "key": "FK11" }, { "key": "FK12" }, { "key": "PRSC" }, { "key": "DELE" }],
+                [{ "key": "TLDE" }, { "key": "AE01" }, { "key": "AE02" }, { "key": "AE03" }, { "key": "AE04" }, { "key": "AE05" }, { "key": "AE06" }, { "key": "AE07" }, { "key": "AE08" }, { "key": "AE09" }, { "key": "AE10" }, { "key": "AE11" }, { "key": "AE12" }, { "key": "BKSP", "width": 2 }],
+                [{ "key": "TAB", "width": 1.5 }, { "key": "AD01" }, { "key": "AD02" }, { "key": "AD03" }, { "key": "AD04" }, { "key": "AD05" }, { "key": "AD06" }, { "key": "AD07" }, { "key": "AD08" }, { "key": "AD09" }, { "key": "AD10" }, { "key": "AD11" }, { "key": "AD12" }, { "key": "BKSL", "width": 1.5 }],
+                [{ "key": "CAPS", "width": 2 }, { "key": "AC01" }, { "key": "AC02" }, { "key": "AC03" }, { "key": "AC04" }, { "key": "AC05" }, { "key": "AC06" }, { "key": "AC07" }, { "key": "AC08" }, { "key": "AC09" }, { "key": "AC10" }, { "key": "AC11" }, { "key": "RTRN", "width": 2 }],
+                [{ "key": "LFSH", "width": 2 }, { "key": "LSGT" }, { "key": "AB01" }, { "key": "AB02" }, { "key": "AB03" }, { "key": "AB04" }, { "key": "AB05" }, { "key": "AB06" }, { "key": "AB07" }, { "key": "AB08" }, { "key": "AB09" }, { "key": "AB10" }, { "key": "RTSH", "width": 2 }],
+                [{ "key": "LCTL" }, { "key": "LWIN" }, { "key": "LALT" }, { "key": "SPCE", "width": 7 }, { "key": "RALT" }, { "key": "RCTL" }, { "key": "LEFT" }, [{ "key": "UP", "height": 0.5 }, { "key": "DOWN", "height": 0.5 }], { "key": "RGHT" }],
+                { "split": false, "settings": true, "close": true }
+            ],
+
+            "Split International": [
+                [{ "key": "ESC", "width": 0.5 }, { "key": "FK01" }, { "key": "FK02" }, { "key": "FK03" }, { "key": "FK04" }, { "key": "FK05" }, { "key": "FK06" }, { "key": "FK07" }, { "split": true }, { "key": "FK08" }, { "key": "FK09" }, { "key": "FK10" }, { "key": "FK11" }, { "key": "FK12" }, { "key": "PRSC" }, { "key": "DELE" }],
+                [{ "key": "TLDE", "width": 1 }, { "key": "AE01" }, { "key": "AE02" }, { "key": "AE03" }, { "key": "AE04" }, { "key": "AE05" }, { "key": "AE06" }, { "split": true }, { "key": "AE07" }, { "key": "AE08" }, { "key": "AE09" }, { "key": "AE10" }, { "key": "AE11" }, { "key": "AE12" }, { "key": "BKSP", "width": 1.5 }],
+                [{ "key": "TAB", "width": 1.5 }, { "key": "AD01" }, { "key": "AD02" }, { "key": "AD03" }, { "key": "AD04" }, { "key": "AD05" }, { "key": "AD06" }, { "split": true }, { "key": "AD07" }, { "key": "AD08" }, { "key": "AD09" }, { "key": "AD10" }, { "key": "AD11" }, { "key": "AD12" }, { "key": "RTRN", "height": 2 }],
+                [{ "key": "CAPS", "width": 2 }, { "key": "AC01" }, { "key": "AC02" }, { "key": "AC03" }, { "key": "AC04" }, { "key": "AC05" }, { "split": true }, { "key": "AC06" }, { "key": "AC07" }, { "key": "AC08" }, { "key": "AC09" }, { "key": "AC10" }, { "key": "AC11" }, { "key": "BKSL", "width": 0.5 }, { "width": 1 }],
+                [{ "key": "LFSH", "width": 2 }, { "key": "LSGT" }, { "key": "AB01" }, { "key": "AB02" }, { "key": "AB03" }, { "key": "AB04" }, { "split": true }, { "key": "AB05" }, { "key": "AB06" }, { "key": "AB07" }, { "key": "AB08" }, { "key": "AB09" }, { "key": "AB10" }, { "key": "RTSH", "width": 1.5 }],
+                [{ "key": "LCTL" }, { "key": "LWIN" }, { "key": "LALT" }, { "key": "SPCE", "width": 4 }, { "split": true }, { "key": "SPCE", "width": 2.5 }, { "key": "RALT" }, { "key": "RCTL" }, { "key": "LEFT" }, [{ "key": "UP", "height": 0.5 }, { "key": "DOWN", "height": 0.5 }], { "key": "RGHT" }],
+                { "split": true, "settings": true, "close": true }
+            ],
+
+            "Split US": [
+                [{ "key": "ESC", "width": 0.5 }, { "key": "FK01" }, { "key": "FK02" }, { "key": "FK03" }, { "key": "FK04" }, { "key": "FK05" }, { "key": "FK06" }, { "key": "FK07" }, { "split": true }, { "key": "FK08" }, { "key": "FK09" }, { "key": "FK10" }, { "key": "FK11" }, { "key": "FK12" }, { "key": "PRSC" }, { "key": "DELE" }],
+                [{ "key": "TLDE", "width": 1 }, { "key": "AE01" }, { "key": "AE02" }, { "key": "AE03" }, { "key": "AE04" }, { "key": "AE05" }, { "key": "AE06" }, { "split": true }, { "key": "AE07" }, { "key": "AE08" }, { "key": "AE09" }, { "key": "AE10" }, { "key": "AE11" }, { "key": "AE12" }, { "key": "BKSP", "width": 1.5 }],
+                [{ "key": "TAB", "width": 1.5 }, { "key": "AD01" }, { "key": "AD02" }, { "key": "AD03" }, { "key": "AD04" }, { "key": "AD05" }, { "key": "AD06" }, { "split": true }, { "key": "AD07" }, { "key": "AD08" }, { "key": "AD09" }, { "key": "AD10" }, { "key": "AD11" }, { "key": "AD12" }, { "key": "BKSL" }],
+                [{ "key": "CAPS", "width": 2 }, { "key": "AC01" }, { "key": "AC02" }, { "key": "AC03" }, { "key": "AC04" }, { "key": "AC05" }, { "split": true }, { "key": "AC06" }, { "key": "AC07" }, { "key": "AC08" }, { "key": "AC09" }, { "key": "AC10" }, { "key": "AC11" }, { "key": "RTRN", "width": 1.5 }],
+                [{ "key": "LFSH", "width": 2 }, { "key": "LSGT" }, { "key": "AB01" }, { "key": "AB02" }, { "key": "AB03" }, { "key": "AB04" }, { "split": true }, { "key": "AB05" }, { "key": "AB06" }, { "key": "AB07" }, { "key": "AB08" }, { "key": "AB09" }, { "key": "AB10" }, { "key": "RTSH", "width": 1.5 }],
+                [{ "key": "LCTL" }, { "key": "LWIN" }, { "key": "LALT" }, { "key": "SPCE", "width": 4 }, { "split": true }, { "key": "SPCE", "width": 2.5 }, { "key": "RALT" }, { "key": "RCTL" }, { "key": "LEFT" }, [{ "key": "UP", "height": 0.5 }, { "key": "DOWN", "height": 0.5 }], { "key": "RGHT" }],
+                { "split": true, "settings": true, "close": true }
+            ],
+
+            "Mobile": [
+                [{ "key": "TLDE", "width": 2 }, { "key": "TAB", "width": 2 }, { "key": "ESC", "width": 2 }, { "key": "FK01", "width": 2 }, { "key": "FK02", "width": 2 }, { "key": "FK03", "width": 2 }, { "key": "FK04", "width": 2 }, { "key": "FK05", "width": 2 }, { "key": "FK06", "width": 2 }, { "key": "FK07", "width": 2 }, { "key": "FK08", "width": 2 }, { "key": "FK09", "width": 2 }, { "key": "FK10", "width": 2 }, { "key": "FK11", "width": 2 }, { "key": "FK12", "width": 2 }, { "key": "PRSC", "width": 2 }, { "key": "DELE", "width": 2 }, { "key": "BKSL", "width": 2 }],
+                [{ "key": "AE11", "width": 3 }, { "key": "AE01", "width": 3 }, { "key": "AE02", "width": 3 }, { "key": "AE03", "width": 3 }, { "key": "AE04", "width": 3 }, { "key": "AE05", "width": 3 }, { "key": "AE06", "width": 3 }, { "key": "AE07", "width": 3 }, { "key": "AE08", "width": 3 }, { "key": "AE09", "width": 3 }, { "key": "AE10", "width": 3 }, { "key": "AE12", "width": 3 }],
+                [{ "key": "AD11", "width": 3 }, { "key": "AD01", "width": 3 }, { "key": "AD02", "width": 3 }, { "key": "AD03", "width": 3 }, { "key": "AD04", "width": 3 }, { "key": "AD05", "width": 3 }, { "key": "AD06", "width": 3 }, { "key": "AD07", "width": 3 }, { "key": "AD08", "width": 3 }, { "key": "AD09", "width": 3 }, { "key": "AD10", "width": 3 }, { "key": "AD12", "width": 3 }],
+                [{ "width": 1.5 }, { "key": "AC11", "width": 3 }, { "key": "AC01", "width": 3 }, { "key": "AC02", "width": 3 }, { "key": "AC03", "width": 3 }, { "key": "AC04", "width": 3 }, { "key": "AC05", "width": 3 }, { "key": "AC06", "width": 3 }, { "key": "AC07", "width": 3 }, { "key": "AC08", "width": 3 }, { "key": "AC09", "width": 3 }, { "key": "AC10", "width": 3 }],
+                [{ "key": "LFSH", "width": 2.5 }, { "key": "LSGT", "width": 2 }, { "key": "AB08", "width": 3 }, { "key": "AB01", "width": 3 }, { "key": "AB02", "width": 3 }, { "key": "AB03", "width": 3 }, { "key": "AB04", "width": 3 }, { "key": "AB05", "width": 3 }, { "key": "AB06", "width": 3 }, { "key": "AB07", "width": 3 }, { "key": "AB09", "width": 3 }, { "key": "AB10", "width": 2 }, { "key": "BKSP", "width": 2.5 }],
+                [{ "key": "CAPS", "width": 2.5 }, { "key": "LCTL", "width": 2.5 }, { "key": "LWIN", "width": 2.5 }, { "key": "LALT", "width": 2.5 }, { "key": "SPCE", "width": 10 }, { "key": "RALT", "width": 2.5 }, { "key": "RCTL", "width": 2.5 }, { "key": "LEFT", "width": 2.5 }, [{ "key": "UP", "width": 2.5, "height": 0.5 }, { "key": "DOWN", "width": 2.5, "height": 0.5 }], { "key": "RGHT", "width": 2.5 }, { "key": "RTRN", "width": 3.5 }],
+                { "split": false, "settings": true, "close": true }
+            ],
+
+            "Split Mobile": [
+                [{ "key": "TLDE", "width": 2 }, { "key": "TAB", "width": 2 }, { "key": "ESC", "width": 2 }, { "key": "FK01", "width": 2 }, { "key": "FK02", "width": 2 }, { "key": "FK03", "width": 2 }, { "key": "FK04", "width": 2 }, { "key": "FK05", "width": 2 }, { "key": "FK06", "width": 2 }, { "split": true }, { "key": "FK07", "width": 2 }, { "key": "FK08", "width": 2 }, { "key": "FK09", "width": 2 }, { "key": "FK10", "width": 2 }, { "key": "FK11", "width": 2 }, { "key": "FK12", "width": 2 }, { "key": "PRSC", "width": 2 }, { "key": "DELE", "width": 3 }, { "key": "BKSL", "width": 2.5 }],
+                [{ "key": "AE11", "width": 3 }, { "key": "AE01", "width": 3 }, { "key": "AE02", "width": 3 }, { "key": "AE03", "width": 3 }, { "key": "AE04", "width": 3 }, { "key": "AE05", "width": 3 }, { "split": true }, { "key": "AE06", "width": 3 }, { "key": "AE07", "width": 3 }, { "key": "AE08", "width": 3 }, { "key": "AE09", "width": 3 }, { "key": "AE10", "width": 3 }, { "key": "AE12", "width": 4.5 }],
+                [{ "key": "AD11", "width": 3 }, { "key": "AD01", "width": 3 }, { "key": "AD02", "width": 3 }, { "key": "AD03", "width": 3 }, { "key": "AD04", "width": 3 }, { "key": "AD05", "width": 3 }, { "split": true }, { "key": "AD06", "width": 3 }, { "key": "AD07", "width": 3 }, { "key": "AD08", "width": 3 }, { "key": "AD09", "width": 3 }, { "key": "AD10", "width": 3 }, { "key": "AD12", "width": 4.5 }],
+                [{ "key": "AC11", "width": 3 }, { "key": "AC01", "width": 3 }, { "key": "AC02", "width": 3 }, { "key": "AC03", "width": 3 }, { "key": "AC04", "width": 3 }, { "key": "AC05", "width": 3 }, { "split": true }, { "key": "AC05", "width": 3 }, { "key": "AC06", "width": 3 }, { "key": "AC07", "width": 3 }, { "key": "AC08", "width": 3 }, { "key": "AC09", "width": 3 }, { "key": "AC10", "width": 3 }, { "width": 1.5 }],
+                [{ "key": "LFSH", "width": 2 }, { "key": "LSGT", "width": 2 }, { "key": "AB08", "width": 2 }, { "key": "AB01", "width": 3 }, { "key": "AB02", "width": 3 }, { "key": "AB03", "width": 3 }, { "key": "AB04", "width": 3 }, { "split": true }, { "key": "AB04", "width": 3 }, { "key": "AB05", "width": 3 }, { "key": "AB06", "width": 3 }, { "key": "AB07", "width": 3 }, { "key": "AB09", "width": 3 }, { "key": "AB10", "width": 2 }, { "key": "BKSP", "width": 2.5 }],
+                [{ "key": "CAPS", "width": 2.5 }, { "key": "LCTL", "width": 2.5 }, { "key": "LWIN", "width": 2.5 }, { "key": "LALT", "width": 2.5 }, { "key": "SPCE", "width": 8 }, { "split": true }, { "key": "SPCE", "width": 4 }, { "key": "RALT", "width": 2.5 }, { "key": "RCTL", "width": 2.5 }, { "key": "LEFT", "width": 2.5 }, [{ "key": "UP", "width": 2.5, "height": 0.5 }, { "key": "DOWN", "width": 2.5, "height": 0.5 }], { "key": "RGHT", "width": 2.5 }, { "key": "RTRN", "width": 3 }],
+                { "split": true, "settings": true, "close": true }
+            ]
+        }
+
+        for (const layoutName in this.templates) {
+            const option = document.createElement('option');
+            option.value = layoutName;
+            option.textContent = layoutName;
+            templateSelect.appendChild(option);
+        }
+
+        this.currentLayoutName = templateSelect.value = "Split International";
+
         const lastRow = currentLayout[currentLayout.length - 1];
         this.element.querySelector('#toggle-split').checked = lastRow.split || false;
         this.element.querySelector('#toggle-settings').checked = lastRow.settings || false;
@@ -449,6 +671,9 @@ class KeyboardSettingsEditor {
         });
         this.element.querySelector('#toggle-close').addEventListener('change', (e) => {
             this.toggleClose(e.target.checked);
+        });
+        this.element.querySelector('#template-selection').addEventListener('change', (e) => {
+            this.selectTemplate(e.target.value);
         });
         this.element.querySelector('#import-layout').addEventListener('click', () => this.importLayout());
         this.element.querySelector('#export-layout').addEventListener('click', () => this.exportLayout());
@@ -492,6 +717,39 @@ class KeyboardSettingsEditor {
         rebuild();
     }
 
+    async selectTemplate(templateName) {
+        const deepCompare = (arg1, arg2) => {
+            if (Object.prototype.toString.call(arg1) === Object.prototype.toString.call(arg2)) {
+                if (Object.prototype.toString.call(arg1) === '[object Object]' || Object.prototype.toString.call(arg1) === '[object Array]') {
+                    if (Object.keys(arg1).length !== Object.keys(arg2).length) {
+                        return false;
+                    }
+                    return (Object.keys(arg1).every(function (key) {
+                        return deepCompare(arg1[key], arg2[key]);
+                    }));
+                }
+                return (arg1 === arg2);
+            }
+            return false;
+        }
+        let isModified = true;
+        for (const key in this.templates) {
+            if (deepCompare(currentLayout, this.templates[key])) {
+                isModified = false;
+                break;
+            }
+        }
+        if (isModified && !(await confirm("You have unsaved changes. Do you want to discard them and load the new template?"))) {
+            document.querySelector('#template-selection').value = this.currentLayoutName;
+            return;
+        }
+        if (this.templates[templateName]) {
+            this.currentLayoutName = templateName;
+            this.element.querySelector('#layout-json').value = JSON.stringify(this.templates[templateName], null, 2);
+            this.importLayout();
+        }
+    }
+
     exportLayout() {
         const layoutCopy = JSON.parse(JSON.stringify(currentLayout));
         const jsonString = JSON.stringify(layoutCopy, null, 2);
@@ -509,11 +767,16 @@ class KeyboardSettingsEditor {
             }
             currentLayout = newLayout;
             rebuild();
+            currentKeyElement = null;
+            keyEditor.hide();
+            document.querySelectorAll('.selectable').forEach(j => {
+                j.classList.remove('pressed');
+            });
             const lastRow = currentLayout[currentLayout.length - 1];
             this.element.querySelector('#toggle-split').checked = lastRow.split || false;
             this.element.querySelector('#toggle-settings').checked = lastRow.settings || false;
             this.element.querySelector('#toggle-close').checked = lastRow.close || false;
-
+            this.element.querySelector('#layout-json').value = JSON.parse(JSON.stringify(jsonString, null, 2))
             alert('Layout imported successfully!');
         } catch (error) {
             alert('Error importing layout: ' + error.message);
@@ -884,6 +1147,16 @@ class Keyboard {
 
 const keyEditor = new KeyEditor();
 const settingsEditor = new KeyboardSettingsEditor();
+const toast = new Toast();
+
+// Override window.alert and window.confirm
+window.alert = (message) => {
+    return toast.alert(message);
+};
+
+window.confirm = (message) => {
+    return toast.confirm(message);
+};
 
 let rebuild = () => {
     window.keycodes = window.structuredClone(window._keycodes)
@@ -896,6 +1169,7 @@ let rebuild = () => {
     kbdElem.id = 'keyboard'
     monitor = { width: kbdElem.innerWidth, height: kbdElem.innerHeight }
     document.querySelector("#keyboard-holder").insertAdjacentElement('afterbegin', kbdElem)
+    document.querySelector("#layout-json").value = JSON.stringify(currentLayout, null, 2)
     let keyboard = new Keyboard()
     keyboard.buildUI()
     keyEditor.hide()
@@ -929,4 +1203,4 @@ let rebuild = () => {
 }
 rebuild()
 
-fetch('./README.md').then(data => data.text()).then(text => {document.querySelector("#readme-holder").innerHTML = marked.parse(text); document.querySelector("#readme-holder").scrollTo()}).catch(() => document.querySelector("#readme-holder").remove())
+fetch('./README.md').then(data => data.text()).then(text => { document.querySelector("#readme-holder").innerHTML = marked.parse(text); document.querySelector("#readme-holder").scrollTo() }).catch(() => document.querySelector("#readme-holder").remove())
