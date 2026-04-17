@@ -973,7 +973,12 @@ class Keyboard extends Dialog {
         } else {
             let customIdx = layoutIdx - numBuiltIn;
             if (customIdx < this.customLayouts.length) {
-                currentLayout = JSON.parse(this.customLayouts[customIdx]);
+                try {
+                    currentLayout = JSON.parse(this.customLayouts[customIdx]);
+                } catch (e) {
+                    this.extensionObject.fail(`Failed to parse custom layout ${customIdx + 1}: ${e.message}`);
+                    currentLayout = layouts[Object.keys(layouts)[0]];
+                }
             } else {
                 currentLayout = layouts[Object.keys(layouts)[0]];
             }
