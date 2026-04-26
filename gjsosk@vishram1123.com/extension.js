@@ -95,6 +95,36 @@ function normalizeCustomLayouts(rawValue) {
     }
 }
 
+class StatusIndicatorButton extends PanelMenu.Button {
+    static {
+        GObject.registerClass(this);
+    }
+
+    _init(extensionObject) {
+        super._init(0, "GJS OSK Indicator", true);
+
+        this.extensionObject = extensionObject;
+        const icon = new St.Icon({
+            gicon: new Gio.ThemedIcon({
+                name: 'input-keyboard-symbolic'
+            }),
+            style_class: 'system-status-icon'
+        });
+
+        this.add_child(icon);
+    }
+
+    vfunc_event(event) {
+        const eventType = event.type();
+        if (eventType === Clutter.EventType.BUTTON_PRESS || eventType === Clutter.EventType.TOUCH_END) {
+            this.extensionObject._toggleKeyboard();
+            return Clutter.EVENT_STOP;
+        }
+
+        return Clutter.EVENT_PROPAGATE;
+    }
+}
+
 // [insert handwriting 1]
 
 export default class GjsOskExtension extends Extension {
@@ -424,26 +454,7 @@ export default class GjsOskExtension extends Extension {
         this._indicator = null;
         this.openInterval = null;
         if (this.settings.get_boolean("indicator-enabled")) {
-            this._indicator = new PanelMenu.Button(0, "GJS OSK Indicator", false);
-            let icon = new St.Icon({
-                gicon: new Gio.ThemedIcon({
-                    name: 'input-keyboard-symbolic'
-                }),
-                style_class: 'system-status-icon'
-            });
-            this._indicator.add_child(icon);
-            this._indicator.clear_actions();
-            this._indicator.connect("button-press-event", () => {
-                this._toggleKeyboard();
-                return Clutter.EVENT_STOP;
-            });
-            this._indicator.connect("touch-event", (_actor, event) => {
-                if (event.type() == Clutter.EventType.TOUCH_END) {
-                    this._toggleKeyboard();
-                    return Clutter.EVENT_STOP;
-                }
-                return Clutter.EVENT_PROPAGATE;
-            });
+            this._indicator = new StatusIndicatorButton(this);
             Main.panel.addToStatusArea("GJS OSK Indicator", this._indicator);
         }
 
@@ -482,19 +493,7 @@ export default class GjsOskExtension extends Extension {
                     this._indicator.destroy();
                     this._indicator = null;
                 }
-                this._indicator = new PanelMenu.Button(0.0, "GJS OSK Indicator", false);
-                let icon = new St.Icon({
-                    gicon: new Gio.ThemedIcon({
-                        name: 'input-keyboard-symbolic'
-                    }),
-                    style_class: 'system-status-icon'
-                });
-                this._indicator.add_child(icon);
-
-                this._indicator.connect("button-press-event", () => this._toggleKeyboard());
-                this._indicator.connect("touch-event", (_actor, event) => {
-                    if (event.type() == Clutter.EventType.TOUCH_END) this._toggleKeyboard()
-                });
+                this._indicator = new StatusIndicatorButton(this);
                 Main.panel.addToStatusArea("GJS OSK Indicator", this._indicator);
             } else {
                 if (this._indicator != null) {
