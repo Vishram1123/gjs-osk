@@ -1429,19 +1429,19 @@ class Keyboard extends Dialog {
             item.connect("destroy", () => {
                 if (item.button_pressed !== null) {
                     clearTimeout(item.button_pressed)
-                    item.button_pressed == null
+                    item.button_pressed = null
                 }
                 if (item.button_repeat !== null) {
                     clearInterval(item.button_repeat)
-                    item.button_repeat == null
+                    item.button_repeat = null
                 }
                 if (item.tap_pressed !== null) {
                     clearTimeout(item.tap_pressed)
-                    item.tap_pressed == null
+                    item.tap_pressed = null
                 }
                 if (item.tap_repeat !== null) {
                     clearInterval(item.tap_repeat)
-                    item.tap_repeat == null
+                    item.tap_repeat = null
                 }
             })
             let pressEv = (evType) => {
@@ -1527,11 +1527,11 @@ class Keyboard extends Dialog {
                 })
                 if (item.button_pressed !== null) {
                     clearTimeout(item.button_pressed)
-                    item.button_pressed == null
+                    item.button_pressed = null
                 }
                 if (item.button_repeat !== null) {
                     clearInterval(item.button_repeat)
-                    item.button_repeat == null
+                    item.button_repeat = null
                 }
                 if (item.space_motion_handler !== null) {
                     item.disconnect(item.space_motion_handler)
@@ -1583,11 +1583,11 @@ class Keyboard extends Dialog {
             item.key_pressed = false;
             if (item.button_pressed !== null) {
                 clearTimeout(item.button_pressed)
-                item.button_pressed == null
+                item.button_pressed = null
             }
             if (item.button_repeat !== null) {
                 clearInterval(item.button_repeat)
-                item.button_repeat == null
+                item.button_repeat = null
             }
             if (item.space_motion_handler !== null && GObject.signal_handler_is_connected(item, item.space_motion_handler)) {
                 item.disconnect(item.space_motion_handler)
@@ -1597,14 +1597,6 @@ class Keyboard extends Dialog {
     }
     sendKey(keys) {
         try {
-            if (this.keyInProgress) {
-                return;
-            }
-            this.keyInProgress = true;
-            let event_time = Clutter.get_current_event_time() * 1000;
-            for (var i = 0; i < keys.length; i++) {
-                this.inputDevice.notify_key(event_time, keys[i], Clutter.KeyState.PRESSED);
-            }
             if (this.keyTimeout !== null) {
                 clearTimeout(this.keyTimeout);
                 if (typeof this.keyTimeoutFunc === 'function') {
@@ -1613,16 +1605,18 @@ class Keyboard extends Dialog {
                 this.keyTimeout = null;
                 this.keyTimeoutFunc = null;
             }
+            let event_time = Clutter.get_current_event_time() * 1000;
+            for (var i = 0; i < keys.length; i++) {
+                this.inputDevice.notify_key(event_time, keys[i], Clutter.KeyState.PRESSED);
+            }
             this.keyTimeoutFunc = () => {
                 const currKeys = keys
                 for (var j = currKeys.length - 1; j >= 0; j--) {
                     this.inputDevice.notify_key(event_time, currKeys[j], Clutter.KeyState.RELEASED);
                 }
-                this.keyInProgress = false;
             }
             this.keyTimeout = setTimeout(this.keyTimeoutFunc, 100);
         } catch (err) {
-            this.keyInProgress = false;
             throw new Error("GJS-OSK: An unknown error occured. Please report this bug to the Issues page (https://github.com/Vishram1123/gjs-osk/issues):\n\n" + err + "\n\nKeys Pressed: " + keys);
         }
     }
