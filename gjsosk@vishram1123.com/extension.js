@@ -424,7 +424,7 @@ export default class GjsOskExtension extends Extension {
         this._indicator = null;
         this.openInterval = null;
         if (this.settings.get_boolean("indicator-enabled")) {
-            this._indicator = new PanelMenu.Button(0, "GJS OSK Indicator", false);
+            this._indicator = new PanelMenu.Button(0, "GJS OSK Indicator", true);
             let icon = new St.Icon({
                 gicon: new Gio.ThemedIcon({
                     name: 'input-keyboard-symbolic'
@@ -482,7 +482,7 @@ export default class GjsOskExtension extends Extension {
                     this._indicator.destroy();
                     this._indicator = null;
                 }
-                this._indicator = new PanelMenu.Button(0.0, "GJS OSK Indicator", false);
+                this._indicator = new PanelMenu.Button(0.0, "GJS OSK Indicator", true);
                 let icon = new St.Icon({
                     gicon: new Gio.ThemedIcon({
                         name: 'input-keyboard-symbolic'
