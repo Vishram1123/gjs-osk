@@ -424,7 +424,7 @@ export default class GjsOskExtension extends Extension {
         this._indicator = null;
         this.openInterval = null;
         if (this.settings.get_boolean("indicator-enabled")) {
-            this._indicator = new PanelMenu.Button(0, "GJS OSK Indicator", false);
+            this._indicator = new PanelMenu.Button(0, "GJS OSK Indicator", true);
             let icon = new St.Icon({
                 gicon: new Gio.ThemedIcon({
                     name: 'input-keyboard-symbolic'
@@ -482,7 +482,7 @@ export default class GjsOskExtension extends Extension {
                     this._indicator.destroy();
                     this._indicator = null;
                 }
-                this._indicator = new PanelMenu.Button(0.0, "GJS OSK Indicator", false);
+                this._indicator = new PanelMenu.Button(0.0, "GJS OSK Indicator", true);
                 let icon = new St.Icon({
                     gicon: new Gio.ThemedIcon({
                         name: 'input-keyboard-symbolic'
@@ -1429,19 +1429,19 @@ class Keyboard extends Dialog {
             item.connect("destroy", () => {
                 if (item.button_pressed !== null) {
                     clearTimeout(item.button_pressed)
-                    item.button_pressed == null
+                    item.button_pressed = null
                 }
                 if (item.button_repeat !== null) {
                     clearInterval(item.button_repeat)
-                    item.button_repeat == null
+                    item.button_repeat = null
                 }
                 if (item.tap_pressed !== null) {
                     clearTimeout(item.tap_pressed)
-                    item.tap_pressed == null
+                    item.tap_pressed = null
                 }
                 if (item.tap_repeat !== null) {
                     clearInterval(item.tap_repeat)
-                    item.tap_repeat == null
+                    item.tap_repeat = null
                 }
             })
             let pressEv = (evType) => {
@@ -1527,11 +1527,11 @@ class Keyboard extends Dialog {
                 })
                 if (item.button_pressed !== null) {
                     clearTimeout(item.button_pressed)
-                    item.button_pressed == null
+                    item.button_pressed = null
                 }
                 if (item.button_repeat !== null) {
                     clearInterval(item.button_repeat)
-                    item.button_repeat == null
+                    item.button_repeat = null
                 }
                 if (item.space_motion_handler !== null) {
                     item.disconnect(item.space_motion_handler)
@@ -1583,11 +1583,11 @@ class Keyboard extends Dialog {
             item.key_pressed = false;
             if (item.button_pressed !== null) {
                 clearTimeout(item.button_pressed)
-                item.button_pressed == null
+                item.button_pressed = null
             }
             if (item.button_repeat !== null) {
                 clearInterval(item.button_repeat)
-                item.button_repeat == null
+                item.button_repeat = null
             }
             if (item.space_motion_handler !== null && GObject.signal_handler_is_connected(item, item.space_motion_handler)) {
                 item.disconnect(item.space_motion_handler)
@@ -1620,7 +1620,7 @@ class Keyboard extends Dialog {
                 }
                 this.keyInProgress = false;
             }
-            this.keyTimeout = setTimeout(this.keyTimeoutFunc, 100);
+            this.keyTimeout = setTimeout(this.keyTimeoutFunc, 5);
         } catch (err) {
             this.keyInProgress = false;
             throw new Error("GJS-OSK: An unknown error occured. Please report this bug to the Issues page (https://github.com/Vishram1123/gjs-osk/issues):\n\n" + err + "\n\nKeys Pressed: " + keys);
