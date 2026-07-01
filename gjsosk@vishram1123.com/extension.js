@@ -124,6 +124,27 @@ export default class GjsOskExtension extends Extension {
         }
     }
 
+
+    _rebuildToggle() {
+        try {
+            if (this._toggle) {
+                this._quick_settings_indicator.quickSettingsItems =
+                    this._quick_settings_indicator.quickSettingsItems.filter(item => item !== this._toggle);
+                this._toggle.destroy();
+            }
+        } catch (e) {
+        }
+        this._toggle = new KeyboardMenuToggle(this);
+        this._quick_settings_indicator.quickSettingsItems.push(this._toggle);
+    }
+
+    _onWake() {
+        this._rebuildToggle();
+        if (typeof this.refresh === 'function') {
+            this.refresh();
+        }
+    }
+
     open_interval() {
         if (this.tapConnect && GObject.signal_handler_is_connected(global.stage, this.tapConnect))
             global.stage.disconnect(this.tapConnect)
@@ -416,6 +437,7 @@ export default class GjsOskExtension extends Extension {
                 await initializeKeyboard();
             })().catch(this.fail)
         }
+        this.refresh = refresh;
         refresh()
 
         this._originalLastDeviceIsTouchscreen = KeyboardUI.KeyboardManager.prototype._lastDeviceIsTouchscreen;
@@ -452,6 +474,21 @@ export default class GjsOskExtension extends Extension {
         this._quick_settings_indicator.quickSettingsItems.push(this._toggle);
         Main.panel.statusArea.quickSettings.addExternalIndicator(this._quick_settings_indicator);
         this.open_interval();
+
+        this._sleepWatchId = Gio.DBus.system.signal_subscribe(
+            'org.freedesktop.login1',
+            'org.freedesktop.login1.Manager',
+            'PrepareForSleep',
+            '/org/freedesktop/login1',
+            null,
+            Gio.DBusSignalFlags.NONE,
+            (_conn, _sender, _path, _iface, _signal, params) => {
+                const [aboutToSleep] = params.deep_unpack();
+                if (!aboutToSleep) {
+                    this._onWake();
+                }
+            }
+        );
 
         this.keyboardVisibilityHandler = this.openBit.connect('changed::keyboard-visible', () => {
             const shouldBeVisible = this.openBit.get_boolean('keyboard-visible');
@@ -536,6 +573,11 @@ export default class GjsOskExtension extends Extension {
     }
 
     disable() {
+        if (this._sleepWatchId) {
+            Gio.DBus.system.signal_unsubscribe(this._sleepWatchId);
+            this._sleepWatchId = null;
+        }
+
         this.gnomeKeyboardSettings.disconnect(this.isGnomeKeyboardEnabledHandler)
         this.gnomeKeyboardSettings.set_boolean('screen-keyboard-enabled', this.isGnomeKeyboardEnabled);
 
@@ -571,7 +613,10 @@ export default class GjsOskExtension extends Extension {
             this.openInterval = null;
         }
         if (this._toggle !== null) {
-            this._toggle.destroy()
+            try {
+                this._toggle.destroy()
+            } catch (e) {
+            }
             this._toggle = null
         }
         this.settings = null
