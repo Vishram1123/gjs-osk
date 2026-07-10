@@ -1673,6 +1673,10 @@ class Keyboard extends Dialog {
     }
 
     decideMod(i, mBtn) {
+        if (!i) return;
+        const needsButton = [29, 56, 97, 125, 126, 100, 42, 54, 58, 69].includes(i.code);
+        if (needsButton && (!mBtn || !mBtn.char)) return;
+
         if (i.code == 29 || i.code == 56 || i.code == 97 || i.code == 125 || i.code == 126) {
             this.setNormMod(mBtn);
         } else if (i.code == 100) {
@@ -1717,6 +1721,7 @@ class Keyboard extends Dialog {
     }
 
     setAlt(button) {
+        if (!button || !button.char) return;
         this.alt = !this.alt;
         this.updateKeyLabels();
         if (!this.alt) {
@@ -1726,6 +1731,7 @@ class Keyboard extends Dialog {
     }
 
     setShift(button) {
+        if (!button || button.char == undefined) return;
         this.shift = !this.shift;
         this.updateKeyLabels();
         if (!this.shift) {
@@ -1749,6 +1755,7 @@ class Keyboard extends Dialog {
 
 
     setNormMod(button) {
+        if (!button || button.char == undefined) return;
         if (this.mod.includes(button.char.code)) {
             this.mod.splice(this.mod.indexOf(button.char.code), this.mod.indexOf(button.char.code) + 1);
             if (!(button.char.code == 42) && !(button.char.code == 54))
