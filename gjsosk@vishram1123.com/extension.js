@@ -695,7 +695,6 @@ class Keyboard extends Dialog {
     }
 
     destroy() {
-        Meta.enable_unredirect_for_display(global.display)
         Main.keyboard.maybeHandleEvent = this._oldMaybeHandleEvent
         global.stage.remove_action_by_name('osk')
         if (this.oldBottomDragAction !== null && this.oldBottomDragAction instanceof Clutter.Action)
@@ -835,7 +834,6 @@ class Keyboard extends Dialog {
         if (this.updateCapsLock) this.updateCapsLock()
         if (this.updateNumLock) this.updateNumLock()
         if (noPrep == null || !noPrep) {
-            Meta.disable_unredirect_for_display(global.display)
             this.prevKeyFocus = global.stage.key_focus
             this.inputDevice = Clutter.get_default_backend().get_default_seat().create_virtual_device(Clutter.InputDeviceType.KEYBOARD_DEVICE);
             this.state = State.OPENING
@@ -843,7 +841,6 @@ class Keyboard extends Dialog {
             Main.uiGroup.set_child_above_sibling(this, null);
         }
         if (noPrep == null || noPrep) {
-            Meta.disable_unredirect_for_display(global.display)
             let monitor = Main.layoutManager.monitors[currentMonitorId] ?? Main.layoutManager.primaryMonitor;
             let posX = [this.settings.get_int("snap-spacing-px"), ((monitor.width * .5) - ((this.width * .5))), monitor.width - this.width - this.settings.get_int("snap-spacing-px")][(this.settings.get_int("default-snap") % 3)];
             let posY = [this.settings.get_int("snap-spacing-px"), ((monitor.height * .5) - ((this.height * .5))), monitor.height - this.height - this.settings.get_int("snap-spacing-px")][Math.floor((this.settings.get_int("default-snap") / 3))];
