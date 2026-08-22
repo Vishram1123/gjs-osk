@@ -7,11 +7,6 @@ A (marginally) better on screen keyboard for GNOME 42-44 (go to the [main branch
 ## Requirements
 - GNOME 42-44
 - Wayland (X11 is not working properly)
-## Demo
-[Keyboard Demo.webm](https://user-images.githubusercontent.com/64966832/210458851-1b91adba-f6e4-4d40-b0d5-dba2c46cc354.webm)
-
-[Settings Demo.webm](https://user-images.githubusercontent.com/64966832/210458854-eb458311-3d3f-4edb-93df-f5b8334d4cbc.webm)
-
 ## Install
 1. Visit [https://extensions.gnome.org/extension/5949/gjs-osk/](https://extensions.gnome.org/extension/5949/gjs-osk/)
 2. Confirming that you have Chrome GNOME shell installed on your computer and your browser's GNOME Shell Integration plugin
