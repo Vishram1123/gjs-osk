@@ -413,6 +413,7 @@ class GjsOskExtension {
                 await initializeKeyboard();
             })().catch(this.fail)
         }
+        this.refresh = refresh;
         refresh()
 
         this._originalLastDeviceIsTouchscreen = KeyboardUI.KeyboardManager.prototype._lastDeviceIsTouchscreen;
@@ -429,6 +430,7 @@ class GjsOskExtension {
                 style_class: 'system-status-icon'
             });
             this._indicator.add_child(icon);
+            this._indicator.clear_actions();
             this._indicator.connect("button-press-event", () => {
                 this._toggleKeyboard();
                 return Clutter.EVENT_STOP;
@@ -561,10 +563,12 @@ class GjsOskExtension {
             clearInterval(this.openInterval);
             this.openInterval = null;
         }
-        try {
-            this._toggle.destroy()
-        } catch { }
-        this._toggle = null
+        if (this._toggle !== null) {
+            try {
+                this._toggle.destroy()
+            } catch { }
+            this._toggle = null
+        }
         this.settings = null
         this.Keyboard = null
         keycodes = null
@@ -599,6 +603,7 @@ class Keyboard extends Dialog {
                 orientation: Clutter.Orientation.HORIZONTAL,
             })
         });
+        this.box.clear_actions();
         this.widthPercent = (monitor.width > monitor.height) ? settings.get_int("landscape-width-percent") / 100 : settings.get_int("portrait-width-percent") / 100;
         this.heightPercent = (monitor.width > monitor.height) ? settings.get_int("landscape-height-percent") / 100 : settings.get_int("portrait-height-percent") / 100;
         this.nonDragBlocker = new Clutter.Actor();
@@ -690,6 +695,7 @@ class Keyboard extends Dialog {
     }
 
     destroy() {
+        Meta.enable_unredirect_for_display(global.display)
         Main.keyboard.maybeHandleEvent = this._oldMaybeHandleEvent
         global.stage.remove_action_by_name('osk')
         if (this.oldBottomDragAction !== null && this.oldBottomDragAction instanceof Clutter.Action)
@@ -829,12 +835,15 @@ class Keyboard extends Dialog {
         if (this.updateCapsLock) this.updateCapsLock()
         if (this.updateNumLock) this.updateNumLock()
         if (noPrep == null || !noPrep) {
+            Meta.disable_unredirect_for_display(global.display)
             this.prevKeyFocus = global.stage.key_focus
             this.inputDevice = Clutter.get_default_backend().get_default_seat().create_virtual_device(Clutter.InputDeviceType.KEYBOARD_DEVICE);
             this.state = State.OPENING
             this.show();
+            Main.uiGroup.set_child_above_sibling(this, null);
         }
         if (noPrep == null || noPrep) {
+            Meta.disable_unredirect_for_display(global.display)
             let monitor = Main.layoutManager.monitors[currentMonitorId] ?? Main.layoutManager.primaryMonitor;
             let posX = [this.settings.get_int("snap-spacing-px"), ((monitor.width * .5) - ((this.width * .5))), monitor.width - this.width - this.settings.get_int("snap-spacing-px")][(this.settings.get_int("default-snap") % 3)];
             let posY = [this.settings.get_int("snap-spacing-px"), ((monitor.height * .5) - ((this.height * .5))), monitor.height - this.height - this.settings.get_int("snap-spacing-px")][Math.floor((this.settings.get_int("default-snap") / 3))];
@@ -870,6 +879,8 @@ class Keyboard extends Dialog {
                 })
             }
             this.opened = true;
+            Main.uiGroup.set_child_above_sibling(this, null);
+            // [insert handwriting 5]
         }
     }
 
@@ -1469,6 +1480,7 @@ class Keyboard extends Dialog {
                 }
                 item.key_pressed = false;
             }
+            item.clear_actions();
             item.connect("button-press-event", () => pressEv("mouse"))
             item.connect("button-release-event", releaseEv)
             item.connect("touch-event", () => {
@@ -1544,6 +1556,10 @@ class Keyboard extends Dialog {
     }
 
     decideMod(i, mBtn) {
+        if (!i) return;
+        const needsButton = [29, 56, 97, 125, 126, 100, 42, 54, 58, 69].includes(i.code);
+        if (needsButton && (!mBtn || !mBtn.char)) return;
+
         if (i.code == 29 || i.code == 56 || i.code == 97 || i.code == 125 || i.code == 126) {
             this.setNormMod(mBtn);
         } else if (i.code == 100) {
@@ -1588,6 +1604,7 @@ class Keyboard extends Dialog {
     }
 
     setAlt(button) {
+        if (!button || !button.char) return;
         this.alt = !this.alt;
         this.updateKeyLabels();
         if (!this.alt) {
@@ -1597,6 +1614,7 @@ class Keyboard extends Dialog {
     }
 
     setShift(button) {
+        if (!button || button.char == undefined) return;
         this.shift = !this.shift;
         this.updateKeyLabels();
         if (!this.shift) {
@@ -1620,6 +1638,7 @@ class Keyboard extends Dialog {
 
 
     setNormMod(button) {
+        if (!button || button.char == undefined) return;
         if (this.mod.includes(button.char.code)) {
             this.mod.splice(this.mod.indexOf(button.char.code), this.mod.indexOf(button.char.code) + 1);
             if (!(button.char.code == 42) && !(button.char.code == 54))
