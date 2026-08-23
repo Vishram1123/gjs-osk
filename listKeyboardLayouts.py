@@ -1,4 +1,4 @@
-import xml.etree.ElementTree as et
+import defusedxml.ElementTree as et
 
 def read_names(path: str) -> list[str]:
     names = []
