@@ -73,6 +73,16 @@
      background-image: url(ui/icons/hicolor/scalable/actions/settings-dark.svg);
 }
 
+.lang-switch_btn.regular,
+.lang-switch_btn.selected.inverted {
+     background-image: url(ui/icons/hicolor/scalable/actions/global.svg);
+}
+
+.lang-switch_btn.inverted,
+.lang-switch_btn.selected.regular {
+     background-image: url(ui/icons/hicolor/scalable/actions/global-dark.svg);
+}
+
 .backspace_btn.regular,
 .backspace_btn.selected.inverted {
      background-image: url(ui/icons/hicolor/scalable/actions/backspace.svg);
