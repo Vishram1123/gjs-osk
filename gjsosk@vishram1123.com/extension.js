@@ -1676,7 +1676,6 @@ class Keyboard extends Dialog {
 
                 const currentIndex = sources.findIndex(src => src.id === manager.currentSource.id);
                 const nextIndex = (currentIndex + 1) % sources.length;
-                this.langSwitchedByKeyboard = true
                 sources[nextIndex].activate();
             });
             this.keys.push(langSwitchBtn)
