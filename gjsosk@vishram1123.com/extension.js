@@ -1278,8 +1278,8 @@ class Keyboard extends Dialog {
                 this.box.add_style_class_name("regular");
             }
 
-            let mvBtnStartLeft = 4 * topBtnWidth
-            let mvBtnEndRight = 2 * topBtnWidth
+            let mvBtnStartLeft = 0
+            let mvBtnEndRight = 0
 
             if (currentLayout[currentLayout.length - 1].settings) {
                 const settingsBtn = new St.Button({
@@ -1297,31 +1297,34 @@ class Keyboard extends Dialog {
                 })
                 this.keys.push(settingsBtn)
                 grid.attach(settingsBtn, 0, 0, 2 * topBtnWidth, 3)
+                mvBtnStartLeft += 2 * topBtnWidth;
+            }
 
+            const manager = InputSourceManager.getInputSourceManager();
+            const sources = Object.values(manager.inputSources);
+
+            if (sources.length > 1) {
                 const showIcons = this.settings.get_boolean("show-icons");
                 const langSwitchBtn = new St.Button({
-                    label: !showIcons ? KeyboardManager.getKeyboardManager().currentLayout?.id : '',
+                    label: !showIcons ? manager.currentSource?.id : '',
                     x_expand: true,
                     y_expand: true,
                 })
                 langSwitchBtn.add_style_class_name("key")
                 if (showIcons) langSwitchBtn.add_style_class_name("lang-switch_btn")
                 langSwitchBtn.connect("clicked", () => {
-                    const manager = InputSourceManager.getInputSourceManager();
-                    const sources = Object.values(manager.inputSources); 
-                    const current = manager.currentSource;
-                    if (sources.length <= 1 || !current) return true;
+                    if (!manager.currentSource) return true;
 
-                    const currentIndex = sources.findIndex(src => src.id === current.id);
+                    const currentIndex = sources.findIndex(src => src.id === manager.currentSource.id);
                     const nextIndex = (currentIndex + 1) % sources.length;
                     this.langSwitchedByKeyboard = true
                     sources[nextIndex].activate();
                 });
                 this.keys.push(langSwitchBtn)
                 grid.attach(langSwitchBtn, 2, 0, 2 * topBtnWidth, 3)
-            } else {
-                mvBtnStartLeft = 0
+                mvBtnStartLeft += 2 * topBtnWidth;
             }
+
             if (currentLayout[currentLayout.length - 1].close) {
                 const closeBtn = new St.Button({
                     x_expand: true,
@@ -1341,8 +1344,7 @@ class Keyboard extends Dialog {
                 })
                 grid.attach(closeBtn, (rowSize - 2 * topBtnWidth), 0, 2 * topBtnWidth, 3)
                 this.keys.push(closeBtn)
-            } else {
-                mvBtnEndRight = 0;
+                mvBtnEndRight += 2 * topBtnWidth
             }
 
             // [insert handwriting 10]
