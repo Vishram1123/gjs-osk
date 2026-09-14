@@ -218,7 +218,7 @@ export default class GjsOskExtension extends Extension {
 
         let [okL, contentsL] = GLib.file_get_contents(this.path + '/physicalLayouts.json');
         if (okL) {
-            layouts = JSON.parse(contentsL);
+            layouts = JSON.parse(new TextDecoder().decode(contentsL));
         }
 
         let rawCustomLayouts = this.settings.get_string("custom-layout") || "[]";
@@ -401,7 +401,7 @@ export default class GjsOskExtension extends Extension {
                         throw new Error(`Failed to read keycodes from ${keycodesPath}`);
                     }
 
-                    keycodes = JSON.parse(contents);
+                    keycodes = JSON.parse(new TextDecoder().decode(contents));
 
                     if (this.Keyboard) {
                         this.Keyboard.destroy();
@@ -877,7 +877,7 @@ class Keyboard extends Dialog {
 
     snapMovement(xPos, yPos) {
         let monitor = Main.layoutManager.monitors[currentMonitorId] ?? Main.layoutManager.primaryMonitor
-        if (xPos < monitor.x || yPos < monitor.y || xPos > monitor.x + monitor.width || yPos > monitor.y + monitor.width) {
+        if (xPos < monitor.x || yPos < monitor.y || xPos > monitor.x + monitor.width || yPos > monitor.y + monitor.height) {
             this.set_translation(xPos, yPos, 0);
             return;
         }

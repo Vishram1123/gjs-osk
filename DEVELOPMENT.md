@@ -14,6 +14,21 @@ Check session type:
 echo $XDG_SESSION_TYPE   # must print: wayland
 ```
 
+## GTK_IM_MODULE (required for GTK4 apps)
+
+GTK4 apps only bind the Wayland `text-input-v3` protocol (and therefore open
+the OSK on focus) when `GTK_IM_MODULE=wayland`. Ubuntu sets it to `ibus` via
+im-config, which suppresses the OSK entirely.
+
+Persistent (user session) via a systemd environment drop-in:
+
+```bash
+mkdir -p ~/.config/environment.d
+printf 'GTK_IM_MODULE=wayland\n' > ~/.config/environment.d/gtk-im.conf
+```
+
+Then log out/in. Or per-app for a quick test: `GTK_IM_MODULE=wayland gedit`.
+
 ## Install
 
 Symlink the extension directory (best for editing — changes reflect on reload
@@ -24,18 +39,15 @@ mkdir -p ~/.local/share/gnome-shell/extensions
 ln -s "$PWD/gjsosk@vishram1123.com" ~/.local/share/gnome-shell/extensions/gjsosk@vishram1123.com
 ```
 
-Install the GSettings schema (user-local or system-wide; pick one):
+Compile the GSettings schema **in place**. GNOME 45+ `getSettings()` loads
+`schemas/gschemas.compiled` from inside the extension directory (NOT from
+`~/.local/share/glib-2.0/schemas/`), so the XML must be compiled there:
 
 ```bash
-# user-local
-mkdir -p ~/.local/share/glib-2.0/schemas
-cp gjsosk@vishram1123.com/schemas/org.gnome.shell.extensions.gjsosk.gschema.xml ~/.local/share/glib-2.0/schemas/
-glib-compile-schemas ~/.local/share/glib-2.0/schemas/
-
-# system-wide (alternative)
-sudo cp gjsosk@vishram1123.com/schemas/org.gnome.shell.extensions.gjsosk.gschema.xml /usr/share/glib-2.0/schemas/
-sudo glib-compile-schemas /usr/share/glib-2.0/schemas/
+glib-compile-schemas gjsosk@vishram1123.com/schemas/
 ```
+
+(`gschemas.compiled` is git-ignored via `*.compiled`.)
 
 Enable and verify:
 
