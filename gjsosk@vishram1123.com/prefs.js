@@ -366,6 +366,88 @@ export default class GjsOskPreferences extends ExtensionPreferences {
         });
         page1.add(layoutGroup);
 
+        const trackpadGroup = new Adw.PreferencesGroup({
+            title: _("Trackpad"),
+            description: _("Touch panels shown in the empty space beside the keys")
+        });
+        page1.add(trackpadGroup);
+
+        const trackpadEnabledRow = new Adw.ActionRow({
+            title: _('Trackpad on the Right')
+        });
+        trackpadGroup.add(trackpadEnabledRow);
+        const trackpadEnabledDT = new Gtk.Switch({
+            active: settings.get_boolean('pad-trackpad-enabled'),
+            valign: Gtk.Align.CENTER,
+        });
+        trackpadEnabledRow.add_suffix(trackpadEnabledDT);
+        trackpadEnabledRow.activatable_widget = trackpadEnabledDT;
+
+        const scrollPadEnabledRow = new Adw.ActionRow({
+            title: _('Scroll Strip on the Left')
+        });
+        trackpadGroup.add(scrollPadEnabledRow);
+        const scrollPadEnabledDT = new Gtk.Switch({
+            active: settings.get_boolean('pad-scroll-enabled'),
+            valign: Gtk.Align.CENTER,
+        });
+        scrollPadEnabledRow.add_suffix(scrollPadEnabledDT);
+        scrollPadEnabledRow.activatable_widget = scrollPadEnabledDT;
+
+        const tapToClickRow = new Adw.ActionRow({
+            title: _('Tap to Click')
+        });
+        trackpadGroup.add(tapToClickRow);
+        const tapToClickDT = new Gtk.Switch({
+            active: settings.get_boolean('pad-tap-to-click'),
+            valign: Gtk.Align.CENTER,
+        });
+        tapToClickRow.add_suffix(tapToClickDT);
+        tapToClickRow.activatable_widget = tapToClickDT;
+
+        const naturalScrollRow = new Adw.ActionRow({
+            title: _('Natural Scrolling')
+        });
+        trackpadGroup.add(naturalScrollRow);
+        const naturalScrollDT = new Gtk.Switch({
+            active: settings.get_boolean('pad-natural-scroll'),
+            valign: Gtk.Align.CENTER,
+        });
+        naturalScrollRow.add_suffix(naturalScrollDT);
+        naturalScrollRow.activatable_widget = naturalScrollDT;
+
+        const keepCursorRow = new Adw.ActionRow({
+            title: _('Keep the Cursor Visible'),
+            subtitle: _('Stops the pointer being hidden by touch input')
+        });
+        trackpadGroup.add(keepCursorRow);
+        const keepCursorDT = new Gtk.Switch({
+            active: settings.get_boolean('pad-keep-cursor-visible'),
+            valign: Gtk.Align.CENTER,
+        });
+        keepCursorRow.add_suffix(keepCursorDT);
+        keepCursorRow.activatable_widget = keepCursorDT;
+
+        let padSensRow = new Adw.ActionRow({
+            title: _('Pointer Speed (%)')
+        });
+        let numChanger_padSens = Gtk.SpinButton.new_with_range(20, 400, 10);
+        numChanger_padSens.value = settings.get_int('pad-sensitivity');
+        numChanger_padSens.valign = Gtk.Align.CENTER;
+        padSensRow.add_suffix(numChanger_padSens);
+        padSensRow.activatable_widget = numChanger_padSens;
+        trackpadGroup.add(padSensRow);
+
+        let padScrollRow = new Adw.ActionRow({
+            title: _('Scroll Speed (%)')
+        });
+        let numChanger_padScroll = Gtk.SpinButton.new_with_range(20, 400, 10);
+        numChanger_padScroll.value = settings.get_int('pad-scroll-speed');
+        numChanger_padScroll.valign = Gtk.Align.CENTER;
+        padScrollRow.add_suffix(numChanger_padScroll);
+        padScrollRow.activatable_widget = numChanger_padScroll;
+        trackpadGroup.add(padScrollRow);
+
         const layoutRow = new Adw.ExpanderRow({
             title: _('Layout')
         });
@@ -1088,6 +1170,13 @@ export default class GjsOskPreferences extends ExtensionPreferences {
 
         window.add(page3);
 
+        settings.bind("pad-trackpad-enabled", trackpadEnabledDT, "active", 0);
+        settings.bind("pad-scroll-enabled", scrollPadEnabledDT, "active", 0);
+        settings.bind("pad-tap-to-click", tapToClickDT, "active", 0);
+        settings.bind("pad-natural-scroll", naturalScrollDT, "active", 0);
+        settings.bind("pad-keep-cursor-visible", keepCursorDT, "active", 0);
+        settings.bind("pad-sensitivity", numChanger_padSens, "value", 0);
+        settings.bind("pad-scroll-speed", numChanger_padScroll, "value", 0);
         settings.bind("layout-landscape", layoutLandscapeDrop, "selected", 0);
         settings.bind("layout-portrait", layoutPortraitDrop, "selected", 0);
         settings.bind("disable-edge-swipe", disableEdgeSwipeDT, "active", 0);
@@ -1136,6 +1225,13 @@ export default class GjsOskPreferences extends ExtensionPreferences {
         })
 
         window.connect("close-request", () => {
+            settings.set_boolean("pad-trackpad-enabled", trackpadEnabledDT.active);
+            settings.set_boolean("pad-scroll-enabled", scrollPadEnabledDT.active);
+            settings.set_boolean("pad-tap-to-click", tapToClickDT.active);
+            settings.set_boolean("pad-natural-scroll", naturalScrollDT.active);
+            settings.set_boolean("pad-keep-cursor-visible", keepCursorDT.active);
+            settings.set_int("pad-sensitivity", numChanger_padSens.value);
+            settings.set_int("pad-scroll-speed", numChanger_padScroll.value);
             settings.set_int("layout-landscape", layoutLandscapeDrop.selected);
             settings.set_int("layout-portrait", layoutPortraitDrop.selected);
             settings.set_boolean("disable-edge-swipe", disableEdgeSwipeDT.active);

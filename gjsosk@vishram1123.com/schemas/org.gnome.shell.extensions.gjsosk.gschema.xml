@@ -100,6 +100,30 @@
     <key name="key-repeat-rate" type="i">
 	    <default>100</default>
     </key>
+    <key name="pad-trackpad-enabled" type="b">
+      <default>true</default>
+    </key>
+    <key name="pad-scroll-enabled" type="b">
+      <default>true</default>
+    </key>
+    <key name="pad-sensitivity" type="i">
+      <default>140</default>
+    </key>
+    <key name="pad-scroll-speed" type="i">
+      <default>100</default>
+    </key>
+    <key name="pad-natural-scroll" type="b">
+      <default>true</default>
+    </key>
+    <key name="pad-tap-to-click" type="b">
+      <default>true</default>
+    </key>
+    <key name="pad-keep-cursor-visible" type="b">
+      <default>true</default>
+    </key>
+    <key name="pad-min-width-px" type="i">
+      <default>90</default>
+    </key>
     <child name="indicator" schema="org.gnome.shell.extensions.gjsosk.indicator"/>
 	
   </schema>
