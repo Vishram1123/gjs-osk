@@ -24,6 +24,7 @@ if (major < 49) {
     } catch { }
 }
 import { Extension, gettext as _ } from 'resource:///org/gnome/shell/extensions/extension.js';
+import { PointerEmulator, TouchPanel } from './trackpad.js';
 
 const State = {
     OPENED: 0,
@@ -640,7 +641,7 @@ class Keyboard extends Dialog {
         this.buildUI();
         this.draggable = false;
         // [insert handwriting 4]
-        this.add_child(this.box);
+        this.add_child(this.buildPads());
         this.close();
         this.box.set_name("osk-gjs")
         this.mod = [];
@@ -795,6 +796,10 @@ class Keyboard extends Dialog {
         if (this.numLockConnect && GObject.signal_handler_is_connected(this.keymap, this.numLockConnect))
             this.keymap.disconnect(this.numLockConnect);
         global.backend.get_monitor_manager().disconnect(this.monitorChecker)
+        if (this.pointer != null) {
+            this.pointer.destroy();
+            this.pointer = null;
+        }
         super.destroy();
         if (this.nonDragBlocker !== null) {
             Main.layoutManager.removeChrome(this.nonDragBlocker)
@@ -806,8 +811,8 @@ class Keyboard extends Dialog {
             if (this._dragging)
                 return Clutter.EVENT_PROPAGATE;
             this._dragging = true;
-            this.box.set_opacity(255);
-            this.box.ease({
+            this.fadeActor.set_opacity(255);
+            this.fadeActor.ease({
                 opacity: 200,
                 duration: 100,
                 mode: Clutter.AnimationMode.EASE_OUT_QUAD,
@@ -837,8 +842,8 @@ class Keyboard extends Dialog {
                     this._grab = null;
                 }
 
-                this.box.set_opacity(200);
-                this.box.ease({
+                this.fadeActor.set_opacity(200);
+                this.fadeActor.ease({
                     opacity: 255,
                     duration: 100,
                     mode: Clutter.AnimationMode.EASE_OUT_QUAD,
@@ -902,7 +907,7 @@ class Keyboard extends Dialog {
         let [dx, dy] = [posX + mX * ((100 - percent) / 100) + monitor.x, posY + mY * ((100 - percent) / 100) + monitor.y]
         let op = 255 * (percent / 100);
         this.set_translation(dx, dy, 0)
-        this.box.set_opacity(op)
+        this.fadeActor.set_opacity(op)
     }
 
     open(noPrep = null, instant = null) {
@@ -914,6 +919,8 @@ class Keyboard extends Dialog {
             }
             this.prevKeyFocus = global.stage.key_focus
             this.inputDevice = Clutter.get_default_backend().get_default_seat().create_virtual_device(Clutter.InputDeviceType.KEYBOARD_DEVICE);
+            if (this.pointer != null)
+                this.pointer.reacquire();
             this.state = State.OPENING
             this.show();
             Main.uiGroup.set_child_above_sibling(this, null);
@@ -930,7 +937,7 @@ class Keyboard extends Dialog {
                 let mY = [-this.box.height, 0, this.box.height][Math.floor((this.settings.get_int("default-snap") / 3))]
                 this.set_translation(posX + mX + monitor.x, posY + mY + monitor.y, 0)
             }
-            this.box.ease({
+            this.fadeActor.ease({
                 opacity: 255,
                 duration: instant == null || !instant ? 100 : 0,
                 mode: Clutter.AnimationMode.EASE_OUT_QUAD,
@@ -970,7 +977,7 @@ class Keyboard extends Dialog {
         let mX = [-this.box.width, 0, this.box.width][(this.settings.get_int("default-snap") % 3)];
         let mY = [-this.box.height, 0, this.box.height][Math.floor((this.settings.get_int("default-snap") / 3))]
         this.state = State.CLOSING
-        this.box.ease({
+        this.fadeActor.ease({
             opacity: 0,
             duration: instant == null || !instant ? 100 : 0,
             mode: Clutter.AnimationMode.EASE_OUT_QUAD,
@@ -1000,6 +1007,8 @@ class Keyboard extends Dialog {
         }
         this.openedFromButton = false
         this.releaseAllKeys();
+        if (this.pointer != null)
+            this.pointer.releaseAll();
         // [insert handwrting 6]
     }
 
@@ -1050,8 +1059,65 @@ class Keyboard extends Dialog {
         return Clutter.EVENT_PROPAGATE;
     }
 
+    /**
+     * Wraps the keyboard grid in a row with a scroll strip on the left and a
+     * trackpad on the right, filling the space the keyboard leaves empty.
+     * Returns the actor that should be added to the dialog.
+     */
+    buildPads() {
+        this.pointer = null;
+        this.padLeft = null;
+        this.padRight = null;
+
+        const wantLeft = this.settings.get_boolean("pad-scroll-enabled");
+        const wantRight = this.settings.get_boolean("pad-trackpad-enabled");
+        if ((!wantLeft && !wantRight) || this.layoutIsSplit)
+            return this.box;
+
+        const monitor = Main.layoutManager.monitors[currentMonitorId] ?? Main.layoutManager.primaryMonitor;
+        const spacing = this.settings.get_int("snap-spacing-px");
+        const gap = Math.floor(((monitor.width - spacing * 2) - this.box.width) / 2);
+        if (gap < this.settings.get_int("pad-min-width-px"))
+            return this.box;
+
+        this.pointer = new PointerEmulator();
+        const makePad = mode => new TouchPanel(this.pointer, this.settings, mode, {
+            width: gap,
+            height: this.box.height
+        });
+
+        const row = new St.BoxLayout({
+            reactive: false,
+            orientation: Clutter.Orientation.HORIZONTAL,
+            style_class: 'gjsosk-pad-row'
+        });
+        // Both sides keep the full gap width even when only one pad is asked
+        // for, so the keyboard itself stays where it was.
+        if (wantLeft) {
+            this.padLeft = makePad('scroll');
+            row.add_child(this.padLeft);
+        } else {
+            row.add_child(new St.Widget({ width: gap, height: this.box.height }));
+        }
+        row.add_child(this.box);
+        if (wantRight) {
+            this.padRight = makePad('pointer');
+            row.add_child(this.padRight);
+        } else {
+            row.add_child(new St.Widget({ width: gap, height: this.box.height }));
+        }
+
+        // The open/close animation fades the whole row from now on, so the box
+        // itself goes back to being opaque.
+        this.box.set_opacity(255);
+        row.set_opacity(0);
+        this.fadeActor = row;
+        return row;
+    }
+
     buildUI() {
-        this.box.set_opacity(0);
+        this.fadeActor = this.box;
+        this.fadeActor.set_opacity(0);
         this.keys = [];
         let monitor = Main.layoutManager.monitors[currentMonitorId] ?? Main.layoutManager.primaryMonitor
         let layoutIdx = (monitor.width > monitor.height) ? this.settings.get_int("layout-landscape") : this.settings.get_int("layout-portrait")
@@ -1073,6 +1139,7 @@ class Keyboard extends Dialog {
                 currentLayout = layouts[Object.keys(layouts)[0]];
             }
         }
+        this.layoutIsSplit = !!currentLayout[currentLayout.length - 1].split;
         this.box.width = Math.round((monitor.width - this.settings.get_int("snap-spacing-px") * 2) * (currentLayout[currentLayout.length - 1].split ? 1 : this.widthPercent))
         this.box.height = Math.round((monitor.height - this.settings.get_int("snap-spacing-px") * 2) * this.heightPercent)
 
