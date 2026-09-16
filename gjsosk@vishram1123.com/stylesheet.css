@@ -243,3 +243,28 @@
 .boxLay {
      border-radius: 10px;
 }
+
+/* Trackpad / scroll strip panels */
+.gjsosk-pad-row {
+     spacing: 0;
+}
+
+.gjsosk-trackpad,
+.gjsosk-scrollbar-pad {
+     margin: 10px;
+     border-radius: 12px;
+     /* Opaque enough to read as part of the keyboard over any wallpaper. */
+     background-color: rgba(40, 40, 40, 0.85);
+     border: 2px solid rgba(255, 255, 255, 0.10);
+}
+
+.gjsosk-trackpad:active,
+.gjsosk-scrollbar-pad:active {
+     background-color: rgba(70, 70, 70, 0.92);
+     border: 2px solid rgba(255, 255, 255, 0.28);
+}
+
+.gjsosk-pad-hint {
+     color: rgba(255, 255, 255, 0.35);
+     font-size: 28px;
+}
