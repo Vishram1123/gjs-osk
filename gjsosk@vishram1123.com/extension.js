@@ -622,6 +622,7 @@ class Keyboard extends Dialog {
 
     _init(settings, extensionObject) {
         this.settingsOpenFunction = extensionObject.openPrefs
+        this.extensionObject = extensionObject;
         this.inputDevice = Clutter.get_default_backend().get_default_seat().create_virtual_device(Clutter.InputDeviceType.KEYBOARD_DEVICE);
         this.settings = settings;
         this.customLayouts = extensionObject.customLayouts;
@@ -1738,7 +1739,9 @@ class Keyboard extends Dialog {
             if (key.char != undefined) {
                 let layer = (this.alt ? 'alt' : '') + (this.shift ? 'shift' : '') + (this.numsL ? 'num' : '') + (this.capsL ? 'caps' : '') + (this.numsL || this.capsL ? 'lock' : '')
                 if (layer == '') layer = 'default'
-                key.label = key.char.layers[layer];
+                let label = key.char.layers[layer];
+                if (label === undefined) label = key.char.layers['default'];
+                key.label = label;
             }
         });
     }
