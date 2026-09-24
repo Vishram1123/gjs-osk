@@ -7,6 +7,7 @@ A (marginally) better on screen keyboard for GNOME 45+ (go to the [pre-45 branch
 ## Requirements
 - GNOME 45 or above
 - Wayland (X11 is not working properly)
+- `GTK_IM_MODULE=wayland` so GTK4 apps bind the Wayland `text-input-v3` protocol and open the keyboard when a text field is focused (see [From a git checkout](#from-a-git-checkout))
 ## Install
 1. Visit [https://extensions.gnome.org/extension/5949/gjs-osk/](https://extensions.gnome.org/extension/5949/gjs-osk/)
 2. Confirming that you have Chrome GNOME shell installed on your computer and your browser's GNOME Shell Integration plugin
@@ -17,6 +18,24 @@ A (marginally) better on screen keyboard for GNOME 45+ (go to the [pre-45 branch
 3. Run `gnome-extensions install /path/to/gjsosk@vishram1123_[version].zip` (replace with appropriate path)
 4. Log out of GNOME and log back in. 
 5. Click on the keyboard button in the dash bar
+### From a git checkout
+The release zips ship a pre-compiled GSettings schema; a git checkout does not.
+Two extra steps are required:
+
+1. Compile the schema in place — GNOME 45+ loads `schemas/gschemas.compiled`
+   from inside the extension directory, and a missing one makes the extension
+   fail to load:
+   ```bash
+   glib-compile-schemas gjsosk@vishram1123.com/schemas/
+   ```
+2. Set `GTK_IM_MODULE=wayland` so GTK4 apps trigger the OSK on focus. Persistent
+   (user session) via a systemd environment drop-in:
+   ```bash
+   mkdir -p ~/.config/environment.d
+   printf 'GTK_IM_MODULE=wayland\n' > ~/.config/environment.d/gtk-im.conf
+   ```
+   Or per-app for a quick test: `GTK_IM_MODULE=wayland gedit`.
+   (Ubuntu sets `GTK_IM_MODULE=ibus` via im-config, which suppresses the OSK.)
 ## Usage
 - To drag the keyboard around, click on the move icon in the bottom right, then drag the keyboard around the screen. To get the full keyboard back, press the move icon again.
   - The keyboard will snap to the corners, edges, and center of the screen.
