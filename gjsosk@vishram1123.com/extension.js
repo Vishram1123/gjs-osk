@@ -631,7 +631,7 @@ class Keyboard extends Dialog {
     _init(settings, extensionObject) {
         this.settingsOpenFunction = extensionObject.openPrefs
         this.extensionObject = extensionObject;
-        this.inputDevice = Clutter.get_default_backend().get_default_seat().create_virtual_device(Clutter.InputDeviceType.KEYBOARD_DEVICE);
+        this.inputDevice = global.stage.context.get_backend().get_default_seat().create_virtual_device(Clutter.InputDeviceType.KEYBOARD_DEVICE);
         this.settings = settings;
         this.customLayouts = extensionObject.customLayouts;
         let monitor = Main.layoutManager.monitors[currentMonitorId] ?? Main.layoutManager.primaryMonitor;
@@ -922,7 +922,7 @@ class Keyboard extends Dialog {
                 global.display.get_compositor().disable_unredirect()
             }
             this.prevKeyFocus = global.stage.key_focus
-            this.inputDevice = Clutter.get_default_backend().get_default_seat().create_virtual_device(Clutter.InputDeviceType.KEYBOARD_DEVICE);
+            this.inputDevice = global.stage.context.get_backend().get_default_seat().create_virtual_device(Clutter.InputDeviceType.KEYBOARD_DEVICE);
             this.state = State.OPENING
             this.show();
             Main.uiGroup.set_child_above_sibling(this, null);
@@ -1214,13 +1214,13 @@ class Keyboard extends Dialog {
                 keyBtn.add_style_class_name('key')
                 keyBtn.char = i
                 if (i.code == 58) {
-                    this.keymap = Clutter.get_default_backend().get_default_seat().get_keymap()
+                    this.keymap = global.stage.context.get_backend().get_default_seat().get_keymap()
                     this.capsLockConnect = this.keymap.connect("state-changed", (a, e) => {
                         this.setCapsLock(keyBtn, this.keymap.get_caps_lock_state())
                     })
                     this.updateCapsLock = () => this.setCapsLock(keyBtn, this.keymap.get_caps_lock_state())
                 } else if (i.code == 69) {
-                    this.keymap = Clutter.get_default_backend().get_default_seat().get_keymap()
+                    this.keymap = global.stage.context.get_backend().get_default_seat().get_keymap()
                     this.numLockConnect = this.keymap.connect("state-changed", (a, e) => {
                         this.setNumLock(keyBtn, this.keymap.get_num_lock_state())
                     })
