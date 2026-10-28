@@ -1747,8 +1747,13 @@ class Keyboard extends Dialog {
         }
     }
 
+    // Terminals take commands, not sentences
+    _autoCapitalizeAllowed() {
+        return Main.inputMethod.content_purpose != Clutter.InputContentPurpose.TERMINAL;
+    }
+
     _armAutoShift() {
-        if (!this.shift && !this.capsL && this.shiftButtons.length > 0) {
+        if (this._autoCapitalizeAllowed() && !this.shift && !this.capsL && this.shiftButtons.length > 0) {
             this.setShift(this.shiftButtons[0]);
         }
     }
