@@ -173,7 +173,15 @@ export default class GjsOskExtension extends Extension {
         }, 300);
         this.tapConnect = global.stage.connect("event", (_actor, event) => {
             if (event.type() !== 4 && event.type() !== 5) {
-                this.lastInputMethod = [false, event.type() >= 9 && event.type() <= 12, true][this.settings.get_boolean("indicator-enabled") ? this.settings.get_int("enable-tap-gesture") : 0]
+                this.lastInputMethod = [false, event.type() >= 9 && event.type() <= 12, true][this.settings.get_int("enable-tap-gesture")]
+            }
+            // Reset close-suppression on a fresh tap outside the keyboard
+            if ((event.type() == Clutter.EventType.TOUCH_BEGIN || event.type() == Clutter.EventType.BUTTON_PRESS)
+                && this.Keyboard != null && this.Keyboard.closedFromButton) {
+                const actor = global.stage.get_event_actor(event);
+                if (actor == null || !this.Keyboard.contains(actor)) {
+                    this.Keyboard.closedFromButton = false;
+                }
             }
         })
     }
@@ -210,7 +218,7 @@ export default class GjsOskExtension extends Extension {
 
         let [okL, contentsL] = GLib.file_get_contents(this.path + '/physicalLayouts.json');
         if (okL) {
-            layouts = JSON.parse(contentsL);
+            layouts = JSON.parse(new TextDecoder().decode(contentsL));
         }
 
         let rawCustomLayouts = this.settings.get_string("custom-layout") || "[]";
@@ -393,7 +401,7 @@ export default class GjsOskExtension extends Extension {
                         throw new Error(`Failed to read keycodes from ${keycodesPath}`);
                     }
 
-                    keycodes = JSON.parse(contents);
+                    keycodes = JSON.parse(new TextDecoder().decode(contents));
 
                     if (this.Keyboard) {
                         this.Keyboard.destroy();
@@ -622,7 +630,8 @@ class Keyboard extends Dialog {
 
     _init(settings, extensionObject) {
         this.settingsOpenFunction = extensionObject.openPrefs
-        this.inputDevice = Clutter.get_default_backend().get_default_seat().create_virtual_device(Clutter.InputDeviceType.KEYBOARD_DEVICE);
+        this.extensionObject = extensionObject;
+        this.inputDevice = global.stage.context.get_backend().get_default_seat().create_virtual_device(Clutter.InputDeviceType.KEYBOARD_DEVICE);
         this.settings = settings;
         this.customLayouts = extensionObject.customLayouts;
         let monitor = Main.layoutManager.monitors[currentMonitorId] ?? Main.layoutManager.primaryMonitor;
@@ -749,7 +758,7 @@ class Keyboard extends Dialog {
         }
         this._oldMaybeHandleEvent = Main.keyboard.maybeHandleEvent
         Main.keyboard.maybeHandleEvent = (e) => {
-            let lastInputMethod = [e.type() == 11, e.type() == 11, e.type() == 7 || e.type() == 11][this.settings.get_boolean("indicator-enabled") ? this.settings.get_int("enable-tap-gesture") : 0]
+            let lastInputMethod = [false, e.type() == 11, e.type() == 7 || e.type() == 11][this.settings.get_int("enable-tap-gesture")]
             let ac = global.stage.get_event_actor(e)
             if (this.contains(ac)) {
                 ac.event(e, true);
@@ -870,7 +879,7 @@ class Keyboard extends Dialog {
 
     snapMovement(xPos, yPos) {
         let monitor = Main.layoutManager.monitors[currentMonitorId] ?? Main.layoutManager.primaryMonitor
-        if (xPos < monitor.x || yPos < monitor.y || xPos > monitor.x + monitor.width || yPos > monitor.y + monitor.width) {
+        if (xPos < monitor.x || yPos < monitor.y || xPos > monitor.x + monitor.width || yPos > monitor.y + monitor.height) {
             this.set_translation(xPos, yPos, 0);
             return;
         }
@@ -915,7 +924,7 @@ class Keyboard extends Dialog {
                 global.display.get_compositor().disable_unredirect()
             }
             this.prevKeyFocus = global.stage.key_focus
-            this.inputDevice = Clutter.get_default_backend().get_default_seat().create_virtual_device(Clutter.InputDeviceType.KEYBOARD_DEVICE);
+            this.inputDevice = global.stage.context.get_backend().get_default_seat().create_virtual_device(Clutter.InputDeviceType.KEYBOARD_DEVICE);
             this.state = State.OPENING
             this.show();
             Main.uiGroup.set_child_above_sibling(this, null);
@@ -1211,13 +1220,13 @@ class Keyboard extends Dialog {
                 keyBtn.add_style_class_name('key')
                 keyBtn.char = i
                 if (i.code == 58) {
-                    this.keymap = Clutter.get_default_backend().get_default_seat().get_keymap()
+                    this.keymap = global.stage.context.get_backend().get_default_seat().get_keymap()
                     this.capsLockConnect = this.keymap.connect("state-changed", (a, e) => {
                         this.setCapsLock(keyBtn, this.keymap.get_caps_lock_state())
                     })
                     this.updateCapsLock = () => this.setCapsLock(keyBtn, this.keymap.get_caps_lock_state())
                 } else if (i.code == 69) {
-                    this.keymap = Clutter.get_default_backend().get_default_seat().get_keymap()
+                    this.keymap = global.stage.context.get_backend().get_default_seat().get_keymap()
                     this.numLockConnect = this.keymap.connect("state-changed", (a, e) => {
                         this.setNumLock(keyBtn, this.keymap.get_num_lock_state())
                     })
@@ -1794,7 +1803,9 @@ class Keyboard extends Dialog {
             if (key.char != undefined) {
                 let layer = (this.alt ? 'alt' : '') + (this.shift ? 'shift' : '') + (this.numsL ? 'num' : '') + (this.capsL ? 'caps' : '') + (this.numsL || this.capsL ? 'lock' : '')
                 if (layer == '') layer = 'default'
-                key.label = key.char.layers[layer];
+                let label = key.char.layers[layer];
+                if (label === undefined) label = key.char.layers['default'];
+                key.label = label;
             }
         });
     }
