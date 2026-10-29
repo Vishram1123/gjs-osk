@@ -925,6 +925,12 @@ class Keyboard extends Dialog {
             this.inputDevice = global.stage.context.get_backend().get_default_seat().create_virtual_device(Clutter.InputDeviceType.KEYBOARD_DEVICE);
             this.state = State.OPENING
             this.show();
+            const parent = this.get_parent();
+            if (parent !== Main.uiGroup) {
+                if (parent)
+                    parent.remove_child(this);
+                Main.uiGroup.add_child(this);
+            }
             Main.uiGroup.set_child_above_sibling(this, null);
         }
         if (noPrep == null || noPrep) {
@@ -966,6 +972,12 @@ class Keyboard extends Dialog {
                 })
             }
             this.opened = true;
+            const parent = this.get_parent();
+            if (parent !== Main.uiGroup) {
+                if (parent)
+                    parent.remove_child(this);
+                Main.uiGroup.add_child(this);
+            }
             Main.uiGroup.set_child_above_sibling(this, null);
             // [insert handwriting 5]
         }
