@@ -100,6 +100,12 @@
     <key name="key-repeat-rate" type="i">
 	    <default>100</default>
     </key>
+    <key name="show-suggestions" type="b">
+      <default>false</default>
+    </key>
+    <key name="typing-booster-on-osk" type="b">
+      <default>false</default>
+    </key>
     <child name="indicator" schema="org.gnome.shell.extensions.gjsosk.indicator"/>
 	
   </schema>

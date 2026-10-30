@@ -4,7 +4,8 @@ const {
     Gio,
     Clutter,
     GLib,
-    Shell
+    Shell,
+    Pango
 } = imports.gi;
 
 const Gettext = imports.gettext;
@@ -20,6 +21,7 @@ const Config = imports.misc.config;
 const [major, minor] = Config.PACKAGE_VERSION.split('.').map(s => Number(s));
 const Signals = major >= 43 ? imports.misc.signals : imports.signals;
 const KeyboardManager = imports.misc.keyboardManager;
+const IBusManager = imports.misc.ibusManager;
 const InputSourceManager = imports.ui.status.keyboard;
 const QuickSettings = major >= 43 ? imports.ui.quickSettings : null
 const PopupMenu = imports.ui.popupMenu;
@@ -80,6 +82,40 @@ let keycodes;
 let layouts;
 let currentMonitorId = 0;
 let extract_dir = GLib.get_user_cache_dir() + "/gjs-osk";
+
+function isEventInActor(actor, event) {
+    if (actor === null || !actor.visible || !actor.mapped)
+        return false;
+    const [x, y] = event.get_coords();
+    const [actorX, actorY] = actor.get_transformed_position();
+    const [actorW, actorH] = actor.get_transformed_size();
+    return x >= actorX && x <= actorX + actorW && y >= actorY && y <= actorY + actorH;
+}
+
+// Shell's own OSK switches to typing-booster while it is in use and restores the previous engine afterwards.
+// It only does this when typing-booster is installed and the current source is a plain XKB layout.
+// GNOME 44 takes a completion callback, 43 ignores it and has no inputMethod.update() yet.
+let preOskEngine = null;
+function setOskCompletion(enabled) {
+    const ibusManager = IBusManager.getIBusManager();
+    if (ibusManager.setCompletionEnabled) {
+        ibusManager.setCompletionEnabled(enabled, () => Main.inputMethod.update?.());
+        return;
+    }
+    // GNOME 42 has no completion mode, so make the same engine switch here
+    if (enabled) {
+        const current = ibusManager._currentEngineName;
+        if (preOskEngine !== null || !ibusManager.getEngineDesc('typing-booster') || !current?.startsWith('xkb:'))
+            return;
+        preOskEngine = current;
+        ibusManager.setEngine('typing-booster');
+    } else if (preOskEngine !== null) {
+        // Leave the engine alone if the input source was changed while the keyboard was open
+        if (ibusManager._currentEngineName === 'typing-booster')
+            ibusManager.setEngine(preOskEngine);
+        preOskEngine = null;
+    }
+}
 
 function normalizeCustomLayouts(rawValue) {
     try {
@@ -607,6 +643,12 @@ class Keyboard extends Dialog {
         this.widthPercent = (monitor.width > monitor.height) ? settings.get_int("landscape-width-percent") / 100 : settings.get_int("portrait-width-percent") / 100;
         this.heightPercent = (monitor.width > monitor.height) ? settings.get_int("landscape-height-percent") / 100 : settings.get_int("portrait-height-percent") / 100;
         this.nonDragBlocker = new Clutter.Actor();
+        this.suggestions = [];
+        this.suggestionsVisible = false;
+        this.suggestionBox = null;
+        this.suggestionTimeout = null;
+        this.lastSuggestionTap = 0;
+        this.showSuggestions = settings.get_boolean("show-suggestions");
         this.buildUI();
         this.draggable = false;
         this.add_child(this.box);
@@ -692,10 +734,49 @@ class Keyboard extends Dialog {
             }
             return false
         }
+        // The IBus candidate popup feeds the (disabled) built-in OSK through these, so redirect them to the drag bar
+        if (this.showSuggestions) {
+            // GNOME 42 never calls setSuggestionsVisible, so treat any suggestions as visible there
+            this.suggestionsVisible = !KeyboardUI.KeyboardManager.prototype.setSuggestionsVisible;
+            this._oldResetSuggestions = Main.keyboard.resetSuggestions
+            this._oldAddSuggestion = Main.keyboard.addSuggestion
+            this._oldSetSuggestionsVisible = Main.keyboard.setSuggestionsVisible
+            Main.keyboard.resetSuggestions = () => {
+                this.suggestions = [];
+                this.queueSuggestionRender();
+            }
+            Main.keyboard.addSuggestion = (text, callback) => {
+                this.suggestions.push({ text, callback });
+                this.queueSuggestionRender();
+            }
+            Main.keyboard.setSuggestionsVisible = (visible) => {
+                this.suggestionsVisible = visible;
+                this.queueSuggestionRender();
+            }
+            const managerVisible = Object.getOwnPropertyDescriptor(KeyboardUI.KeyboardManager.prototype, 'visible').get;
+            Object.defineProperty(Main.keyboard, 'visible', {
+                configurable: true,
+                get: () => this.opened || managerVisible.call(Main.keyboard)
+            })
+        }
     }
 
     destroy() {
         Main.keyboard.maybeHandleEvent = this._oldMaybeHandleEvent
+        if (this.showSuggestions) {
+            Main.keyboard.resetSuggestions = this._oldResetSuggestions
+            Main.keyboard.addSuggestion = this._oldAddSuggestion
+            // GNOME 42 has no setSuggestionsVisible to restore
+            if (this._oldSetSuggestionsVisible)
+                Main.keyboard.setSuggestionsVisible = this._oldSetSuggestionsVisible
+            else
+                delete Main.keyboard.setSuggestionsVisible;
+            delete Main.keyboard.visible;
+        }
+        if (this.suggestionTimeout !== null) {
+            clearTimeout(this.suggestionTimeout);
+            this.suggestionTimeout = null;
+        }
         global.stage.remove_action_by_name('osk')
         if (this.oldBottomDragAction !== null && this.oldBottomDragAction instanceof Clutter.Action)
             global.stage.add_action_full('osk', Clutter.EventPhase.CAPTURE, this.oldBottomDragAction)
@@ -727,7 +808,7 @@ class Keyboard extends Dialog {
     }
 
     startDragging(event, delta) {
-        if (this.draggable) {
+        if (this.draggable && !isEventInActor(this.suggestionBox, event)) {
             if (this._dragging)
                 return Clutter.EVENT_PROPAGATE;
             this._dragging = true;
@@ -830,6 +911,15 @@ class Keyboard extends Dialog {
         this.box.set_opacity(op)
     }
 
+    placeOnTop() {
+        const inputPanelGroup = Main.uiGroup;
+        if (inputPanelGroup && this.get_parent() !== inputPanelGroup) {
+            this.get_parent()?.remove_child(this);
+            inputPanelGroup.add_child(this);
+        }
+        this.get_parent()?.set_child_above_sibling(this, null);
+    }
+
     open(noPrep = null, instant = null) {
         if (this.updateCapsLock) this.updateCapsLock()
         if (this.updateNumLock) this.updateNumLock()
@@ -837,8 +927,10 @@ class Keyboard extends Dialog {
             this.prevKeyFocus = global.stage.key_focus
             this.inputDevice = Clutter.get_default_backend().get_default_seat().create_virtual_device(Clutter.InputDeviceType.KEYBOARD_DEVICE);
             this.state = State.OPENING
+            if (this.showSuggestions && this.settings.get_boolean("typing-booster-on-osk"))
+                setOskCompletion(true);
             this.show();
-            Main.uiGroup.set_child_above_sibling(this, null);
+            this.placeOnTop();
         }
         if (noPrep == null || noPrep) {
             let monitor = Main.layoutManager.monitors[currentMonitorId] ?? Main.layoutManager.primaryMonitor;
@@ -876,13 +968,14 @@ class Keyboard extends Dialog {
                 })
             }
             this.opened = true;
-            Main.uiGroup.set_child_above_sibling(this, null);
+            this.placeOnTop();
             // [insert handwriting 5]
         }
     }
 
     close(instant = null) {
         this.prevKeyFocus = null;
+        setOskCompletion(false);
         let monitor = Main.layoutManager.monitors[currentMonitorId] ?? Main.layoutManager.primaryMonitor;
         let posX = [this.settings.get_int("snap-spacing-px"), ((monitor.width * .5) - ((this.width * .5))), monitor.width - this.width - this.settings.get_int("snap-spacing-px")][(this.settings.get_int("default-snap") % 3)];
         let posY = [this.settings.get_int("snap-spacing-px"), ((monitor.height * .5) - ((this.height * .5))), monitor.height - this.height - this.settings.get_int("snap-spacing-px")][Math.floor((this.settings.get_int("default-snap") / 3))];
@@ -966,6 +1059,84 @@ class Keyboard extends Dialog {
         }
 
         return Clutter.EVENT_PROPAGATE;
+    }
+
+    attachSuggestionBox(handle, widthFraction = 1) {
+        if (!this.showSuggestions)
+            return;
+        const container = new St.Widget({
+            x_expand: true,
+            y_expand: true,
+            layout_manager: new Clutter.GridLayout({
+                orientation: Clutter.Orientation.HORIZONTAL,
+                column_homogeneous: true
+            })
+        });
+        const columns = 20;
+        const side = Math.round(((1 - widthFraction) / 2) * columns);
+        this.suggestionBox = new St.BoxLayout({
+            x_expand: true,
+            y_expand: true,
+            visible: false
+        });
+        if (side > 0) {
+            container.layout_manager.attach(new St.Widget({ x_expand: true, y_expand: true }), 0, 0, side, 1)
+            container.layout_manager.attach(new St.Widget({ x_expand: true, y_expand: true }), columns - side, 0, side, 1)
+        }
+        container.layout_manager.attach(this.suggestionBox, side, 0, columns - 2 * side, 1)
+        this.suggestionStyle = this.lightOrDark() ? "inverted" : "regular";
+        handle.set_child(container);
+        this.renderSuggestions();
+    }
+
+    queueSuggestionRender() {
+        if (this.suggestionTimeout !== null)
+            return;
+        this.suggestionTimeout = setTimeout(() => {
+            this.suggestionTimeout = null;
+            this.renderSuggestions();
+        }, 0);
+    }
+
+    renderSuggestions() {
+        if (this.suggestionBox === null)
+            return;
+        this.suggestionBox.destroy_all_children();
+        const show = this.suggestionsVisible && this.suggestions.length > 0;
+        this.suggestionBox.visible = show;
+        if (!show)
+            return;
+        this.suggestions.forEach(({ text, callback }) => {
+            const btn = new St.Button({
+                x_expand: true,
+                y_expand: true
+            })
+            const label = new St.Label({
+                text: text,
+                x_align: Clutter.ActorAlign.CENTER,
+                y_align: Clutter.ActorAlign.CENTER
+            })
+            label.clutter_text.ellipsize = Pango.EllipsizeMode.END;
+            btn.set_child(label);
+            btn.clear_actions();
+            btn.add_style_class_name("key")
+            btn.add_style_class_name("suggestion")
+            btn.add_style_class_name(this.suggestionStyle)
+            btn.set_style("font-size: " + this.settings.get_int("font-size-px") + "px; border-radius: " + (this.settings.get_boolean("round-key-corners") ? (this.settings.get_int("border-spacing-px") + 5) + "px" : "0") + "; font-weight: " + (this.settings.get_boolean("font-bold") ? "bold" : "normal") + "; border: " + this.settings.get_int("border-spacing-px") + "px solid transparent;");
+            const select = () => {
+                const now = GLib.get_monotonic_time();
+                if (now - this.lastSuggestionTap < 200000)
+                    return;
+                this.lastSuggestionTap = now;
+                callback();
+            }
+            btn.connect("button-press-event", select)
+            btn.connect("touch-event", () => {
+                if (Clutter.get_current_event().type() == Clutter.EventType.TOUCH_BEGIN)
+                    select();
+            })
+            this.suggestionBox.add_child(btn);
+        })
     }
 
     buildUI() {
@@ -1241,11 +1412,14 @@ class Keyboard extends Dialog {
             }
 
             moveHandleLeft.connect("event", (actor, event) => {
+                if (isEventInActor(this.suggestionBox, event))
+                    return Clutter.EVENT_PROPAGATE;
                 if (event.type() == Clutter.EventType.BUTTON_PRESS || event.type() == Clutter.EventType.TOUCH_BEGIN) {
                     this.draggable = this.settings.get_boolean("enable-drag");
                 }
                 this.event(event, false)
             })
+            this.attachSuggestionBox(moveHandleLeft)
             gridLeft.attach(moveHandleLeft, mvBtnStartLeft, 0, (halfSize - mvBtnStartLeft), 3)
 
             let moveHandleRight = new St.Button({
@@ -1261,6 +1435,8 @@ class Keyboard extends Dialog {
             }
 
             moveHandleRight.connect("event", (actor, event) => {
+                if (isEventInActor(this.suggestionBox, event))
+                    return Clutter.EVENT_PROPAGATE;
                 if (event.type() == Clutter.EventType.BUTTON_PRESS || event.type() == Clutter.EventType.TOUCH_BEGIN) {
                     this.draggable = this.settings.get_boolean("enable-drag");
                 }
@@ -1338,11 +1514,14 @@ class Keyboard extends Dialog {
             }
 
             moveHandle.connect("event", (actor, event) => {
+                if (isEventInActor(this.suggestionBox, event))
+                    return Clutter.EVENT_PROPAGATE;
                 if (event.type() == Clutter.EventType.BUTTON_PRESS || event.type() == Clutter.EventType.TOUCH_BEGIN) {
                     this.draggable = this.settings.get_boolean("enable-drag");
                 }
                 this.event(event, false)
             })
+            this.attachSuggestionBox(moveHandle, 0.7)
             grid.attach(moveHandle, mvBtnStartLeft, 0, (rowSize - mvBtnStartLeft - mvBtnEndRight), 3)
             grid.attach(new St.Widget({ x_expand: true, y_expand: true }), 0, 3, rowSize, 1)
         }
