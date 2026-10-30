@@ -328,7 +328,6 @@ function generateStaticSVG(layoutData) {
         }
     }
 
-    // --- 4. EXECUTE & FINALIZE STRING ---
     render(layout);
 
     return `<?xml version="1.0" encoding="UTF-8"?>
@@ -367,12 +366,14 @@ export default class GjsOskPreferences extends ExtensionPreferences {
         page1.add(layoutGroup);
 
         const layoutRow = new Adw.ExpanderRow({
-            title: _('Layout')
+            title: _('Layout'),
+            subtitle: _('The key layout used in each screen orientation')
         });
         layoutGroup.add(layoutRow);
 
         const layoutLandscapeRow = new Adw.ActionRow({
-            title: _('Landscape Layout')
+            title: _('Landscape Layout'),
+            subtitle: _('Layout used on landscape monitors')
         });
         layoutRow.add_row(layoutLandscapeRow);
 
@@ -422,7 +423,8 @@ export default class GjsOskPreferences extends ExtensionPreferences {
         layoutLandscapeRow.activatable_widget = layoutLandscapeDrop;
 
         const layoutPortraitRow = new Adw.ActionRow({
-            title: _('Portrait Layout')
+            title: _('Portrait Layout'),
+            subtitle: _('Layout used on portrait monitors')
         });
         layoutRow.add_row(layoutPortraitRow);
 
@@ -434,15 +436,18 @@ export default class GjsOskPreferences extends ExtensionPreferences {
         layoutPortraitRow.activatable_widget = layoutPortraitDrop;
 
         const portraitSizing = new Adw.ExpanderRow({
-            title: _('Portrait Sizing')
+            title: _('Portrait Sizing'),
+            subtitle: _('Keyboard size on portrait monitors')
         });
         layoutGroup.add(portraitSizing);
 
         let pW = new Adw.ActionRow({
-            title: _('Width (%)')
+            title: _('Width (%)'),
+            subtitle: _('Percentage of the monitor width')
         })
         let pH = new Adw.ActionRow({
-            title: _('Height (%)')
+            title: _('Height (%)'),
+            subtitle: _('Percentage of the monitor height')
         })
 
         let numChanger_pW = Gtk.SpinButton.new_with_range(0, 100, 5);
@@ -461,15 +466,18 @@ export default class GjsOskPreferences extends ExtensionPreferences {
         portraitSizing.add_row(pH);
 
         const landscapeSizing = new Adw.ExpanderRow({
-            title: _('Landscape Sizing')
+            title: _('Landscape Sizing'),
+            subtitle: _('Keyboard size on landscape monitors')
         });
         layoutGroup.add(landscapeSizing);
 
         let lW = new Adw.ActionRow({
-            title: _('Width (%)')
+            title: _('Width (%)'),
+            subtitle: _('Percentage of the monitor width')
         });
         let lH = new Adw.ActionRow({
-            title: _('Height (%)')
+            title: _('Height (%)'),
+            subtitle: _('Percentage of the monitor height')
         });
 
         let numChanger_lW = Gtk.SpinButton.new_with_range(0, 100, 5);
@@ -488,7 +496,8 @@ export default class GjsOskPreferences extends ExtensionPreferences {
         landscapeSizing.add_row(lH);
 
         const disableEdgeSwipeRow = new Adw.ActionRow({
-            title: _('Disable Edge Swipe')
+            title: _('Disable Edge Swipe'),
+            subtitle: _('Ignore swipes in from the screen edge')
         });
         behaviorGroup.add(disableEdgeSwipeRow);
 
@@ -501,7 +510,8 @@ export default class GjsOskPreferences extends ExtensionPreferences {
         disableEdgeSwipeRow.activatable_widget = disableEdgeSwipeDT;
 
         const enableDragRow = new Adw.ActionRow({
-            title: _('Enable Dragging')
+            title: _('Enable Dragging'),
+            subtitle: _('Move the keyboard by dragging its top bar')
         });
         behaviorGroup.add(enableDragRow);
 
@@ -514,7 +524,8 @@ export default class GjsOskPreferences extends ExtensionPreferences {
         enableDragRow.activatable_widget = dragEnableDT;
 
         const indEnabledRow = new Adw.ActionRow({
-            title: _('Enable Panel Indicator')
+            title: _('Enable Panel Indicator'),
+            subtitle: _('Show a keyboard toggle in the top bar')
         });
         behaviorGroup.add(indEnabledRow);
 
@@ -527,7 +538,8 @@ export default class GjsOskPreferences extends ExtensionPreferences {
         indEnabledRow.activatable_widget = indEnabled;
 
         const enableKeyRepeatRow = new Adw.ActionRow({
-            title: _('Enable Key Repeat for All Keys')
+            title: _('Enable Key Repeat for All Keys'),
+            subtitle: _('Repeat every held key, not just Backspace')
         });
         behaviorGroup.add(enableKeyRepeatRow);
         const enableKeyRepeatDT = new Gtk.Switch({
@@ -539,16 +551,17 @@ export default class GjsOskPreferences extends ExtensionPreferences {
         enableKeyRepeatRow.activatable_widget = enableKeyRepeatDT;
 
         const soundPlayRow = new Adw.ExpanderRow({
-            title: _('Play sound'),
+            title: _('Play Sound'),
+            subtitle: _('Play a sound on every key press'),
             show_enable_switch: true
         });
         behaviorGroup.add(soundPlayRow);
         soundPlayRow.enable_expansion = settings.get_boolean('play-sound')
 
         const fileRow = new Adw.ActionRow({
-            title: _('Sound file'),
+            title: _('Sound File'),
             subtitle: settings.get_string('sound-file') || _('No file selected'),
-            activatable: false, // prevent clicking the whole row
+            activatable: false
         });
 
         const fileButton = new Gtk.Button({
@@ -588,7 +601,6 @@ export default class GjsOskPreferences extends ExtensionPreferences {
                             fileRow.subtitle = path;
                             fileButton.label = _('Clear');
 
-                            // Optionally play the file immediately
                             try {
                                 let player = global.display.get_sound_player();
                                 player.play_from_file(path, null);
@@ -607,7 +619,8 @@ export default class GjsOskPreferences extends ExtensionPreferences {
         soundPlayRow.add_row(fileRow);
 
         const keyRepeatRateRow = new Adw.ActionRow({
-            title: _('Key Repeat Rate (ms)')
+            title: _('Key Repeat Rate (ms)'),
+            subtitle: _('Delay between repeats while a key is held')
         });
         behaviorGroup.add(keyRepeatRateRow);
         let numChanger_keyRepeat = Gtk.SpinButton.new_with_range(10, 1000, 10);
@@ -617,7 +630,8 @@ export default class GjsOskPreferences extends ExtensionPreferences {
         keyRepeatRateRow.activatable_widget = numChanger_keyRepeat;
 
         const row1t5 = new Adw.ActionRow({
-            title: _('Open upon clicking in a text field')
+            title: _('Open Upon Clicking in a Text Field'),
+            subtitle: _('When to open on text field focus')
         });
         behaviorGroup.add(row1t5);
 
@@ -630,8 +644,31 @@ export default class GjsOskPreferences extends ExtensionPreferences {
         row1t5.add_suffix(dragOpt);
         row1t5.activatable_widget = dragOpt;
 
+        const showSuggestionsRow = new Adw.ExpanderRow({
+            title: _('Show Suggestions in Drag Bar'),
+            subtitle: _('Show IBus word suggestions in the drag bar'),
+            show_enable_switch: true
+        });
+        behaviorGroup.add(showSuggestionsRow);
+        showSuggestionsRow.enable_expansion = settings.get_boolean('show-suggestions')
+
+        const typingBoosterRow = new Adw.ActionRow({
+            title: _('Enable Suggestions When OSK Is Used'),
+            subtitle: _('Only suggest words while typing using the OSK')
+        });
+
+        const typingBoosterDT = new Gtk.Switch({
+            active: settings.get_boolean('typing-booster-on-osk'),
+            valign: Gtk.Align.CENTER,
+        });
+
+        typingBoosterRow.add_suffix(typingBoosterDT);
+        typingBoosterRow.activatable_widget = typingBoosterDT;
+        showSuggestionsRow.add_row(typingBoosterRow);
+
         const defaultMonitor = new Adw.ActionRow({
-            title: _('Default Monitor')
+            title: _('Default Monitor'),
+            subtitle: _('Monitor the keyboard appears on')
         })
         layoutGroup.add(defaultMonitor);
 
@@ -674,7 +711,8 @@ export default class GjsOskPreferences extends ExtensionPreferences {
         defaultMonitor.activatable_widget = monitorDrop;
 
         const defaultPosition = new Adw.ActionRow({
-            title: _('Default Position')
+            title: _('Default Position'),
+            subtitle: _('Where the keyboard appears when it opens')
         });
         layoutGroup.add(defaultPosition);
 
@@ -696,13 +734,15 @@ export default class GjsOskPreferences extends ExtensionPreferences {
         page1.add(appearanceGroup);
 
         const colorRow = new Adw.ExpanderRow({
-            title: _("Color")
+            title: _("Color"),
+            subtitle: _("Keyboard background color for light and dark mode")
         })
         appearanceGroup.add(colorRow);
 
 
         const lightCol = new Adw.ActionRow({
-            title: _('Light Mode')
+            title: _('Light Mode'),
+            subtitle: _('Background color used with the light system style')
         });
         colorRow.add_row(lightCol)
 
@@ -717,7 +757,8 @@ export default class GjsOskPreferences extends ExtensionPreferences {
         lightCol.activatable_widget = colorButton;
 
         const darkCol = new Adw.ActionRow({
-            title: _('Dark Mode')
+            title: _('Dark Mode'),
+            subtitle: _('Background color used with the dark system style')
         });
         colorRow.add_row(darkCol)
 
@@ -732,7 +773,8 @@ export default class GjsOskPreferences extends ExtensionPreferences {
         darkCol.activatable_widget = colorButton_d;
 
         const systemAccCol = new Adw.ActionRow({
-            title: _("Use System Accent Color")
+            title: _("Use System Accent Color"),
+            subtitle: _("Tint the keyboard with the accent color")
         })
         colorRow.add_row(systemAccCol)
 
@@ -749,7 +791,8 @@ export default class GjsOskPreferences extends ExtensionPreferences {
         darkCol.set_sensitive(!settings.get_boolean("system-accent-col"));
 
         let fontSize = new Adw.ActionRow({
-            title: _('Font Size (px)')
+            title: _('Font Size (px)'),
+            subtitle: _('Size of the key labels')
         });
         appearanceGroup.add(fontSize);
 
@@ -761,7 +804,8 @@ export default class GjsOskPreferences extends ExtensionPreferences {
         fontSize.activatable_widget = numChanger_font;
 
         const fontBoldRow = new Adw.ActionRow({
-            title: _("Bold Font")
+            title: _("Bold Font"),
+            subtitle: _("Draw key labels in bold")
         })
         appearanceGroup.add(fontBoldRow)
 
@@ -774,7 +818,8 @@ export default class GjsOskPreferences extends ExtensionPreferences {
         fontBoldRow.activatable_widget = fontBoldEnabled
 
         let borderSpacing = new Adw.ActionRow({
-            title: _('Border Spacing (px)')
+            title: _('Border Spacing (px)'),
+            subtitle: _('Gap between neighboring keys')
         });
         appearanceGroup.add(borderSpacing);
 
@@ -785,7 +830,8 @@ export default class GjsOskPreferences extends ExtensionPreferences {
         borderSpacing.activatable_widget = numChanger_bord;
 
         let outerSpacing = new Adw.ActionRow({
-            title: _('Outer Spacing (px)')
+            title: _('Outer Spacing (px)'),
+            subtitle: _('Padding around the edge of the keyboard')
         });
         appearanceGroup.add(outerSpacing);
 
@@ -796,7 +842,8 @@ export default class GjsOskPreferences extends ExtensionPreferences {
         outerSpacing.activatable_widget = numChanger_outer;
 
         let snapSpacing = new Adw.ActionRow({
-            title: _('Drag snap spacing (px)')
+            title: _('Drag Snap Spacing (px)'),
+            subtitle: _('Gap between the keyboard and screen edges')
         });
         appearanceGroup.add(snapSpacing);
 
@@ -807,7 +854,8 @@ export default class GjsOskPreferences extends ExtensionPreferences {
         snapSpacing.activatable_widget = numChanger_snap;
 
         const roundCorners = new Adw.ActionRow({
-            title: _('Round Corners')
+            title: _('Round Corners'),
+            subtitle: _('Round the corners of keys')
         });
         appearanceGroup.add(roundCorners);
 
@@ -820,7 +868,8 @@ export default class GjsOskPreferences extends ExtensionPreferences {
         roundCorners.activatable_widget = roundKeyCDT;
 
         const showIcon = new Adw.ActionRow({
-            title: _('Show Special Key Icons')
+            title: _('Show Special Key Icons'),
+            subtitle: _('Use icons for keys like Shift and Enter')
         });
         appearanceGroup.add(showIcon);
 
@@ -850,7 +899,7 @@ export default class GjsOskPreferences extends ExtensionPreferences {
         addGroup.add(addRow);
 
         const createKeyboardLayoutRow = new Adw.ActionRow({
-            title: _('Create/edit a custom keyboard layout')
+            title: _('Create or Edit a Custom Keyboard Layout')
         })
         addGroup.add(createKeyboardLayoutRow)
 
@@ -888,8 +937,7 @@ export default class GjsOskPreferences extends ExtensionPreferences {
         layoutsBox.set_min_children_per_line(2);
         layoutsBox.set_max_children_per_line(2);
         layoutsScroll.set_child(layoutsBox);
-
-        // Function to refresh dropdown lists
+        
         function refreshLayoutDropdowns() {
             const savedLandscapeIdx = layoutLandscapeDrop.selected;
             const savedPortraitIdx = layoutPortraitDrop.selected;
@@ -903,7 +951,6 @@ export default class GjsOskPreferences extends ExtensionPreferences {
             layoutPortraitDrop.selected = Math.min(savedPortraitIdx, newLayoutList.length - 1);
         }
 
-        // Function to add a layout box
         function addLayoutBox(json, index) {
             const vboxparent = new Gtk.ScrolledWindow({
                 min_content_height: 170,
@@ -953,7 +1000,6 @@ export default class GjsOskPreferences extends ExtensionPreferences {
                 hexpand: true
             });
             vbox.append(hbox);
-            // Label
             const label = new Gtk.Label({
                 label: "Custom Layout " + (index + 1),
                 valign: Gtk.Align.CENTER,
@@ -966,7 +1012,6 @@ export default class GjsOskPreferences extends ExtensionPreferences {
             });
             hbox.append(spacer);
 
-            // Delete button
             const deleteButton = new Gtk.Button({
                 icon_name: 'user-trash-symbolic',
                 valign: Gtk.Align.CENTER,
@@ -994,12 +1039,10 @@ export default class GjsOskPreferences extends ExtensionPreferences {
             layoutsBox.append(vboxparent);
         }
 
-        // Load existing
         for (let i = 0; i < customLayouts.length; i++) {
             addLayoutBox(customLayouts[i], i);
         }
 
-        // Add button connect
         addButton.connect('clicked', () => {
             const json = addRow.get_text();
             try {
@@ -1054,7 +1097,7 @@ export default class GjsOskPreferences extends ExtensionPreferences {
         let links_pref_group = new Adw.PreferencesGroup();
         let code_row = new Adw.ActionRow({
             icon_name: "code-symbolic",
-            title: _("More Information, submit feedback, and get help")
+            title: _("More Information, Submit Feedback, and Get Help")
         });
         let github_link = new Gtk.LinkButton({
             label: "Github",
@@ -1063,7 +1106,7 @@ export default class GjsOskPreferences extends ExtensionPreferences {
 
         let icons_credit = new Adw.ActionRow({
             icon_name: "app-icon-design-symbolic",
-            title: _("Icons sourced from")
+            title: _("Icons Sourced From")
         });
         let remixicon_link = new Gtk.LinkButton({
             label: "RemixIcon",
@@ -1120,6 +1163,8 @@ export default class GjsOskPreferences extends ExtensionPreferences {
         settings.bind("key-repeat-rate", numChanger_keyRepeat, "value", 0);
         settings.bind("play-sound", soundPlayRow, "enable-expansion", 0);
         settings.bind("show-icons", showIconDT, "active", 0)
+        settings.bind("show-suggestions", showSuggestionsRow, "enable-expansion", 0);
+        settings.bind("typing-booster-on-osk", typingBoosterDT, "active", 0);
         settings.bind("default-snap", snapDrop, "selected", 0);
         monitorDrop.connect("notify::selected", () => {
             currentMonitorMap[monitors.length + ""] = monitors.map(m => { return m.get_connector() })[monitorDrop.selected];
@@ -1164,6 +1209,8 @@ export default class GjsOskPreferences extends ExtensionPreferences {
             settings.set_int("key-repeat-rate", numChanger_keyRepeat.value);
             settings.set_boolean("play-sound", soundPlayRow.enable_expansion);
             settings.set_boolean("show-icons", showIconDT.active)
+            settings.set_boolean("show-suggestions", showSuggestionsRow.enable_expansion);
+            settings.set_boolean("typing-booster-on-osk", typingBoosterDT.active);
             settings.set_int("default-snap", snapDrop.selected);
             currentMonitorMap[monitors.length + ""] = monitors.map(m => { return m.get_connector() })[monitorDrop.selected];
             let representation = [];
