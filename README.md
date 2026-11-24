@@ -1,5 +1,7 @@
 # [GJS OSK](https://extensions.gnome.org/extension/5949/gjs-osk/)
 A (marginally) better on screen keyboard for GNOME 45+ (go to the [pre-45 branch](https://github.com/Vishram1123/gjs-osk/tree/pre-45) for compatibility from gnome 42-44)
+
+[![GNOME Extensions](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fextensions.gnome.org%2Fextension-info%2F%3Fpk%3D5949&query=%24.downloads&label=GNOME%20Extensions&suffix=%20downloads&logo=gnome&logoColor=white&color=4A86CF)](https://extensions.gnome.org/extension/5949/gjs-osk/)
 ## Advantages over the default OSK:
 -	Function, modifier, tab, and arrow key support
 -	Ability to move around the screen
