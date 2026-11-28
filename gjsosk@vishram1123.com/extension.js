@@ -118,14 +118,14 @@ function normalizeCustomLayouts(rawValue) {
 
 export default class GjsOskExtension extends Extension {
     _openKeyboard(instant) {
-        if (this.Keyboard.state == State.CLOSED) {
+        if (this.Keyboard.state == State.CLOSED || this.Keyboard.state == State.CLOSING) {
             this.Keyboard.open(null, !instant ? null : true);
             this.openBit.set_boolean('keyboard-visible', true);
         }
     }
 
     _closeKeyboard(instant) {
-        if (this.Keyboard.state == State.OPENED) {
+        if (this.Keyboard.state == State.OPENED || this.Keyboard.state == State.OPENING) {
             this.Keyboard.close(!instant ? null : true);
             this.openBit.set_boolean('keyboard-visible', false);
         }
@@ -171,37 +171,101 @@ export default class GjsOskExtension extends Extension {
             clearInterval(this.openInterval);
             this.openInterval = null;
         }
+        this._activeClutterText = null;
+        this._lastTrackedFocus = null;
+        this._lastImFocused = false;
+        const tapMode = this.settings.get_int("enable-tap-gesture");
+        this.lastInputMethod = tapMode === 2;
+
         this.openInterval = setInterval(() => {
             if (this.Keyboard != null) {
-                if (global.stage.key_focus == this.Keyboard && this.Keyboard.prevKeyFocus != null) {
+                if (global.stage.key_focus != null && this.Keyboard.contains(global.stage.key_focus) && this.Keyboard.prevKeyFocus != null) {
                     global.stage.key_focus = this.Keyboard.prevKeyFocus
                 }
                 this.Keyboard.get_parent().set_child_at_index(this.Keyboard, this.Keyboard.get_parent().get_n_children() - 1);
                 this.Keyboard.set_child_at_index(this.Keyboard.box, this.Keyboard.get_n_children() - 1);
-                if (!this.Keyboard.openedFromButton && this.lastInputMethod) {
-                    if (Main.inputMethod.currentFocus != null && Main.inputMethod.currentFocus.is_focused() && !this.Keyboard.closedFromButton) {
-                        this._openKeyboard();
-                    } else if (!this.Keyboard.closedFromButton && !this.Keyboard._dragging) {
+
+                if (this._activeClutterText !== null) {
+                    const text = this._activeClutterText;
+                    const stillFocused = text.mapped && text.visible &&
+                        (global.stage.key_focus === text || text.has_key_focus?.());
+                    if (!stillFocused) {
+                        this._activeClutterText = null;
+                    }
+                }
+
+                const imFocus = Main.inputMethod.currentFocus;
+                const imFocused = imFocus != null && imFocus.is_focused();
+                if (imFocus !== this._lastTrackedFocus || (!imFocused && this._lastImFocused)) {
+                    this._lastTrackedFocus = imFocus;
+                    this.Keyboard.closedFromButton = false;
+                }
+                this._lastImFocused = imFocused;
+
+                const hasTextFocus = imFocused || this._activeClutterText !== null;
+                const currentTapMode = this.settings.get_int("enable-tap-gesture");
+                const canAutoOpen = currentTapMode !== 0 && this.lastInputMethod;
+
+                if (!this.Keyboard.openedFromButton) {
+                    if (hasTextFocus && !this.Keyboard.closedFromButton) {
+                        if (canAutoOpen) {
+                            this._openKeyboard();
+                        }
+                    } else if (!hasTextFocus && !this.Keyboard._dragging) {
                         this._closeKeyboard();
-                        this.Keyboard.closedFromButton = false
-                    } else if (Main.inputMethod.currentFocus == null) {
-                        this.Keyboard.closedFromButton = false
+                        this.Keyboard.closedFromButton = false;
                     }
                 }
             }
         }, 300);
-        this.tapConnect = global.stage.connect("event", (_actor, event) => {
-            if (event.type() !== 4 && event.type() !== 5) {
-                this.lastInputMethod = [false, event.type() >= 9 && event.type() <= 12, true][this.settings.get_int("enable-tap-gesture")]
+
+        this._forwardingEvent = false;
+        this.tapConnect = global.stage.connect("captured-event", (_actor, event) => {
+            if (this._forwardingEvent) {
+                return Clutter.EVENT_PROPAGATE;
             }
-            if ((event.type() == Clutter.EventType.TOUCH_BEGIN || event.type() == Clutter.EventType.BUTTON_PRESS)
-                && this.Keyboard != null && this.Keyboard.closedFromButton) {
+            const type = event.type();
+            const tapModeNow = this.settings.get_int("enable-tap-gesture");
+            if (type !== Clutter.EventType.ENTER && type !== Clutter.EventType.LEAVE) {
+                const isTouch = type >= Clutter.EventType.TOUCH_BEGIN && type <= Clutter.EventType.TOUCH_CANCEL;
+                this.lastInputMethod = [false, isTouch, true][tapModeNow];
+            }
+
+            const isPointerOrTouch =
+                type === Clutter.EventType.BUTTON_PRESS ||
+                type === Clutter.EventType.BUTTON_RELEASE ||
+                type === Clutter.EventType.MOTION ||
+                (type >= Clutter.EventType.TOUCH_BEGIN && type <= Clutter.EventType.TOUCH_CANCEL);
+
+            if (isPointerOrTouch && this.Keyboard != null && this.Keyboard.opened && !this.Keyboard._dragging) {
                 const actor = global.stage.get_event_actor(event);
-                if (actor == null || !this.Keyboard.contains(actor)) {
-                    this.Keyboard.closedFromButton = false;
+                if (actor != null && this.Keyboard.contains(actor)) {
+                    this._forwardingEvent = true;
+                    try {
+                        actor.event(event, true);
+                        actor.event(event, false);
+                    } finally {
+                        this._forwardingEvent = false;
+                    }
+                    return Clutter.EVENT_STOP;
                 }
             }
-        })
+
+            const isTouchEnd = type === Clutter.EventType.TOUCH_END;
+            const isButtonRelease = type === Clutter.EventType.BUTTON_RELEASE;
+            const triggerByMode = [false, isTouchEnd, isButtonRelease || isTouchEnd][tapModeNow];
+
+            if (triggerByMode && this.Keyboard != null) {
+                const actor = global.stage.get_event_actor(event);
+                if (actor instanceof Clutter.Text && !this.Keyboard.contains(actor)) {
+                    this._activeClutterText = actor;
+                    if (!this.Keyboard.opened && !this.Keyboard.closedFromButton && !this.Keyboard.openedFromButton) {
+                        this._openKeyboard();
+                    }
+                }
+            }
+            return Clutter.EVENT_PROPAGATE;
+        });
     }
 
     fail(error, method = null, instance = null) {
@@ -682,6 +746,7 @@ class Keyboard extends Dialog {
         this.shift = false;
         this.alt = false;
         this.opened = false;
+        this.closedFromButton = false;
         this.state = State.CLOSED;
         this.delta = [];
         this.monitorChecker = global.backend.get_monitor_manager().connect('monitors-changed', () => {
@@ -779,20 +844,19 @@ class Keyboard extends Dialog {
         } else {
             this.bottomDragAction = null;
         }
-        this._oldMaybeHandleEvent = Main.keyboard.maybeHandleEvent
-        Main.keyboard.maybeHandleEvent = (e) => {
-            let lastInputMethod = [false, e.type() == 11, e.type() == 7 || e.type() == 11][this.settings.get_int("enable-tap-gesture")]
-            let ac = global.stage.get_event_actor(e)
-            if (this.contains(ac)) {
-                ac.event(e, true);
-                ac.event(e, false);
-                return true;
-            } else if (ac instanceof Clutter.Text && lastInputMethod && !this.opened) {
-                this.open();
-            }
-            return false
+        this._oldMaybeHandleEvent = null;
+        if (major < 51 && typeof Main.keyboard?.maybeHandleEvent === 'function') {
+            this._oldMaybeHandleEvent = Main.keyboard.maybeHandleEvent;
+            Main.keyboard.maybeHandleEvent = (e) => {
+                let ac = global.stage.get_event_actor(e);
+                if (this.contains(ac)) {
+                    ac.event(e, true);
+                    ac.event(e, false);
+                    return true;
+                }
+                return false;
+            };
         }
-        // The IBus candidate popup feeds the (disabled) built-in OSK through these, so redirect them to the drag bar
         if (this.showSuggestions) {
             this._oldResetSuggestions = Main.keyboard.resetSuggestions
             this._oldAddSuggestion = Main.keyboard.addSuggestion
@@ -821,7 +885,10 @@ class Keyboard extends Dialog {
         if (major >= 48) {
             global.display.get_compositor().enable_unredirect()
         }
-        Main.keyboard.maybeHandleEvent = this._oldMaybeHandleEvent
+        if (this._oldMaybeHandleEvent !== null) {
+            Main.keyboard.maybeHandleEvent = this._oldMaybeHandleEvent;
+            this._oldMaybeHandleEvent = null;
+        }
         if (this.showSuggestions) {
             Main.keyboard.resetSuggestions = this._oldResetSuggestions
             Main.keyboard.addSuggestion = this._oldAddSuggestion
@@ -1016,9 +1083,7 @@ class Keyboard extends Dialog {
                         clearTimeout(this.stateTimeout);
                         this.stateTimeout = null;
                     }
-                    this.stateTimeout = setTimeout(() => {
-                        this.state = State.OPENED
-                    }, 500);
+                    this.state = State.OPENED;
                 }
             });
             this.ease({
@@ -1041,6 +1106,7 @@ class Keyboard extends Dialog {
 
     close(instant = null) {
         this.prevKeyFocus = null;
+        this.opened = false;
         setOskCompletion(false);
         let monitor = Main.layoutManager.monitors[currentMonitorId] ?? Main.layoutManager.primaryMonitor;
         let posX = [this.settings.get_int("snap-spacing-px"), ((monitor.width * .5) - ((this.width * .5))), monitor.width - this.width - this.settings.get_int("snap-spacing-px")][(this.settings.get_int("default-snap") % 3)];
@@ -1053,15 +1119,12 @@ class Keyboard extends Dialog {
             duration: instant == null || !instant ? 100 : 0,
             mode: Clutter.AnimationMode.EASE_OUT_QUAD,
             onComplete: () => {
-                this.opened = false;
                 this.hide();
                 if (this.stateTimeout !== null) {
                     clearTimeout(this.stateTimeout);
                     this.stateTimeout = null;
                 }
-                this.stateTimeout = setTimeout(() => {
-                    this.state = State.CLOSED
-                }, 500);
+                this.state = State.CLOSED;
             },
         });
         this.ease({
@@ -1464,12 +1527,12 @@ class Keyboard extends Dialog {
                 closeBtn.add_style_class_name("close_btn")
                 closeBtn.add_style_class_name("key")
                 closeBtn.connect("button-press-event", () => {
-                    this.close();
+                    this.extensionObject._closeKeyboard();
                     this.closedFromButton = true;
                 })
                 closeBtn.connect("touch-event", () => {
                     if (Clutter.get_current_event().type() == Clutter.EventType.TOUCH_BEGIN) {
-                        this.close();
+                        this.extensionObject._closeKeyboard();
                         this.closedFromButton = true;
                     }
                 })
@@ -1574,12 +1637,12 @@ class Keyboard extends Dialog {
                 closeBtn.add_style_class_name("close_btn")
                 closeBtn.add_style_class_name("key")
                 closeBtn.connect("button-press-event", () => {
-                    this.close();
+                    this.extensionObject._closeKeyboard();
                     this.closedFromButton = true;
                 })
                 closeBtn.connect("touch-event", () => {
                     if (Clutter.get_current_event().type() == Clutter.EventType.TOUCH_BEGIN) {
-                        this.close();
+                        this.extensionObject._closeKeyboard();
                         this.closedFromButton = true;
                     }
                 })
